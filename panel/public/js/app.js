@@ -84,21 +84,139 @@ async function refreshProjects() {
   try {
     const { projects } = await api('/api/projects');
     $('#projectsCount').textContent = projects.length;
-    const grid = $('#projectsList');
+    const wrap = $('#projectsList');
     if (!projects.length) {
-      grid.innerHTML = '<div class="empty">пока пусто — создай проект из шаблона</div>';
+      wrap.innerHTML = '<div class="empty">пока пусто — создай проект из шаблона</div>';
       return;
     }
-    grid.innerHTML = projects.map(p => `
-      <div class="template-card">
-        <div class="t-name">${escapeHtml(p.name)}</div>
-        <div class="t-meta">/home/student/workspace/${escapeHtml(p.name)}</div>
-        <div class="t-actions">
-          <a class="btn btn-sm" href="/code/${escapeHtml(ME.username)}/?folder=${encodeURIComponent('/home/student/workspace/' + p.name)}" target="_blank">VS Code →</a>
-        </div>
-      </div>
-    `).join('');
+    // Сортируем по дате создания (новые сверху).
+    projects.sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
+
+    const folderInVs = (name) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent('/home/student/workspace/' + name)}`;
+    const statusClass = (s) => /боёвой/i.test(s) ? 'status-prod' : (s === 'НОВЫЙ' ? 'status-new' : 'status-other');
+
+    wrap.innerHTML = `
+      <table class="projects-table">
+        <thead>
+          <tr>
+            <th class="th-type">Тип</th>
+            <th class="th-status">Статус</th>
+            <th class="th-name">Название</th>
+            <th class="th-owner">Автор</th>
+            <th class="th-date">Дата</th>
+            <th class="th-actions">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${projects.map(p => `
+            <tr data-project="${escapeHtml(p.name)}">
+              <td><span class="pill pill-type">ПРОЕКТ</span></td>
+              <td><span class="pill ${statusClass(p.status)}">${escapeHtml(p.status)}</span></td>
+              <td class="td-name">${escapeHtml(p.name)}</td>
+              <td>${escapeHtml(p.owner)}</td>
+              <td>${fmtDate(p.modified)}</td>
+              <td class="td-actions">
+                <button class="btn btn-sm" data-action="files" title="Файлы">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </button>
+                <a class="btn btn-sm" target="_blank" href="${folderInVs(p.name)}">VS Code →</a>
+                <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    $$('tbody tr', wrap).forEach(tr => {
+      const name = tr.dataset.project;
+      $('[data-action="files"]', tr).onclick = () => openExplorer(name);
+      $('[data-action="delete"]', tr).onclick = async () => {
+        if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
+        try {
+          await api('/api/projects/' + encodeURIComponent(name), { method: 'DELETE' });
+          refreshProjects();
+        } catch (e) { alert(e.message); }
+      };
+    });
   } catch {}
+}
+
+// ── File explorer ──────────────────────────────────────────
+
+async function openExplorer(project) {
+  $('#explorer-path').textContent = `/home/student/workspace/${project}/`;
+  $('#explorer-tree').innerHTML = '<div class="explorer-loading">загрузка…</div>';
+  $('#explorer-view-path').textContent = '← Выберите файл';
+  $('#explorer-view-size').textContent = '';
+  $('#explorer-view-pre').textContent = '';
+  $('#explorer-overlay').classList.remove('hidden');
+  $('#explorer-overlay').dataset.project = project;
+  try {
+    const { tree } = await api('/api/explore/tree?project=' + encodeURIComponent(project));
+    $('#explorer-tree').innerHTML = renderTree(tree, '');
+    $$('.explorer-node-file', $('#explorer-tree')).forEach(el => {
+      el.onclick = () => loadFile(el.dataset.path);
+    });
+    $$('.explorer-node-dir', $('#explorer-tree')).forEach(el => {
+      el.onclick = () => el.parentElement.classList.toggle('collapsed');
+    });
+  } catch (e) {
+    $('#explorer-tree').innerHTML = `<div class="empty">ошибка: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderTree(nodes, parentPath) {
+  if (!nodes.length) return '<div class="empty">пусто</div>';
+  return '<ul class="explorer-tree-list">' + nodes.map(n => {
+    const p = parentPath ? `${parentPath}/${n.name}` : n.name;
+    if (n.type === 'dir') {
+      return `
+        <li class="explorer-tree-item">
+          <div class="explorer-node-dir" data-path="${escapeHtml(p)}">
+            <span class="explorer-icon-caret">▸</span>
+            <span class="explorer-name">${escapeHtml(n.name)}/</span>
+          </div>
+          ${renderTree(n.children || [], p)}
+        </li>
+      `;
+    }
+    return `
+      <li class="explorer-tree-item">
+        <div class="explorer-node-file" data-path="${escapeHtml(p)}">
+          <span class="explorer-name">${escapeHtml(n.name)}</span>
+        </div>
+      </li>
+    `;
+  }).join('') + '</ul>';
+}
+
+async function loadFile(relPath) {
+  const project = $('#explorer-overlay').dataset.project;
+  $('#explorer-view-path').textContent = relPath;
+  $('#explorer-view-size').textContent = '…';
+  $('#explorer-view-pre').textContent = '';
+  $$('.explorer-node-file.active', $('#explorer-tree')).forEach(el => el.classList.remove('active'));
+  const node = $(`.explorer-node-file[data-path="${CSS.escape(relPath)}"]`, $('#explorer-tree'));
+  if (node) node.classList.add('active');
+  try {
+    const data = await api('/api/explore/file?project=' + encodeURIComponent(project) + '&path=' + encodeURIComponent(relPath));
+    const sizeKb = (data.size / 1024).toFixed(1);
+    if (data.binary) {
+      $('#explorer-view-size').textContent = `бинарь, ${sizeKb} КБ`;
+      $('#explorer-view-pre').textContent = '— бинарный файл, не отображаем —';
+    } else if (data.truncated) {
+      $('#explorer-view-size').textContent = `${sizeKb} КБ (>200 КБ, не показано)`;
+      $('#explorer-view-pre').textContent = '— файл слишком большой, не отображаем —';
+    } else {
+      $('#explorer-view-size').textContent = `${sizeKb} КБ`;
+      $('#explorer-view-pre').textContent = data.content;
+    }
+  } catch (e) {
+    $('#explorer-view-size').textContent = '';
+    $('#explorer-view-pre').textContent = 'ошибка: ' + e.message;
+  }
 }
 
 async function refreshTemplates() {
@@ -309,6 +427,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#newproject-submit').onclick = doCreateProject;
   $('#newproject-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doCreateProject(); }
+  });
+
+  // Explorer close
+  $('#explorer-close').onclick = () => $('#explorer-overlay').classList.add('hidden');
+  $('#explorer-overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'explorer-overlay') $('#explorer-overlay').classList.add('hidden');
   });
 
   // Init session

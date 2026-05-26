@@ -9,9 +9,10 @@ import {
 } from './auth.js';
 
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
-const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/dev-portal/templates/vibe';
+const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
 const IMAGE = process.env.VIBE_IMAGE || 'vibe-workspace:dev';
 const NETWORK = process.env.VIBE_NETWORK || 'vibe-net';
+const EXTENSIONS_VOLUME = process.env.VIBE_EXTENSIONS_VOLUME || 'vibe-extensions';
 const SHIM_BASE_URL = process.env.SHIM_BASE_URL || 'http://172.30.0.1:8190';
 const MEM_LIMIT_MB = parseInt(process.env.STUDENT_MEM_LIMIT_MB || '1536', 10);
 const CPU_LIMIT = parseFloat(process.env.STUDENT_CPU_LIMIT || '1.0');
@@ -121,6 +122,9 @@ async function dockerCreate(username, port) {
       Binds: [
         `${workspaceDir(username)}:/home/student/workspace:rw`,
         `${TEMPLATES_DIR}:/home/student/templates:ro`,
+        // Общий volume для расширений code-server: ставишь раз — у всех есть.
+        // User-settings/keybindings/state у каждого свои (не маунтятся).
+        `${EXTENSIONS_VOLUME}:/home/student/.local/share/code-server/extensions:rw`,
       ],
       PortBindings: {
         '8080/tcp': [{ HostIp: '127.0.0.1', HostPort: String(port) }],
@@ -143,8 +147,21 @@ async function dockerRemove(username) {
 }
 
 export async function dockerStart(username) {
-  const c = docker.getContainer(containerName(username));
-  const info = await c.inspect();
+  const state = loadUsers();
+  const u = state.users[username];
+  if (!u) throw new Error(`no such student: ${username}`);
+
+  let c = docker.getContainer(containerName(username));
+  let info;
+  try {
+    info = await c.inspect();
+  } catch (e) {
+    if (e.statusCode !== 404) throw e;
+    if (!u.containerPort) throw new Error(`no port assigned for ${username}`);
+    await dockerCreate(username, u.containerPort);
+    c = docker.getContainer(containerName(username));
+    info = await c.inspect();
+  }
   if (info.State.Running) return info;
   await c.start();
   return await c.inspect();

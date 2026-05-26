@@ -33,6 +33,7 @@ import {
   touchActivity, startReaper,
 } from './lib/students.js';
 import { listTemplates, instantiateTemplate } from './lib/templates.js';
+import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -108,8 +109,73 @@ app.get('/api/projects', requireAuth, (req, res) => {
   fs.mkdirSync(ws, { recursive: true });
   const projects = fs.readdirSync(ws, { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.startsWith('.'))
-    .map(d => ({ name: d.name }));
+    .map(d => {
+      const dir = path.join(ws, d.name);
+      let st;
+      try { st = fs.statSync(dir); } catch { st = null; }
+      // .portal-meta.json — опциональный сайдкар (status, siteUrl и т.п.)
+      let meta = {};
+      try {
+        const metaPath = path.join(dir, '.portal-meta.json');
+        if (fs.existsSync(metaPath)) {
+          meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+        }
+      } catch {}
+      return {
+        name: d.name,
+        created: st ? new Date(st.birthtimeMs || st.ctimeMs).toISOString() : null,
+        modified: st ? new Date(st.mtimeMs).toISOString() : null,
+        owner: req.session.user,
+        status: meta.status || 'НОВЫЙ',
+        siteUrl: meta.siteUrl || null,
+      };
+    });
   res.json({ projects });
+});
+
+app.delete('/api/projects/:name', requireAuth, (req, res) => {
+  const name = req.params.name;
+  if (!/^[a-zA-Z0-9._-]+$/.test(name)) {
+    return res.status(400).json({ error: 'invalid project name' });
+  }
+  const ws = workspaceDir(req.session.user);
+  const target = path.join(ws, name);
+  if (!fs.existsSync(target)) return res.status(404).json({ error: 'no such project' });
+  // Архивируем в `.deleted/` внутри workspace ученика (а не сразу rm).
+  const archiveDir = path.join(ws, '.deleted');
+  fs.mkdirSync(archiveDir, { recursive: true });
+  const archive = path.join(archiveDir, `${name}-${Date.now()}`);
+  fs.renameSync(target, archive);
+  res.json({ ok: true, archivedTo: archive });
+});
+
+// ---------- file explorer (user) ----------
+
+function projectRootFor(req, projectName) {
+  if (!/^[a-zA-Z0-9._-]+$/.test(projectName || '')) return null;
+  const ws = workspaceDir(req.session.user);
+  const root = path.join(ws, projectName);
+  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) return null;
+  return root;
+}
+
+app.get('/api/explore/tree', requireAuth, (req, res) => {
+  const root = projectRootFor(req, req.query.project);
+  if (!root) return res.status(404).json({ error: 'no such project' });
+  res.json({ tree: buildTree(root) });
+});
+
+app.get('/api/explore/file', requireAuth, (req, res) => {
+  const root = projectRootFor(req, req.query.project);
+  if (!root) return res.status(404).json({ error: 'no such project' });
+  const rel = req.query.path || '';
+  const abs = resolveSafe(root, rel);
+  if (!abs) return res.status(400).json({ error: 'invalid path' });
+  try {
+    res.json(readFileSafe(root, rel));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 app.post('/api/projects/from-template', requireAuth, (req, res) => {
@@ -178,6 +244,33 @@ app.delete('/api/students/:u', requireAdmin, async (req, res) => {
 // nginx за нами делает auth_request на /api/me, и проксирует /code/ сюда.
 // Здесь мы доп. сверяем что user из URL совпадает с сессией, и шлём в нужный контейнер.
 
+// Прокси /code/<user>/* → 127.0.0.1:<port>.
+// router вычисляется по URL, чтобы работало в т.ч. для WebSocket upgrade
+// (он обходит Express-цепочку и до auth-middleware ниже не доходит).
+// HTTP-цепочка делает сессионную проверку и авто-старт контейнера; WS-апгрейд
+// идёт уже после первого HTTP-запроса (code-server грузит HTML по GET до WS).
+const codeProxy = createProxyMiddleware({
+  router: (req) => {
+    const m = req.url.match(/^\/code\/([^/]+)/);
+    if (!m) return null;
+    const state = loadUsers();
+    const u = state.users[m[1]];
+    if (!u || !u.containerPort) return null;
+    return `http://127.0.0.1:${u.containerPort}`;
+  },
+  changeOrigin: true,
+  ws: true,
+  pathRewrite: (p) => p.replace(/^\/code\/[^/]+/, ''),
+  on: {
+    error: (err, req, res) => {
+      if (res && !res.headersSent) {
+        try { res.writeHead(502); res.end('container not ready'); } catch {}
+      }
+    },
+  },
+});
+
+// HTTP: проверка сессии + авто-старт контейнера. После next() — прокси.
 app.use('/code/:user', (req, res, next) => {
   const wantUser = req.params.user;
   if (!req.session?.user) return res.status(401).send('login required');
@@ -189,27 +282,20 @@ app.use('/code/:user', (req, res, next) => {
   if (!u) return res.status(404).send('no such student');
   if (!u.containerPort) return res.status(500).send('no port assigned');
 
-  // Авто-старт контейнера, если выключен
   dockerStart(wantUser)
     .then(() => touchActivity(wantUser))
     .catch(e => console.error('autostart failed:', e.message));
 
-  // Прокси на 127.0.0.1:<port>
-  req._vibePort = u.containerPort;
   next();
-}, createProxyMiddleware({
-  router: (req) => `http://127.0.0.1:${req._vibePort}`,
-  changeOrigin: true,
-  ws: true,
-  pathRewrite: (path, req) => path.replace(/^\/code\/[^/]+/, ''),
-  on: {
-    error: (err, req, res) => {
-      if (res && !res.headersSent) {
-        try { res.writeHead(502); res.end('container not ready'); } catch {}
-      }
-    },
-  },
-}));
+});
+
+// Прокси без mount-префикса — иначе Express режет `/code` из req.url
+// и router/pathRewrite не сматчат. Фильтруем по префиксу руками.
+// Регистрация через app.use(mw) важна для подписки на upgrade-события сервера.
+app.use((req, res, next) => {
+  if (req.url.startsWith('/code/')) return codeProxy(req, res, next);
+  next();
+});
 
 // ---------- статика ----------
 
@@ -220,6 +306,14 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`[vibe-panel] listening on http://${HOST}:${PORT}`);
+});
+
+// WebSocket upgrade для /code/<user>/* (code-server поднимает ws).
+// http-proxy-middleware v3 экспортирует .upgrade на инстансе прокси.
+server.on('upgrade', (req, socket, head) => {
+  if (req.url && req.url.startsWith('/code/')) {
+    codeProxy.upgrade(req, socket, head);
+  }
 });
 
 // Reaper для idle контейнеров

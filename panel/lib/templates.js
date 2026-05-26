@@ -1,10 +1,10 @@
-// Чтение каталога шаблонов dev-портала (ro для vibe) + копирование в workspace ученика.
+// Чтение каталога курсовых шаблонов (ro) + копирование в workspace ученика.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/dev-portal/templates/vibe';
+const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
 
 export function listTemplates() {
   if (!fs.existsSync(TEMPLATES_DIR)) return [];

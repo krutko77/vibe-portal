@@ -88,7 +88,7 @@
           <span class="section-path"><span id="projectsCount">0</span> шт</span>
         </div>
       </div>
-      <div class="projects-grid" id="projectsList"></div>
+      <div class="projects-table-wrap" id="projectsList"></div>
     </div>
 
     <!-- Секция: Шаблоны -->
@@ -96,7 +96,7 @@
       <div class="section-head">
         <div class="section-head-left">
           <span class="section-label">Шаблоны</span>
-          <span class="section-path">/opt/dev-portal/templates/vibe/ (read-only)</span>
+          <span class="section-path">/opt/vibe-portal/templates/ (read-only)</span>
         </div>
       </div>
       <div class="projects-grid" id="templatesList"></div>
@@ -206,6 +206,33 @@
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-newproject">Отмена</button>
         <button class="btn btn-primary" id="newproject-submit">Создать проект →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Explorer overlay (файлы проекта) ─────────────────────-->
+  <div class="explorer-overlay hidden" id="explorer-overlay" role="dialog" aria-modal="true">
+    <div class="explorer-panel">
+      <div class="explorer-header">
+        <span class="explorer-title">
+          <span class="section-label">Файлы</span>
+          <span class="section-path" id="explorer-path">—</span>
+        </span>
+        <button class="btn-icon-sm" id="explorer-close" title="Закрыть">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="explorer-body">
+        <div class="explorer-tree" id="explorer-tree"></div>
+        <div class="explorer-view">
+          <div class="explorer-view-head">
+            <span class="explorer-view-path" id="explorer-view-path">← Выберите файл</span>
+            <span class="explorer-view-size" id="explorer-view-size"></span>
+          </div>
+          <pre class="explorer-view-pre" id="explorer-view-pre"></pre>
+        </div>
       </div>
     </div>
   </div>
