@@ -215,14 +215,16 @@
     <div class="explorer-panel">
       <div class="explorer-header">
         <span class="explorer-title">
-          <span class="section-label">Файлы</span>
           <span class="section-path" id="explorer-path">—</span>
         </span>
-        <button class="btn-icon-sm" id="explorer-close" title="Закрыть">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <div class="explorer-header-actions">
+          <a class="btn btn-primary btn-sm" id="explorer-open-vscode" target="_blank">VS Code →</a>
+          <button class="btn-icon-sm" id="explorer-close" title="Закрыть">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="explorer-body">
         <div class="explorer-tree" id="explorer-tree"></div>

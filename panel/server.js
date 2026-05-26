@@ -151,26 +151,34 @@ app.delete('/api/projects/:name', requireAuth, (req, res) => {
 
 // ---------- file explorer (user) ----------
 
-function projectRootFor(req, projectName) {
-  if (!/^[a-zA-Z0-9._-]+$/.test(projectName || '')) return null;
-  const ws = workspaceDir(req.session.user);
-  const root = path.join(ws, projectName);
-  if (!fs.existsSync(root) || !fs.statSync(root).isDirectory()) return null;
-  return root;
+const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
+
+// Возвращает абсолютный путь к корню для просмотра.
+// kind=project — workspace залогиненного юзера; kind=template — общий каталог.
+function exploreRoot(req, kind, name) {
+  if (!/^[a-zA-Z0-9._-]+$/.test(name || '')) return null;
+  let base;
+  if (kind === 'template') base = path.join(TEMPLATES_DIR, name);
+  else base = path.join(workspaceDir(req.session.user), name);
+  if (!fs.existsSync(base) || !fs.statSync(base).isDirectory()) return null;
+  return base;
 }
 
 app.get('/api/explore/tree', requireAuth, (req, res) => {
-  const root = projectRootFor(req, req.query.project);
-  if (!root) return res.status(404).json({ error: 'no such project' });
+  const kind = req.query.kind === 'template' ? 'template' : 'project';
+  const name = req.query.project || req.query.template;
+  const root = exploreRoot(req, kind, name);
+  if (!root) return res.status(404).json({ error: 'no such ' + kind });
   res.json({ tree: buildTree(root) });
 });
 
 app.get('/api/explore/file', requireAuth, (req, res) => {
-  const root = projectRootFor(req, req.query.project);
-  if (!root) return res.status(404).json({ error: 'no such project' });
+  const kind = req.query.kind === 'template' ? 'template' : 'project';
+  const name = req.query.project || req.query.template;
+  const root = exploreRoot(req, kind, name);
+  if (!root) return res.status(404).json({ error: 'no such ' + kind });
   const rel = req.query.path || '';
-  const abs = resolveSafe(root, rel);
-  if (!abs) return res.status(400).json({ error: 'invalid path' });
+  if (!resolveSafe(root, rel)) return res.status(400).json({ error: 'invalid path' });
   try {
     res.json(readFileSafe(root, rel));
   } catch (e) {

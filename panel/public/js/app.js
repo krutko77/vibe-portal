@@ -145,16 +145,32 @@ async function refreshProjects() {
 
 // ── File explorer ──────────────────────────────────────────
 
-async function openExplorer(project) {
-  $('#explorer-path').textContent = `/home/student/workspace/${project}/`;
+// kind = 'project' | 'template'
+async function openExplorer(name, kind = 'project') {
+  const overlay = $('#explorer-overlay');
+  overlay.dataset.name = name;
+  overlay.dataset.kind = kind;
+
+  const isTpl = kind === 'template';
+  const folderInside = isTpl
+    ? `/home/student/templates/${name}`
+    : `/home/student/workspace/${name}`;
+  $('#explorer-path').textContent = folderInside + '/';
+  // VS Code открывает контейнер залогиненного юзера, для шаблонов — read-only mount.
+  $('#explorer-open-vscode').href =
+    `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent(folderInside)}`;
+
   $('#explorer-tree').innerHTML = '<div class="explorer-loading">загрузка…</div>';
   $('#explorer-view-path').textContent = '← Выберите файл';
   $('#explorer-view-size').textContent = '';
   $('#explorer-view-pre').textContent = '';
-  $('#explorer-overlay').classList.remove('hidden');
-  $('#explorer-overlay').dataset.project = project;
+  overlay.classList.remove('hidden');
+
+  const treeUrl = isTpl
+    ? '/api/explore/tree?kind=template&template=' + encodeURIComponent(name)
+    : '/api/explore/tree?project=' + encodeURIComponent(name);
   try {
-    const { tree } = await api('/api/explore/tree?project=' + encodeURIComponent(project));
+    const { tree } = await api(treeUrl);
     $('#explorer-tree').innerHTML = renderTree(tree, '');
     $$('.explorer-node-file', $('#explorer-tree')).forEach(el => {
       el.onclick = () => loadFile(el.dataset.path);
@@ -193,15 +209,20 @@ function renderTree(nodes, parentPath) {
 }
 
 async function loadFile(relPath) {
-  const project = $('#explorer-overlay').dataset.project;
+  const overlay = $('#explorer-overlay');
+  const name = overlay.dataset.name;
+  const kind = overlay.dataset.kind || 'project';
   $('#explorer-view-path').textContent = relPath;
   $('#explorer-view-size').textContent = '…';
   $('#explorer-view-pre').textContent = '';
   $$('.explorer-node-file.active', $('#explorer-tree')).forEach(el => el.classList.remove('active'));
   const node = $(`.explorer-node-file[data-path="${CSS.escape(relPath)}"]`, $('#explorer-tree'));
   if (node) node.classList.add('active');
+  const fileUrl = kind === 'template'
+    ? '/api/explore/file?kind=template&template=' + encodeURIComponent(name) + '&path=' + encodeURIComponent(relPath)
+    : '/api/explore/file?project=' + encodeURIComponent(name) + '&path=' + encodeURIComponent(relPath);
   try {
-    const data = await api('/api/explore/file?project=' + encodeURIComponent(project) + '&path=' + encodeURIComponent(relPath));
+    const data = await api(fileUrl);
     const sizeKb = (data.size / 1024).toFixed(1);
     if (data.binary) {
       $('#explorer-view-size').textContent = `бинарь, ${sizeKb} КБ`;
@@ -232,6 +253,7 @@ async function refreshTemplates() {
         <div class="t-name">${escapeHtml(t.name)}</div>
         <div class="t-desc">${escapeHtml(t.description) || ' '}</div>
         <div class="t-actions">
+          <button class="btn btn-sm" data-tpl-files="${escapeHtml(t.name)}">Файлы</button>
           <button class="btn btn-primary btn-sm" data-tpl="${escapeHtml(t.name)}">Создать проект →</button>
         </div>
       </div>
@@ -244,6 +266,9 @@ async function refreshTemplates() {
         openModal('modal-newproject');
         setTimeout(() => $('#newproject-name').focus(), 30);
       };
+    });
+    $$('[data-tpl-files]', grid).forEach(b => {
+      b.onclick = () => openExplorer(b.dataset.tplFiles, 'template');
     });
   } catch {}
 }
