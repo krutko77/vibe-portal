@@ -1,0 +1,14 @@
+{
+  "name": "anthropic-shim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reverse proxy that injects OAuth Bearer for vibe-workspace containers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "undici": "^8.0.0"
+  }
+}

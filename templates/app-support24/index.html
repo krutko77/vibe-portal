@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Пульт клиентских задач — Демо</title>
+<link rel="icon" type="image/png" href="./favicon.png">
+<link rel="stylesheet" href="./css/style.css">
+
+</head>
+
+<body class="app-page">
+  <header class="app-header">
+    <div class="app-header-left">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Меню" type="button">☰</button>
+      <div class="brand">
+        <span class="brand-mark">📋</span>
+        <div>
+          <h1 class="brand-title">Пульт клиентских задач</h1>
+          <p class="brand-sub">Демо · данные синтетические</p>
+        </div>
+      </div>
+    </div>
+    <div class="app-header-right">
+      <button class="btn btn-ghost" id="refresh-btn" type="button">
+        <span class="refresh-icon">↻</span>
+        <span class="refresh-label">Обновить</span>
+      </button>
+      <div class="view-switch" id="view-switch" role="tablist" aria-label="Вид">
+        <button type="button" class="view-switch-btn is-active" data-view="dashboard" role="tab">Дашборд</button>
+        <button type="button" class="view-switch-btn" data-view="kanban" role="tab">Канбан</button>
+        <button type="button" class="view-switch-btn" data-view="table" role="tab">Таблица</button>
+        <button type="button" class="view-switch-btn" data-view="chat" role="tab">Чат</button>
+        <button type="button" class="view-switch-btn" data-view="lurv" role="tab">ЛУРВ</button>
+      </div>
+      <span class="sync-status" id="sync-status">—</span>
+      <div class="user-chip" id="user-chip"></div>
+      <button id="logout-btn" hidden type="button" aria-hidden="true"></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <h3>Поиск</h3>
+        <input type="search" id="search-input" placeholder="По тексту или №…" autocomplete="off">
+      </div>
+      <div class="sidebar-section">
+        <h3>Настройки</h3>
+        <label class="toggle-row">
+          <input type="checkbox" id="hide-completed">
+          <span>Скрыть выполненные</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="only-priority">
+          <span>Только приоритет</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="show-internal">
+          <span>Внутренние колонки</span>
+        </label>
+      </div>
+      <div class="sidebar-section">
+        <h3>Статус</h3>
+        <div class="status-filters" id="status-filters"></div>
+      </div>
+      <div class="sidebar-section sidebar-stats" id="stats"></div>
+      <div class="sidebar-spacer"></div>
+      <p class="sidebar-footnote">Источник — Google Sheets + Telegram-канал клиента. Демо.</p>
+    </aside>
+
+    <main class="workspace" id="workspace" aria-live="polite"></main>
+  </div>
+
+  <div class="modal" id="task-modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-panel" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Закрыть">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="drill" id="drill" hidden>
+    <div class="drill-backdrop" data-close></div>
+    <aside class="drill-panel" role="dialog" aria-modal="true" aria-labelledby="drill-title">
+      <header class="drill-head">
+        <h2 id="drill-title">—</h2>
+        <button class="drill-close" data-close aria-label="Закрыть" type="button">✕</button>
+      </header>
+      <div class="drill-sub" id="drill-sub"></div>
+      <div class="drill-list" id="drill-list"></div>
+    </aside>
+  </div>
+
+  <script src="./vendor/chart.umd.min.js"></script>
+  <script src="./js/demo-data.js"></script>
+  <script src="./js/demo-shim.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

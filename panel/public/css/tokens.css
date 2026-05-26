@@ -1,0 +1,103 @@
+/* =============================================================
+ * Dev Portal — Design Tokens (SMUI Nord)
+ * Based on SpaceMolt UI globals.css — Nord palette, HSL triplets
+ * Dark: Polar Night | Light: Snow Storm | Font: JetBrains Mono
+ * ============================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* ── Light mode (default) — Nord Snow Storm ────────────────── */
+:root {
+  --background:           218 27% 94%;   /* #eceff4 */
+  --foreground:           220 16% 22%;   /* #2e3440 */
+  --card:                 218 27% 89%;   /* #e5e9f0 */
+  --card-foreground:      220 16% 22%;
+  --popover:              218 27% 89%;
+  --popover-foreground:   220 16% 22%;
+  --primary:              213 32% 40%;   /* #4c6d94 frost, WCAG-adjusted */
+  --primary-foreground:   0 0% 100%;
+  --secondary:            219 28% 84%;   /* #d8dee9 */
+  --secondary-foreground: 220 16% 22%;
+  --muted:                219 28% 84%;
+  --muted-foreground:     220 17% 28%;   /* #4c566a */
+  --accent:               213 20% 86%;
+  --accent-foreground:    213 32% 40%;
+  --destructive:          355 55% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --border:               219 18% 72%;   /* #b7c4bc */
+  --input:                219 18% 72%;
+  --ring:                 213 32% 40%;
+  --radius:               0rem;
+
+  /* Frost blues (darkened for light backgrounds) */
+  --smui-frost-1: 176 30% 35%;
+  --smui-frost-2: 193 40% 38%;
+  --smui-frost-3: 210 34% 40%;
+  --smui-frost-4: 213 32% 36%;
+
+  /* Aurora (darkened for light backgrounds) */
+  --smui-red:    355 55% 44%;
+  --smui-orange:  14 55% 44%;
+  --smui-yellow:  40 70% 34%;
+  --smui-green:   92 35% 34%;
+  --smui-purple: 311 28% 40%;
+
+  /* Surface hierarchy */
+  --smui-surface-0: 218 27% 94%;
+  --smui-surface-1: 218 27% 89%;
+  --smui-surface-2: 219 28% 84%;
+  --smui-surface-3: 219 20% 76%;
+
+  /* Interactive border */
+  --smui-border-hover: 220 17% 50%;
+
+  /* Typography */
+  --font-sans: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ── Dark mode — Nord Polar Night ──────────────────────────── */
+.dark {
+  --background:           213 16% 12%;   /* #1a1e24 */
+  --foreground:           213 27% 88%;   /* #d8dee9 */
+  --card:                 217 16% 15.5%; /* #21262e */
+  --card-foreground:      213 27% 88%;
+  --popover:              217 16% 15.5%;
+  --popover-foreground:   213 27% 88%;
+  --primary:              193 44% 67%;   /* #88c0d0 frost blue */
+  --primary-foreground:   213 16% 12%;
+  --secondary:            216 15% 19%;   /* #282e37 */
+  --secondary-foreground: 213 27% 88%;
+  --muted:                216 15% 19%;
+  --muted-foreground:     213 14% 65%;   /* #8e99a8 */
+  --accent:               193 10% 16%;   /* #242c30 */
+  --accent-foreground:    193 44% 67%;
+  --destructive:          355 52% 65%;   /* #d4737c */
+  --destructive-foreground: 219 28% 94%;
+  --border:               217 17% 28%;   /* #3b4252 */
+  --input:                217 17% 28%;
+  --ring:                 193 44% 67%;
+  --radius:               0rem;
+
+  /* Frost blues (original Nord values) */
+  --smui-frost-1: 176 25% 65%;  /* #8fbcbb */
+  --smui-frost-2: 193 44% 67%;  /* #88c0d0 */
+  --smui-frost-3: 210 34% 63%;  /* #81a1c1 */
+  --smui-frost-4: 213 32% 52%;  /* #5e81ac */
+
+  /* Aurora (original Nord values) */
+  --smui-red:    355 52% 64%;   /* #d4737c */
+  --smui-orange:  14 51% 63%;   /* #d08770 */
+  --smui-yellow:  40 71% 73%;   /* #ebcb8b */
+  --smui-green:   92 28% 65%;   /* #a3be8c */
+  --smui-purple: 311 24% 63%;   /* #b48ead */
+
+  /* Surface hierarchy */
+  --smui-surface-0: 213 16% 12%;
+  --smui-surface-1: 217 16% 15.5%;
+  --smui-surface-2: 216 15% 19%;
+  --smui-surface-3: 215 14% 22%;
+
+  /* Interactive border */
+  --smui-border-hover: 216 12% 37%;  /* #4c566a */
+}

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Часы за зарплату — Демо</title>
+  <link rel="stylesheet" href="./css/style.css">
+
+</head>
+
+<body>
+  <div class="scan-banner" id="scanBanner" hidden>
+    <div class="scan-banner__text" id="scanBannerText">Скан запущен…</div>
+    <div class="scan-banner__bar"><div class="scan-banner__fill" id="scanBannerFill"></div></div>
+  </div>
+  <div class="app">
+    <header class="header">
+      <h1 class="header__title">Часы за зарплату · демо</h1>
+      <div class="header__actions">
+        <button class="btn btn--refresh-quick" id="btnRefreshQuick">Обновить последние данные</button>
+        <button class="btn btn--refresh" id="btnRefreshFull">Обновить весь отчёт</button>
+      </div>
+    </header>
+
+    <section class="filters" id="filters">
+      <div class="filter-group">
+        <label class="filter-label">Период с</label>
+        <input type="date" class="filter-select" id="filterStart">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">по</label>
+        <input type="date" class="filter-select" id="filterEnd">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Быстрый выбор</label>
+        <select class="filter-select" id="filterPreset">
+          <option value="thisMonth">Текущий месяц</option>
+          <option value="prevMonth">Прошлый месяц</option>
+          <option value="last7">Последние 7 дней</option>
+          <option value="last30">Последние 30 дней</option>
+          <option value="ytd">С начала года</option>
+          <option value="custom">Свой диапазон</option>
+        </select>
+      </div>
+    </section>
+
+    <div class="status" id="status"></div>
+
+    <section class="table-section">
+      <div class="table-scroll">
+        <table class="report-table" id="reportTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="charts-section">
+      <div class="chart-wrap chart-wrap--wide">
+        <h3 class="chart-title">Часы и зарплата по месяцам</h3>
+        <canvas id="chartTrend"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <div class="cell-tooltip" id="cellTooltip"></div>
+
+  <div class="slideover-backdrop" id="slideoverBackdrop"></div>
+  <aside class="slideover" id="slideover" aria-hidden="true">
+    <header class="slideover__header">
+      <button class="slideover__close" id="slideoverClose" aria-label="Закрыть">×</button>
+      <h2 class="slideover__title" id="slideoverTitle"></h2>
+    </header>
+    <div class="slideover__body">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>Задача</th>
+            <th>Автор</th>
+            <th>Списанное время</th>
+            <th>Дата комментария</th>
+            <th>Комментарий</th>
+          </tr>
+        </thead>
+        <tbody id="slideoverBody"></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="./js/demo-data.js"></script>
+  <script src="./js/demo-shim.js"></script>
+  <script src="./js/app.js" type="module"></script>
+</body>
+</html>

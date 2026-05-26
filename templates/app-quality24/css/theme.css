@@ -1,0 +1,131 @@
+/* KISELEV GROUP brand tokens + base reset */
+
+:root {
+  --kg-yellow: #ffd66b;
+  --kg-yellow-strong: #f3bf3c;
+  --kg-dark: #37383d;
+  --kg-dark-2: #2c2d31;
+  --kg-dark-3: #46474d;
+  --kg-text: #1e1f22;
+  --kg-muted: #6a6c73;
+  --kg-border: #e4e4e7;
+  --kg-bg: #f5f5f7;
+  --kg-surface: #ffffff;
+  --kg-red: #e06a5a;
+  --kg-green: #4ca878;
+  --kg-blue: #5b8fd9;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 2px rgba(55, 56, 61, 0.04), 0 4px 12px rgba(55, 56, 61, 0.06);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font);
+  color: var(--kg-text);
+  background: var(--kg-bg);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--kg-dark); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  padding: 10px 16px;
+  transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+button:active { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--kg-yellow);
+  color: var(--kg-dark);
+}
+.btn-primary:hover { background: var(--kg-yellow-strong); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--kg-dark);
+  border: 1px solid var(--kg-border);
+}
+.btn-ghost:hover { background: var(--kg-surface); }
+
+.btn-dark {
+  background: var(--kg-dark);
+  color: #fff;
+}
+.btn-dark:hover { background: var(--kg-dark-2); }
+
+/* Brand mark: словный логотип KISELEV GROUP */
+.kg-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  user-select: none;
+}
+.kg-brand__name {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  color: #fff;
+}
+.kg-brand__tag {
+  font-size: 0.55em;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  padding-top: 3px;
+  align-self: stretch;
+  text-align: right;
+}
+.kg-brand--dark .kg-brand__name { color: var(--kg-dark); }
+.kg-brand--dark .kg-brand__tag {
+  color: var(--kg-muted);
+  border-top-color: var(--kg-dark);
+}
+
+/* Inputs */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.field input,
+.field select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--kg-border);
+  border-radius: var(--radius-sm);
+  background: var(--kg-surface);
+  color: var(--kg-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.field input:focus,
+.field select:focus {
+  border-color: var(--kg-yellow-strong);
+  box-shadow: 0 0 0 3px rgba(255, 214, 107, 0.35);
+}
+
+/* Scrollbar для тёмных секций */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #c9c9cf; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #b2b2ba; }

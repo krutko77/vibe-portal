@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Штаб руководителя отдела — Демо</title>
+  <link rel="stylesheet" href="./css/theme-b24.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2/dist/chartjs-plugin-datalabels.min.js"></script>
+
+</head>
+
+<body>
+
+<!-- Скрытые заглушки — login-overlay убран, но app.js обращается к этим элементам; держим скрытыми чтобы не падало -->
+<div id="login-overlay" class="hidden" style="display:none">
+  <div class="login-card">
+    <input type="password" id="login-pw">
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<div class="tabs-header">
+  <button class="tab-btn active" data-tab="1">Загрузка команды</button>
+  <button class="tab-btn" data-tab="2">Проектный отдел</button>
+  <button class="tab-btn" data-tab="3">Замечания</button>
+  <button class="tab-btn" data-tab="4">Благодарности</button>
+  <button class="tab-btn" data-tab="5">Табель времени</button>
+  <button class="tab-btn" data-tab="6">Остаток часов</button>
+  <button class="tab-btn" data-tab="7">Аналитика диалогов</button>
+</div>
+
+<!-- ═══ ВКЛАДКА 1 ═══ -->
+<div class="tab-panel active" id="tab-1">
+  <div class="info-bar">
+    <div class="info-card"><div class="label">Руководитель</div><div class="value">А. Соколов</div></div>
+    <div class="info-card"><div class="label">Сотрудников в отделе</div><div class="value">7</div></div>
+    <div class="info-card info-card-dark"><div class="label">Грейды</div><div class="value" id="grades-val-1">—</div></div>
+    <div class="info-card info-card-green"><div class="label">Проектов в работе</div><div class="value" id="work-val-1">—</div></div>
+    <div class="info-card info-card-orange"><div class="label">На тех.поддержке</div><div class="value" id="tp-val-1">—</div></div>
+    <div class="info-card info-card-pause"><div class="label">На паузе</div><div class="value" id="pause-val-1">—</div></div>
+  </div>
+
+  <div class="monthly-section" id="monthly-section-1">
+    <div class="monthly-header">
+      <div class="monthly-title" id="monthly-title-1">Показатели месяца</div>
+      <button class="btn-refresh" onclick="loadMonthly('1')">↻ Обновить</button>
+    </div>
+    <div class="monthly-cards">
+      <div class="monthly-card monthly-plan"><div class="monthly-label">План продаж</div><div class="monthly-value" id="monthly-plan-1">—</div></div>
+      <div class="monthly-card monthly-potential" style="cursor:pointer" onclick="togglePotentialList('1')">
+        <div class="monthly-label">Потенциал продаж ▾</div><div class="monthly-value" id="monthly-potential-1">—</div>
+      </div>
+      <div class="monthly-card monthly-fact"><div class="monthly-label">Факт продаж</div><div class="monthly-value" id="monthly-fact-1">—</div></div>
+    </div>
+    <div class="potential-list" id="potential-list-1" style="display:none"></div>
+  </div>
+
+  <div class="filter-bar">
+    <label>Месяц:</label>
+    <input type="month" id="month-1">
+    <button class="btn-apply" onclick="applyTab1()">Применить</button>
+  </div>
+
+  <div class="chart-card">
+    <h3>Объём продаж (Валовая прибыль), ₽ <span class="chart-total-badge" id="money-total-1"></span></h3>
+    <div class="loading" id="chart-1-loading">Загрузка...</div>
+    <canvas id="chart-1" style="display:none"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h3>Объём актов (Подписанные акты), ₽ <span class="chart-total-badge" id="acts-total-1"></span></h3>
+    <div class="loading" id="acts-1-loading">Загрузка...</div>
+    <canvas id="acts-chart-1" style="display:none"></canvas>
+  </div>
+
+  <div class="load-section">
+    <h3 class="section-title">Загрузка сотрудников</h3>
+    <div class="analyst-grid" id="analyst-grid-1"><div class="loading">Загрузка...</div></div>
+    <div class="load-stages-panel" id="load-stages-1" style="display:none"></div>
+  </div>
+
+  <div class="kanban-header" onclick="toggleKanban('1')">
+    <span>ПРИОРИТЕТЫ ПРОЕКТОВ</span>
+    <span class="kanban-toggle" id="kanban-toggle-1">▼</span>
+  </div>
+  <div class="kanban-board" id="kanban-1"><div class="loading">Загрузка...</div></div>
+</div>
+
+<!-- ═══ ВКЛАДКА 2 ═══ -->
+<div class="tab-panel" id="tab-2">
+  <div class="info-bar">
+    <div class="info-card"><div class="label">Руководитель</div><div class="value">Н. Лебедева</div></div>
+    <div class="info-card"><div class="label">Сотрудников в отделе</div><div class="value">2</div></div>
+    <div class="info-card info-card-dark"><div class="label">Грейды</div><div class="value" id="grades-val-2">—</div></div>
+    <div class="info-card info-card-green"><div class="label">Проектов в работе</div><div class="value" id="work-val-2">—</div></div>
+    <div class="info-card info-card-pause"><div class="label">На паузе</div><div class="value" id="pause-val-2">—</div></div>
+  </div>
+
+  <div class="monthly-section" id="monthly-section-2">
+    <div class="monthly-header">
+      <div class="monthly-title" id="monthly-title-2">Показатели месяца</div>
+      <button class="btn-refresh" onclick="loadMonthly('2')">↻ Обновить</button>
+    </div>
+    <div class="monthly-cards">
+      <div class="monthly-card monthly-plan"><div class="monthly-label">План продаж</div><div class="monthly-value" id="monthly-plan-2">—</div></div>
+      <div class="monthly-card monthly-potential" style="cursor:pointer" onclick="togglePotentialList('2')">
+        <div class="monthly-label">Потенциал продаж ▾</div><div class="monthly-value" id="monthly-potential-2">—</div>
+      </div>
+      <div class="monthly-card monthly-fact"><div class="monthly-label">Факт продаж</div><div class="monthly-value" id="monthly-fact-2">—</div></div>
+    </div>
+    <div class="potential-list" id="potential-list-2" style="display:none"></div>
+  </div>
+
+  <div class="filter-bar">
+    <label>Месяц:</label>
+    <input type="month" id="month-2">
+    <button class="btn-apply" onclick="applyTab2()">Применить</button>
+  </div>
+
+  <div class="chart-card">
+    <h3>Объём продаж (Валовая прибыль), ₽ <span class="chart-total-badge" id="money-total-2"></span></h3>
+    <div class="loading" id="chart-2-loading">Загрузка...</div>
+    <canvas id="chart-2" style="display:none"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h3>Объём актов (Подписанные акты), ₽ <span class="chart-total-badge" id="acts-total-2"></span></h3>
+    <div class="loading" id="acts-2-loading">Загрузка...</div>
+    <canvas id="acts-chart-2" style="display:none"></canvas>
+  </div>
+
+  <div class="load-section">
+    <h3 class="section-title">Загрузка сотрудников</h3>
+    <div class="analyst-grid" id="analyst-grid-2"><div class="loading">Загрузка...</div></div>
+    <div class="load-stages-panel" id="load-stages-2" style="display:none"></div>
+  </div>
+
+  <div class="kanban-header" onclick="toggleKanban('2')">
+    <span>ПРИОРИТЕТЫ ПРОЕКТОВ</span>
+    <span class="kanban-toggle" id="kanban-toggle-2">▼</span>
+  </div>
+  <div class="kanban-board" id="kanban-2"><div class="loading">Загрузка...</div></div>
+</div>
+
+<!-- ═══ ВКЛАДКА 3 — ЗАМЕЧАНИЯ ═══ -->
+<div class="tab-panel" id="tab-3">
+  <div class="chart-card">
+    <h3>Замечания по месяцам (последние 3 месяца)</h3>
+    <canvas id="fouls-month-chart" style="max-height:220px"></canvas>
+  </div>
+  <div class="fouls-nav">
+    <button class="btn-week" onclick="foulsPrevWeek()">‹ Предыдущая</button>
+    <span class="fouls-week-label" id="fouls-week-label">—</span>
+    <button class="btn-week" onclick="foulsNextWeek()">Следующая ›</button>
+  </div>
+  <div id="fouls-table-wrap" class="fouls-table-wrap"><div class="loading">Загрузка...</div></div>
+</div>
+
+<!-- ═══ ВКЛАДКА 4 — БЛАГОДАРНОСТИ ═══ -->
+<div class="tab-panel" id="tab-4">
+  <div class="thanks-nav">
+    <button class="btn-week" onclick="thanksPrevMonth()">‹ Предыдущий</button>
+    <span class="thanks-month-label" id="thanks-month-label">—</span>
+    <button class="btn-week" onclick="thanksNextMonth()">Следующий ›</button>
+  </div>
+  <div id="thanks-table-wrap" class="fouls-table-wrap"><div class="loading">Загрузка...</div></div>
+</div>
+
+<!-- ═══ ВКЛАДКА 5 — ТАБЕЛЬ ВРЕМЕНИ ═══ -->
+<div class="tab-panel" id="tab-5">
+  <div class="fouls-nav">
+    <button class="btn-week" onclick="tsPrevMonth()">‹ Предыдущий</button>
+    <span class="fouls-week-label" id="ts-month-label">—</span>
+    <button class="btn-week" onclick="tsNextMonth()">Следующий ›</button>
+  </div>
+  <div id="ts-wrap" class="fouls-table-wrap"><div class="loading">Загрузка...</div></div>
+</div>
+
+<!-- ═══ ВКЛАДКА 6 — ОСТАТОК ЧАСОВ ═══ -->
+<div class="tab-panel" id="tab-6">
+  <div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Проекты с остатком менее 5 часов</h3>
+      <button class="btn-refresh" onclick="loadHours()">↻ Обновить</button>
+    </div>
+    <div id="hours-wrap"><div class="loading">Загрузка...</div></div>
+  </div>
+</div>
+
+<!-- ═══ ВКЛАДКА 7 — АНАЛИТИКА ДИАЛОГОВ ═══ -->
+<div class="tab-panel" id="tab-7">
+  <div id="dialogs-wrap"><div class="loading">Загрузка...</div></div>
+</div>
+
+<div id="icp-popup" style="display:none" onclick="event.stopPropagation()">
+  <div id="icp-hint"></div>
+  <div class="icp-row">
+    <input id="icp-input" type="text" autocomplete="off">
+    <button id="icp-save-btn" title="Сохранить (Enter)">✓</button>
+    <button id="icp-cancel-btn" title="Отмена (Esc)">✕</button>
+  </div>
+</div>
+
+<script src="./js/demo-data.js"></script>
+<script src="./js/demo-shim.js"></script>
+<script src="./js/kanban.js"></script>
+<script src="./js/load-board.js"></script>
+<script src="./js/fouls.js"></script>
+<script src="./js/thanks.js"></script>
+<script src="./js/timesheet.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>

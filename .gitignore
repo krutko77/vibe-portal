@@ -1,0 +1,13 @@
+node_modules/
+*.log
+*.sqlite
+*.sqlite-journal
+*.db
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.env.local
+.env.*.local
+.claude/settings.local.json
+.portal-meta.json

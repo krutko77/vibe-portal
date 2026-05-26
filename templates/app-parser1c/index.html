@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Парсер 1С → Битрикс24 — Демо</title>
+  <link rel="stylesheet" href="./css/style.css">
+
+</head>
+
+<body>
+  <div class="demo-banner">
+    <b>Демо</b> · загрузка из 1С в Битрикс24 · все товары и цены — синтетические
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">⇄</span>
+      <div>
+        <h1 class="brand-title">Парсер 1С → Битрикс24</h1>
+        <p class="brand-sub">Excel/CSV из 1С → массовое обновление смарт-процесса</p>
+      </div>
+    </div>
+    <div class="period-pill">
+      Шаблон выгрузки: <b>«Прайс + остатки»</b>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- ШАГ 1: дроп-зона -->
+    <section class="card" id="step-upload">
+      <div class="card-head">
+        <span class="step-num">1</span>
+        <div>
+          <h2>Загрузите выгрузку из 1С</h2>
+          <p>Поддерживаются <code>.xlsx</code>, <code>.xls</code>, <code>.csv</code> · до 50 000 строк</p>
+        </div>
+      </div>
+
+      <div class="dropzone" id="dropzone">
+        <div class="dz-icon">📥</div>
+        <div class="dz-title">Перетащите файл сюда</div>
+        <div class="dz-sub">или <button type="button" class="link" id="pickBtn">выберите вручную</button></div>
+        <div class="dz-meta">В демо файл не отправляется на сервер — мы используем заранее подготовленную выгрузку</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+      </div>
+
+      <div class="dz-shortcut">
+        <button type="button" class="btn btn-primary btn-lg" id="loadDemoBtn">⚡ Загрузить демо-файл «price-2026-04.xlsx»</button>
+      </div>
+    </section>
+
+    <!-- ШАГ 2: предпросмотр -->
+    <section class="card hidden" id="step-preview">
+      <div class="card-head">
+        <span class="step-num">2</span>
+        <div>
+          <h2>Распознали колонки</h2>
+          <p id="previewMeta">—</p>
+        </div>
+        <button type="button" class="btn btn-ghost" id="resetBtn">↺ Загрузить другой файл</button>
+      </div>
+
+      <div class="mapping" id="mapping"></div>
+
+      <div class="preview-table-wrap">
+        <table class="preview-table" id="previewTable"></table>
+      </div>
+
+      <div class="step-actions">
+        <button type="button" class="btn btn-primary btn-lg" id="importBtn">→ Обновить смарт-процесс «Товары»</button>
+        <span class="hint">Будет обновлено <b id="previewCount">0</b> позиций · цена и остаток</span>
+      </div>
+    </section>
+
+    <!-- ШАГ 3: прогресс -->
+    <section class="card hidden" id="step-progress">
+      <div class="card-head">
+        <span class="step-num">3</span>
+        <div>
+          <h2>Обновляем смарт-процесс</h2>
+          <p id="progressTitle">Готовим запросы…</p>
+        </div>
+      </div>
+
+      <div class="progress-info">
+        <div class="progress-stat">
+          <span class="ps-label">Обработано</span>
+          <span class="ps-val" id="psDone">0</span>
+          <span class="ps-of">/ <span id="psTotal">0</span></span>
+        </div>
+        <div class="progress-stat">
+          <span class="ps-label">Скорость</span>
+          <span class="ps-val" id="psRate">— /сек</span>
+        </div>
+        <div class="progress-stat">
+          <span class="ps-label">Осталось</span>
+          <span class="ps-val" id="psEta">—</span>
+        </div>
+      </div>
+
+      <div class="progress-bar"><div class="progress-bar-fill" id="progressBar"></div></div>
+
+      <div class="log" id="log"></div>
+    </section>
+
+    <!-- ШАГ 4: итог -->
+    <section class="card hidden" id="step-done">
+      <div class="card-head">
+        <span class="step-num done">✓</span>
+        <div>
+          <h2>Готово</h2>
+          <p id="doneSummary">—</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="restartBtn">Загрузить ещё один файл</button>
+      </div>
+
+      <div class="done-stats">
+        <div class="ds-card">
+          <div class="ds-num" id="dsCreated">0</div>
+          <div class="ds-label">создано</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-num" id="dsUpdated">0</div>
+          <div class="ds-label">обновлено</div>
+        </div>
+        <div class="ds-card">
+          <div class="ds-num" id="dsSkipped">0</div>
+          <div class="ds-label">пропущено</div>
+        </div>
+        <div class="ds-card warn">
+          <div class="ds-num" id="dsErrors">0</div>
+          <div class="ds-label">ошибок</div>
+        </div>
+      </div>
+
+      <div class="done-link">
+        <button type="button" class="link" id="openSmartBtn">Открыть смарт-процесс в Битрикс24 →</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    Демо · реальная версия работает с любой структурой выгрузки 1С (товары / прайс / остатки / контрагенты)
+  </footer>
+
+  <script src="./js/demo-data.js"></script>
+  <script src="./js/demo-shim.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

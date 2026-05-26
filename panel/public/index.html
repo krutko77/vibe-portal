@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vibe — KISELEV GROUP</title>
+  <link rel="icon" type="image/png" href="/KG_fi.png" />
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    // Тема применяется до рендера, чтобы не было flash.
+    (function() {
+      var t = localStorage.getItem('aif-theme');
+      if (t !== 'light') document.documentElement.classList.add('dark');
+    })();
+  </script>
+</head>
+<body class="app-bg">
+
+  <!-- ── Navbar ─────────────────────────────────────────────── -->
+  <nav class="navbar">
+    <a href="/" class="navbar-kg">KG</a>
+
+    <span class="navbar-spacer"></span>
+
+    <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+      <svg class="ic-sun"  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+      <svg class="ic-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+
+    <a class="nav-icon hidden-when-no-auth" href="/history.html" title="История">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    </a>
+
+    <button class="nav-icon hidden-when-no-auth admin-only" id="settingsBtn" title="Настройки">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
+    <div class="auth-group hidden-when-no-auth" id="authBox">
+      <span class="auth-username" id="authUsername"></span>
+      <span class="auth-logout-label">ВЫЙТИ</span>
+    </div>
+  </nav>
+
+  <!-- ── Welcome (когда не залогинен) ──────────────────────── -->
+  <div class="welcome" id="welcome">
+    <p class="welcome-domain">vibe.kiselevgroup.com</p>
+    <h1 class="welcome-heading">Добро пожаловать в волшебный мир! 🪄</h1>
+    <button class="btn-welcome" id="welcomeLoginBtn">Войти →</button>
+  </div>
+
+  <!-- ── Dashboard (когда залогинен) ───────────────────────── -->
+  <main class="dashboard hidden" id="app">
+
+    <!-- Секция: Контейнер -->
+    <div class="section-block">
+      <div class="section-head">
+        <div class="section-head-left">
+          <span class="section-label">VS Code</span>
+          <span class="section-path">/home/student/workspace/</span>
+        </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-ghost btn-sm" id="stopContainerBtn">Остановить</button>
+          <a class="btn btn-primary btn-sm" id="openCodeBtn" href="#" target="_blank">Открыть VS Code →</a>
+        </div>
+      </div>
+      <div class="container-banner" id="containerStatus">
+        <span class="dot"></span>
+        <span class="banner-text">Загрузка статуса контейнера…</span>
+      </div>
+    </div>
+
+    <!-- Секция: Мои проекты -->
+    <div class="section-block">
+      <div class="section-head">
+        <div class="section-head-left">
+          <span class="section-label">Мои проекты</span>
+          <span class="section-path"><span id="projectsCount">0</span> шт</span>
+        </div>
+      </div>
+      <div class="projects-grid" id="projectsList"></div>
+    </div>
+
+    <!-- Секция: Шаблоны -->
+    <div class="section-block">
+      <div class="section-head">
+        <div class="section-head-left">
+          <span class="section-label">Шаблоны</span>
+          <span class="section-path">/opt/dev-portal/templates/vibe/ (read-only)</span>
+        </div>
+      </div>
+      <div class="projects-grid" id="templatesList"></div>
+    </div>
+
+  </main>
+
+  <!-- ── Settings panel (admin) ────────────────────────────── -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      <span class="settings-title">Настройки</span>
+      <button class="btn-icon-sm" id="settings-close" title="Закрыть">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <span class="settings-section-title">Ученики</span>
+          <button class="btn btn-ghost btn-sm" id="btn-add-user">+ Добавить</button>
+        </div>
+        <div class="users-list" id="users-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Login ──────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-login" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-header">
+        <span class="modal-title">Вход в Vibe</span>
+        <button class="modal-close" data-close="modal-login" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="login-username">Логин</label>
+        <input id="login-username" type="text" class="form-input"
+               placeholder="ivan" autocomplete="username" spellcheck="false" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="login-password">Пароль</label>
+        <input id="login-password" type="password" class="form-input"
+               autocomplete="current-password" />
+      </div>
+      <div class="form-error hidden" id="login-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="login-submit" style="flex:1">Войти →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Add student ───────────────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-add-user" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <span class="modal-title">Новый ученик</span>
+        <button class="modal-close" data-close="modal-add-user" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="new-username">Логин</label>
+        <input id="new-username" type="text" class="form-input"
+               placeholder="ivan" autocomplete="off" spellcheck="false"
+               pattern="[a-z][a-z0-9_-]{1,30}" />
+        <span class="form-hint">Только a-z, 0-9, дефис, подчёркивание</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="new-password">Пароль</label>
+        <input id="new-password" type="text" class="form-input"
+               autocomplete="off" minlength="6" />
+        <span class="form-hint">Минимум 6 символов. Пользователь сможет сменить.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="new-role">Роль</label>
+        <select id="new-role" class="form-input">
+          <option value="user">user — доступ только к своему workspace</option>
+          <option value="admin">admin — управление учениками</option>
+        </select>
+      </div>
+      <div class="form-error hidden" id="add-user-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-add-user">Отмена</button>
+        <button class="btn btn-primary" id="add-user-submit">Создать ученика</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Create project from template ──────────────── -->
+  <div class="modal-overlay hidden" id="modal-newproject" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Новый проект из шаблона</span>
+        <button class="modal-close" data-close="modal-newproject" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Шаблон</label>
+        <input id="newproject-tpl" type="text" class="form-input" readonly />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="newproject-name">Имя проекта</label>
+        <input id="newproject-name" type="text" class="form-input"
+               placeholder="my-app" autocomplete="off" spellcheck="false"
+               pattern="[a-z][a-z0-9_-]{1,50}" />
+        <span class="form-hint">Только a-z, 0-9, дефис</span>
+      </div>
+      <div class="form-error hidden" id="newproject-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-newproject">Отмена</button>
+        <button class="btn btn-primary" id="newproject-submit">Создать проект →</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

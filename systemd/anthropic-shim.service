@@ -1,0 +1,23 @@
+[Unit]
+Description=Anthropic OAuth shim for vibe-workspace containers
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vibe-portal/shim
+EnvironmentFile=/data/config/env/proxy.env
+Environment=NODE_ENV=production
+Environment=CREDENTIALS_PATH=/data/config/auth/claude-vibe.credentials.json
+Environment=LISTEN_HOST=0.0.0.0
+Environment=LISTEN_PORT=8190
+Environment=ALLOWED_CIDRS=172.30.0.0/24,127.0.0.0/8
+ExecStart=/usr/bin/node /opt/vibe-portal/shim/server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

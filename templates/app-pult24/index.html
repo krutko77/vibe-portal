@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KG: Пульт24 — Демо</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+</head>
+
+<body>
+
+<!-- Header -->
+<header class="dash-header">
+  <div class="dash-brand">
+    <div class="dash-brand-icon">KG</div>
+    <div>
+      <div class="dash-brand-name">KG: Пульт24</div>
+      <div class="dash-brand-sub">Дашборд руководителя</div>
+    </div>
+  </div>
+  <nav class="dash-tabs" id="dashTabs">
+    <a href="#" class="dash-tab active" data-view="overview">Обзор</a>
+    <a href="#" class="dash-tab" data-view="funnel">Воронка</a>
+    <a href="#" class="dash-tab" data-view="managers">Менеджеры</a>
+    <a href="#" class="dash-tab" data-view="sources">Источники</a>
+  </nav>
+  <div class="dash-meta">
+    <div class="live-pulse"><span class="live-dot"></span> Демо · данные синтетические</div>
+  </div>
+</header>
+
+<!-- Toolbar -->
+<div class="dash-toolbar">
+  <div class="period-switch" id="periodSwitch">
+    <button data-period="day">Сегодня</button>
+    <button data-period="week">Неделя</button>
+    <button data-period="month" class="active">Месяц</button>
+    <button data-period="quarter">Квартал</button>
+  </div>
+  <div class="filter-group">
+    <div class="filter-chip">Все воронки <span class="chip-x">×</span></div>
+    <div class="filter-chip">Москва +МО <span class="chip-x">×</span></div>
+    <button class="filter-add">+ Фильтр</button>
+  </div>
+  <div class="updated-block" id="lastUpdated">Обновлено только что</div>
+</div>
+
+<!-- KPI row (всегда виден) -->
+<div class="kpi-row" data-views="overview funnel managers sources">
+  <div class="kpi-card">
+    <div class="kpi-label">Сделок за период</div>
+    <div class="kpi-val ac" id="kpi-deals">—</div>
+    <div class="kpi-trend up" id="kpi-deals-trend">↑ +18%</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Выручка</div>
+    <div class="kpi-val" id="kpi-revenue">—</div>
+    <div class="kpi-trend up" id="kpi-revenue-trend">↑ +12%</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Конверсия</div>
+    <div class="kpi-val green" id="kpi-conversion">—</div>
+    <div class="kpi-trend up" id="kpi-conversion-trend">↑ +3.2 пп</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-label">Средний чек</div>
+    <div class="kpi-val" id="kpi-avg">—</div>
+    <div class="kpi-trend warn" id="kpi-avg-trend">→ без изменений</div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="charts-row" data-views="overview">
+  <div class="chart-card chart-wide">
+    <div class="chart-head">
+      <div class="chart-title">Сделки по периодам</div>
+      <div class="chart-legend">
+        <span class="legend-dot bg-ac"></span> Текущий период
+        <span class="legend-dot bg-mute"></span> Прошлый период
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="weeklyChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-head"><div class="chart-title">Воронка продаж</div></div>
+    <div class="chart-wrap"><canvas id="funnelChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-head"><div class="chart-title">Источники лидов</div></div>
+    <div class="chart-wrap"><canvas id="sourcesChart"></canvas></div>
+  </div>
+</div>
+
+<!-- Managers + Recent Deals -->
+<div class="bottom-row" data-views="overview">
+  <div class="managers-card">
+    <div class="card-head">
+      <div class="managers-title">Рейтинг менеджеров</div>
+      <a href="#" class="card-link">Все →</a>
+    </div>
+    <table class="mgr-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Менеджер</th><th>Сделок</th><th>Выручка</th><th>Конв.</th><th>Динамика</th>
+        </tr>
+      </thead>
+      <tbody id="managersBody"></tbody>
+    </table>
+  </div>
+
+  <div class="deals-card">
+    <div class="card-head">
+      <div class="managers-title">Последние сделки</div>
+      <a href="#" class="card-link">Все →</a>
+    </div>
+    <ul class="deals-list" id="dealsList"></ul>
+  </div>
+</div>
+
+<!-- Solo: Воронка -->
+<div class="solo-row" data-views="funnel">
+  <div class="chart-card chart-solo">
+    <div class="chart-head">
+      <div class="chart-title">Воронка продаж — детально</div>
+      <div class="chart-legend"><span class="legend-dot bg-ac"></span> Кол-во сделок на стадии</div>
+    </div>
+    <div class="chart-wrap chart-tall"><canvas id="funnelSolo"></canvas></div>
+  </div>
+  <div class="funnel-stats">
+    <div class="card-head"><div class="managers-title">Конверсия по стадиям</div></div>
+    <table class="mgr-table">
+      <thead><tr><th>Стадия</th><th>Сделок</th><th>Конв.</th><th>Drop-off</th></tr></thead>
+      <tbody id="funnelStatsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Solo: Менеджеры -->
+<div class="solo-row" data-views="managers">
+  <div class="managers-card managers-solo">
+    <div class="card-head">
+      <div class="managers-title">Полный рейтинг менеджеров</div>
+      <div class="updated-block">Топ-10 за период</div>
+    </div>
+    <table class="mgr-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Менеджер</th><th>Сделок</th><th>Выручка</th>
+          <th>Конв.</th><th>Сред. чек</th><th>Лучший день</th><th>Динамика</th>
+        </tr>
+      </thead>
+      <tbody id="managersSoloBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Solo: Источники -->
+<div class="solo-row" data-views="sources">
+  <div class="chart-card chart-solo">
+    <div class="chart-head">
+      <div class="chart-title">Источники лидов — структура</div>
+    </div>
+    <div class="chart-wrap chart-tall"><canvas id="sourcesSolo"></canvas></div>
+  </div>
+  <div class="sources-stats">
+    <div class="card-head"><div class="managers-title">Эффективность каналов</div></div>
+    <table class="mgr-table">
+      <thead><tr><th>Источник</th><th>Лидов</th><th>Доля</th><th>Конв.</th><th>Стоимость лида</th></tr></thead>
+      <tbody id="sourcesStatsBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="./js/data.js"></script>
+<script src="./js/demo.js"></script>
+</body>
+</html>

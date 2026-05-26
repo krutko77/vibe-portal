@@ -1,0 +1,500 @@
+/* =============================================================
+ * Vibe Panel — стиль идентичен Dev Portal (SMUI Nord, JetBrains Mono).
+ * Использует HSL-токены из tokens.css.
+ * ============================================================= */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  height: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-mono); font-weight: 600; }
+
+::selection { background: hsl(var(--primary) / 0.2); color: hsl(var(--primary)); }
+
+/* Background — radial glow + grid (как на dev) */
+body.app-bg {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -5%,
+      hsl(var(--primary) / 0.07) 0%, transparent 100%),
+    linear-gradient(to right,  hsl(var(--border) / 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.15) 1px, transparent 1px),
+    hsl(var(--background));
+  background-size: auto, 24px 24px, 24px 24px, auto;
+}
+
+.hidden { display: none !important; }
+
+/* ── Navbar ───────────────────────────────────────────────── */
+.navbar {
+  height: 44px;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-kg {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 800;
+  letter-spacing: .14em;
+  text-decoration: none;
+  color: hsl(var(--background));
+  background: hsl(var(--foreground) / 0.65);
+  padding: 8px 11px;
+  flex-shrink: 0;
+  margin-right: 4px;
+  transition: opacity .15s;
+}
+.navbar-kg:hover { opacity: .8; }
+
+.navbar-spacer { flex: 1; }
+
+/* Theme toggle + nav-icon (квадратные кнопки 32x32 с иконкой 16x16) */
+.theme-toggle, .nav-icon, .btn-icon-sm {
+  width: 32px; height: 32px;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.theme-toggle:hover, .nav-icon:hover, .btn-icon-sm:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--smui-border-hover));
+}
+.theme-toggle .ic-sun  { display: none; }
+.theme-toggle .ic-moon { display: block; }
+html:not(.dark) .theme-toggle .ic-sun  { display: block; }
+html:not(.dark) .theme-toggle .ic-moon { display: none; }
+
+/* Auth group (username + logout) — копия .auth-group из dev */
+.auth-group {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--secondary));
+  height: 30px; padding: 2px 10px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  line-height: 1;
+  transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.auth-group:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--smui-border-hover));
+}
+.auth-username {
+  font-size: 10px; font-weight: 600;
+  color: hsl(var(--foreground));
+  letter-spacing: .03em;
+}
+.auth-logout-label {
+  font-size: 8px; font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.auth-group:hover .auth-logout-label { color: hsl(var(--foreground)); }
+
+/* Виден только когда залогинен */
+body:not(.is-auth) .hidden-when-no-auth { display: none !important; }
+body:not(.is-admin) .admin-only { display: none !important; }
+
+/* ── Welcome (как на dev) ─────────────────────────────────── */
+.welcome {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: calc(100vh - 44px);
+  text-align: center;
+  gap: 16px;
+  padding: 32px;
+}
+.welcome-domain {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.welcome-heading {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  letter-spacing: -.01em;
+}
+.btn-welcome {
+  height: 36px; padding: 0 28px; margin-top: 8px;
+  border: none;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 12px; font-weight: 600;
+  font-family: var(--font-mono);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-welcome:hover { opacity: .85; }
+
+/* ── Dashboard ────────────────────────────────────────────── */
+.dashboard {
+  padding: 24px 32px;
+  flex: 1;
+  width: 100%;
+}
+
+.section-block { margin-bottom: 36px; max-width: 972px; margin-left: auto; margin-right: auto; }
+.section-block:last-child { margin-bottom: 0; }
+
+.section-head {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.section-head-left { display: flex; align-items: baseline; gap: 14px; }
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 14px; font-weight: 600;
+  letter-spacing: .02em;
+  color: hsl(var(--foreground));
+  text-transform: uppercase;
+}
+.section-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: .03em;
+}
+
+.dashboard-actions { display: flex; gap: 6px; align-items: center; }
+
+/* ── Container banner ─────────────────────────────────────── */
+.container-banner {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.container-banner .dot {
+  width: 8px; height: 8px;
+  background: hsl(var(--muted-foreground));
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+.container-banner.running {
+  border-color: hsl(var(--smui-green) / 0.5);
+  color: hsl(var(--smui-green));
+}
+.container-banner.running .dot { background: hsl(var(--smui-green)); }
+
+/* ── Projects / templates grid ────────────────────────────── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.template-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 140px;
+  transition: border-color .15s;
+}
+.template-card:hover { border-color: hsl(var(--smui-border-hover)); }
+.template-card .t-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 4px;
+}
+.template-card .t-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: .04em;
+}
+.template-card .t-desc {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+  flex: 1;
+  margin-top: 4px;
+}
+.template-card .t-actions {
+  display: flex; gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.empty {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  padding: 20px;
+  text-align: center;
+  border: 1px dashed hsl(var(--border));
+  grid-column: 1 / -1;
+}
+
+/* ── Buttons (как на dev) ─────────────────────────────────── */
+.btn {
+  height: 30px; padding: 0 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: .03em;
+  cursor: pointer;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s, opacity .15s;
+  white-space: nowrap;
+}
+.btn:hover {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--smui-border-hover));
+}
+.btn-primary {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+.btn-primary:hover {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  opacity: .85;
+  border-color: hsl(var(--primary));
+}
+.btn-ghost { background: transparent; }
+.btn-danger {
+  border-color: hsl(var(--destructive) / 0.5);
+  color: hsl(var(--destructive));
+}
+.btn-danger:hover {
+  background: hsl(var(--destructive) / 0.1);
+  border-color: hsl(var(--destructive));
+  color: hsl(var(--destructive));
+}
+.btn-sm { height: 26px; padding: 0 10px; font-size: 10px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Modal (точно как на dev) ─────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: hsl(var(--background) / 0.75);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 400; padding: 16px;
+}
+.modal {
+  background: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  padding: 0;
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.modal-title {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: hsl(var(--popover-foreground));
+}
+.modal-close {
+  width: 24px; height: 24px; border: none;
+  background: transparent; color: hsl(var(--muted-foreground));
+  font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+
+.modal > .form-group,
+.modal > .form-row,
+.modal > .form-error,
+.modal > .modal-footer { padding: 0 18px; }
+.modal > .form-group { padding-top: 14px; }
+.modal > .form-row   { padding-top: 14px; }
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-row { display: flex; align-items: flex-end; gap: 8px; }
+.form-row .form-group { flex: 1; }
+
+.form-label {
+  font-size: 11px; font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.form-input {
+  height: 32px; padding: 0 10px;
+  border: 1px solid hsl(var(--input));
+  background: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+  font-size: 13px; font-family: var(--font-mono);
+  width: 100%; outline: none;
+  transition: border-color .15s;
+}
+.form-input:focus { border-color: hsl(var(--primary)); }
+.form-input::placeholder { color: hsl(var(--muted-foreground)); opacity: .6; }
+.form-input[readonly] { opacity: .6; cursor: default; }
+
+.form-hint {
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+}
+.form-error {
+  font-size: 11px;
+  color: hsl(var(--destructive));
+  min-height: 16px;
+  font-family: var(--font-mono);
+  padding-top: 6px;
+}
+
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 18px !important;
+  border-top: 1px solid hsl(var(--border));
+  margin-top: 14px;
+}
+
+/* ── Settings panel (slide-in справа, как на dev) ─────────── */
+.settings-panel {
+  position: fixed; right: 0; top: 44px; bottom: 0;
+  width: 400px;
+  background: hsl(var(--card));
+  border-left: 1px solid hsl(var(--border));
+  z-index: 300;
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .25s ease;
+}
+.settings-panel.open { transform: translateX(0); }
+
+.settings-header {
+  height: 44px;
+  border-bottom: 1px solid hsl(var(--border));
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 0 16px; flex-shrink: 0;
+}
+.settings-title {
+  font-size: 11px; font-family: var(--font-mono);
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+.settings-body { flex: 1; overflow-y: auto; }
+.settings-section {
+  padding: 16px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.settings-section-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.settings-section-title {
+  font-size: 11px; font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase; letter-spacing: 1.5px;
+}
+
+/* Users list / user-row ─ копия dev ─────────────────────── */
+.users-list {
+  display: flex; flex-direction: column;
+  border: 1px solid hsl(var(--border));
+  overflow: hidden;
+}
+.user-row {
+  display: flex; align-items: center;
+  padding: 8px 12px;
+  background: hsl(var(--card)); gap: 8px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.user-row:last-child { border-bottom: none; }
+.user-row-name {
+  flex: 1; font-size: 12px; font-family: var(--font-mono);
+  color: hsl(var(--foreground));
+}
+.user-row-meta {
+  font-size: 10px; font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+  margin-top: 2px;
+}
+.user-row-actions { display: flex; gap: 4px; align-items: center; }
+
+.user-role-pill {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 2px 8px;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+}
+.user-role-pill.role-admin {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08);
+}
+.user-row-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .auth-username { display: none; }
+  .navbar { padding: 0 10px; gap: 4px; }
+  .dashboard { padding: 16px 12px 32px; }
+  .settings-panel { width: 100vw; }
+  .section-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .section-head-left { flex-direction: column; align-items: flex-start; gap: 2px; }
+}

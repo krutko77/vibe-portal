@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Контроль качества звонков — Демо</title>
+  <link rel="stylesheet" href="./css/theme.css" />
+  <link rel="stylesheet" href="./css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+</head>
+
+<body>
+  <div class="app">
+    <div class="loading-bar" id="loading"></div>
+    <header class="topbar">
+      <div class="kg-brand topbar__brand">
+        <span class="kg-brand__name">KISELEV GROUP</span>
+        <span class="kg-brand__tag">для автоматизации бизнеса</span>
+      </div>
+      <div class="topbar__title">
+        <span class="dot"></span>
+        Контроль качества звонков · Демо
+      </div>
+      <div class="topbar__actions">
+        <button class="btn-ghost" id="refresh" title="Сбросить кеш и перечитать таблицу">Обновить</button>
+        <button class="btn-dark" id="logout" hidden>Выйти</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="filters">
+        <div class="filters__row">
+          <div class="field">
+            <label for="weekFrom">Неделя с</label>
+            <select id="weekFrom"></select>
+          </div>
+          <div class="field">
+            <label for="weekTo">по</label>
+            <select id="weekTo"></select>
+          </div>
+          <div class="field">
+            <label for="manager">Менеджер</label>
+            <select id="manager"><option value="">Все</option></select>
+          </div>
+          <div class="field">
+            <label for="type">Тип звонка</label>
+            <select id="type"><option value="">Все</option></select>
+          </div>
+          <button class="btn-primary" id="apply">Применить</button>
+        </div>
+      </section>
+
+      <section class="kpis">
+        <div class="kpi">
+          <span class="kpi__label">Звонков в выборке</span>
+          <span class="kpi__value" id="kpi-calls">—</span>
+          <span class="kpi__hint" id="kpi-calls-hint"></span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">% ОКК</span>
+          <span class="kpi__value" id="kpi-pct-call">—</span>
+          <span class="kpi__hint">среднее по отделу</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">% CRM</span>
+          <span class="kpi__value" id="kpi-pct-crm">—</span>
+          <span class="kpi__hint">заполняемость</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi__label">Минут в диалоге</span>
+          <span class="kpi__value" id="kpi-minutes">—</span>
+          <span class="kpi__hint">суммарно</span>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">% ОКК по менеджерам</div><div class="card__subtitle">Среднее качество за каждую неделю</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-okk-mgr"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">% ОКК — динамика отдела</div><div class="card__subtitle">Среднее по всем звонкам</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-okk-trend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">% CRM по менеджерам</div><div class="card__subtitle">Среднее заполнение CRM за каждую неделю</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-crm-mgr"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">% CRM — динамика отдела</div><div class="card__subtitle">Среднее по всем звонкам</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-crm-trend"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column: 1 / -1;">
+          <div class="card__head"><div><div class="card__title">% ОКК по типам звонков</div><div class="card__subtitle">Сравнение по неделям</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-okk-type"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column: 1 / -1;">
+          <div class="card__head"><div><div class="card__title">Результаты по критериям</div><div class="card__subtitle">Среднее по каждому критерию за каждую неделю</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-criteria"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column: 1 / -1;">
+          <div class="card__head"><div><div class="card__title">Критерии × недели — таблица</div><div class="card__subtitle">Красным выделены проседания</div></div></div>
+          <div class="card__body"><div class="crit-table-wrap" id="crit-table"></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">Минуты в диалоге — по менеджерам</div><div class="card__subtitle">Суммарно за каждую неделю</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-min-mgr"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">Минуты в диалоге — отдел</div><div class="card__subtitle">Суммарно по неделям</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-min-trend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">Прозвон «Контактный хаб» · % ОКК</div><div class="card__subtitle">Среднее качество звонков 08:50–10:10 по менеджерам</div></div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-hub-okk"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><div><div class="card__title">Прозвон «Контактный хаб» · количество</div><div class="card__subtitle">Звонки в окне 08:50–10:10 по менеджерам</div></div><div class="card__badge" id="hub-total">0</div></div>
+          <div class="card__body"><div class="chart-wrap chart-wrap--tall"><canvas id="chart-hub-count"></canvas></div></div>
+        </div>
+        <div class="card" style="grid-column: 1 / -1;">
+          <div class="card__head"><div><div class="card__title">Звонки «Секретарь»</div><div class="card__subtitle">Отработка возражений: кто попадает в отказы и как отрабатывает</div></div><div class="card__badge" id="sec-total">0</div></div>
+          <div class="card__body">
+            <div class="sec-split">
+              <div><div class="sec-heading">По менеджерам</div><div class="chart-wrap chart-wrap--tall"><canvas id="chart-sec-mgr"></canvas></div></div>
+              <div><div class="sec-heading">Типы возражений</div><div class="chart-wrap chart-wrap--tall"><canvas id="chart-sec-obj"></canvas></div></div>
+            </div>
+            <div class="sec-heading sec-heading--section">Детализация звонков</div>
+            <div class="sec-table-wrap" id="sec-table"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mgr-section">
+        <div class="mgr-section__head">
+          <div class="mgr-section__title">По каждому менеджеру</div>
+          <div class="mgr-section__subtitle">% качества и % заполнения CRM за выбранные недели</div>
+        </div>
+        <div class="managers-grid" id="managers-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="./js/demo-data.js"></script>
+  <script src="./js/demo-shim.js"></script>
+  <script src="./js/charts.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

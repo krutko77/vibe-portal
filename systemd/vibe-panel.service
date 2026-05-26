@@ -1,0 +1,29 @@
+[Unit]
+Description=vibe-panel — портал курса (vibe.kiselevgroup.com)
+After=network-online.target docker.service anthropic-shim.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vibe-portal/panel
+EnvironmentFile=/data/config/env/vibe-panel.env
+Environment=NODE_ENV=production
+Environment=PORT=3020
+Environment=HOST=127.0.0.1
+Environment=SESSIONS_DIR=/data/config/sessions-vibe
+Environment=HTPASSWD_FILE=/data/config/auth/.htpasswd-vibe
+Environment=USERS_FILE=/data/config/auth/users-vibe.json
+Environment=STUDENTS_ROOT=/data/vibe-students
+Environment=TEMPLATES_DIR=/opt/vibe-portal/templates
+Environment=VIBE_IMAGE=vibe-workspace:dev
+Environment=VIBE_NETWORK=vibe-net
+Environment=SHIM_BASE_URL=http://172.30.0.1:8190
+ExecStart=/usr/bin/node /opt/vibe-portal/panel/server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

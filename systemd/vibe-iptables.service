@@ -1,0 +1,13 @@
+[Unit]
+Description=vibe-net iptables filter (isolate student containers)
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/vibe-portal/scripts/setup-iptables.sh
+
+[Install]
+WantedBy=multi-user.target

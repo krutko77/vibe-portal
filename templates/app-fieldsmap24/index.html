@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Конструктор карточек CRM — Демо</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <link rel="stylesheet" href="./css/app.css" />
+
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar__left">
+      <button id="btn-new-portal" class="btn btn-primary" type="button" title="Добавить портал по входящему вебхуку">+ Новый портал</button>
+      <div id="dd-portal" class="dd dd--portal" aria-expanded="false"></div>
+      <span class="topbar__divider"></span>
+      <label>Сущность:</label>
+      <div id="dd-entity" class="dd" aria-expanded="false"></div>
+      <label id="lbl-category" class="hidden">Воронка:</label>
+      <div id="dd-category" class="dd hidden" aria-expanded="false" style="min-width:180px"></div>
+    </div>
+    <div class="topbar__right">
+      <span class="editor-actions">
+        <button id="btn-reset"  class="btn btn-ghost"   title="Сбросить раскладку до дефолтной">Сбросить</button>
+        <button id="btn-reload" class="btn btn-ghost"   title="Перечитать раскладку из Б24">Перечитать</button>
+        <button id="btn-save"   class="btn btn-primary" disabled>Сохранить</button>
+      </span>
+      <button id="btn-theme" class="theme-toggle" type="button" title="Переключить тему">◐</button>
+    </div>
+  </header>
+
+  <div id="status" class="status hidden"></div>
+
+  <main class="grid" id="view-editor">
+    <aside class="pane pane--pool">
+      <div class="pane__head">
+        <h3>Доступные поля</h3>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;flex:1">
+          <button id="btn-create-field" class="btn btn-secondary" type="button" title="Создать одно поле с настройками">+ Поле</button>
+          <button id="btn-bulk-fields"   class="btn btn-secondary" type="button" title="Массовая заливка списка полей">+ Массово</button>
+          <input id="field-search" type="search" placeholder="поиск…" style="width:140px" />
+        </div>
+      </div>
+      <div id="pool" class="pool"></div>
+    </aside>
+
+    <section class="pane pane--card">
+      <div class="pane__head">
+        <h3>Раскладка карточки</h3>
+        <div style="display:flex;gap:6px">
+          <button id="btn-add-section" class="btn btn-secondary">+ Секция</button>
+          <button id="btn-move-sections" class="btn btn-secondary" title="Свернуть поля, чтобы удобнее перетаскивать секции">↕ Двигать секции</button>
+        </div>
+      </div>
+      <div id="sections" class="sections"></div>
+    </section>
+  </main>
+
+  <div id="empty-no-portal" class="empty-screen hidden">
+    <div class="empty-screen__inner">
+      <h2>Нет ни одного портала</h2>
+      <p>Жми «+ Новый портал» в шапке, добавь название и входящий вебхук — и редактируй раскладку карточек этого портала.</p>
+    </div>
+  </div>
+
+  <template id="tpl-section">
+    <div class="section" data-section-id="">
+      <div class="section__head">
+        <span class="drag-handle" title="Перетащить секцию">⋮⋮</span>
+        <input class="section__title" type="text" />
+        <button class="section__remove btn btn-icon" title="Удалить секцию">✕</button>
+      </div>
+      <div class="section__fields"></div>
+    </div>
+  </template>
+
+  <template id="tpl-field">
+    <div class="field" data-field-name="">
+      <span class="drag-handle" title="Перетащить">⋮⋮</span>
+      <span class="field__title"></span>
+      <span class="field__type"></span>
+      <span class="field__multi" title="Множественное поле (можно несколько значений)">multi</span>
+      <span class="field__name"></span>
+      <button class="field__edit no-drag" type="button" title="Переименовать поле / добавить значения списка">✎</button>
+      <button class="field__show-toggle no-drag" type="button" title="Показывать в карточке всегда (клик — переключить)">показывать</button>
+      <button class="field__remove no-drag btn-icon" type="button" title="Убрать поле из карточки (вернётся в список доступных)">✕</button>
+    </div>
+  </template>
+
+  <div id="modal-new-portal" class="modal hidden" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true">
+      <div class="modal__head">
+        <h3>Новый портал</h3>
+        <button class="modal__close btn btn-icon" type="button" id="btn-portal-close">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="form-row">
+          <label>Название</label>
+          <input id="portal-name" type="text" placeholder="например, Основной портал" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label>Входящий вебхук</label>
+          <input id="portal-webhook" type="url" placeholder="https://your-portal.bitrix24.ru/rest/1/abcdef0123456789/" autocomplete="off" />
+          <small class="muted-block">
+            Б24 → Разработчикам → Другое → Входящий вебхук. Для работы редактора у вебхука должны быть отмечены права:
+            <strong>CRM</strong> (<code>crm</code>) и <strong>Пользовательские поля</strong> (<code>userfieldconfig</code>).
+            Демо: вебхук не проверяется, любой принимается.
+          </small>
+        </div>
+        <div id="portal-status" class="status hidden"></div>
+      </div>
+      <div class="modal__foot">
+        <button class="btn btn-ghost"   type="button" id="btn-portal-cancel">Отмена</button>
+        <button class="btn btn-primary" type="button" id="btn-portal-save">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-edit-field" class="modal hidden" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true">
+      <div class="modal__head">
+        <h3>Редактирование поля</h3>
+        <button class="modal__close btn btn-icon" type="button" id="btn-field-close">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="form-row">
+          <label>Имя в этой раскладке</label>
+          <input id="field-edit-override" type="text" placeholder="оставить пустым — будет системное" />
+          <small class="muted-block">Видно только в этой раскладке (и воронке, если выбрана). Сохраняется кнопкой «Сохранить» в шапке.</small>
+        </div>
+        <div class="form-row" id="form-row-system">
+          <label>Имя в настройках сущности (системное)</label>
+          <input id="field-edit-system" type="text" />
+          <small class="muted-block">Меняется в самой сущности — повлияет везде, где видно это поле. Применится сразу.</small>
+        </div>
+        <div class="form-row hidden" id="form-row-readonly-system">
+          <label>Системное имя поля</label>
+          <div class="readonly-value" id="field-edit-system-readonly"></div>
+          <small class="muted-block">Системное поле — переименовать через REST нельзя. Доступен только override для раскладки.</small>
+        </div>
+        <div class="form-row hidden" id="form-row-list">
+          <label>Значения списка</label>
+          <ul id="field-edit-list-items" class="list-values"></ul>
+          <div class="add-row">
+            <input id="field-edit-list-new" type="text" placeholder="новое значение" />
+            <button id="btn-add-list-value" type="button" class="btn btn-secondary">+ Добавить</button>
+          </div>
+          <small class="muted-block">Клик ✎ — переименовать, ✕ — удалить значение. Применится после «Применить». Удаление существующего значения освободит его в карточках, где оно было выбрано.</small>
+        </div>
+        <div class="form-row form-row--checks hidden" id="form-row-flags">
+          <label class="check"><input type="checkbox" id="fe-mandatory"  /> Обязательное</label>
+          <label class="check"><input type="checkbox" id="fe-showfilter" /> Показать в фильтре</label>
+          <label class="check"><input type="checkbox" id="fe-showinlist" /> Показать в списке</label>
+          <label class="check"><input type="checkbox" id="fe-editinlist" /> Редактировать в списке</label>
+        </div>
+        <div class="form-row hidden" id="form-row-help">
+          <label>Подсказка пользователю</label>
+          <textarea id="fe-help" rows="2" placeholder="что заполнять / пример"></textarea>
+        </div>
+        <div id="field-edit-status" class="status hidden"></div>
+      </div>
+      <div class="modal__foot">
+        <button class="btn btn-danger hidden" type="button" id="btn-field-delete" title="Удалить поле с портала вместе со всеми данными">Удалить с портала</button>
+        <span style="flex:1"></span>
+        <button class="btn btn-ghost"   type="button" id="btn-field-cancel">Отмена</button>
+        <button class="btn btn-primary" type="button" id="btn-field-apply">Применить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-create-field" class="modal hidden" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__panel" role="dialog" aria-modal="true">
+      <div class="modal__head">
+        <h3>Новое поле</h3>
+        <button class="modal__close btn btn-icon" type="button" id="btn-cf-close">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="form-row">
+          <label>Название</label>
+          <input id="cf-title" type="text" placeholder="например, Источник лида" autocomplete="off" />
+        </div>
+        <div class="form-row">
+          <label>Системное имя</label>
+          <input id="cf-name" type="text" placeholder="UF_CRM_..." autocomplete="off" />
+          <small class="muted-block">Должно начинаться с <code>UF_</code>, заглавные латинские буквы, цифры, <code>_</code>. Сгенерируется из названия — поправь, если нужно.</small>
+        </div>
+        <div class="form-row">
+          <label>Тип</label>
+          <select id="cf-type"></select>
+        </div>
+        <div class="form-row hidden" id="cf-row-list">
+          <label>Значения списка</label>
+          <textarea id="cf-list" rows="6" placeholder="каждое значение с новой строки"></textarea>
+        </div>
+        <div class="form-row form-row--checks">
+          <label class="check"><input type="checkbox" id="cf-multiple" /> Множественное</label>
+          <label class="check"><input type="checkbox" id="cf-mandatory" /> Обязательное</label>
+          <label class="check"><input type="checkbox" id="cf-showfilter" /> Показать в фильтре</label>
+        </div>
+        <div id="cf-status" class="status hidden"></div>
+      </div>
+      <div class="modal__foot">
+        <button class="btn btn-ghost"   type="button" id="btn-cf-cancel">Отмена</button>
+        <button class="btn btn-primary" type="button" id="btn-cf-save">Создать</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-bulk-fields" class="modal hidden" aria-hidden="true">
+    <div class="modal__backdrop"></div>
+    <div class="modal__panel modal__panel--wide" role="dialog" aria-modal="true">
+      <div class="modal__head">
+        <h3>Массовая заливка полей</h3>
+        <button class="modal__close btn btn-icon" type="button" id="btn-bulk-close">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="form-row">
+          <label>Вставь список — каждое поле с новой строки. Парсер сам угадает название, тип и значения списка.</label>
+          <textarea id="bulk-text" rows="8" placeholder="Имя клиента — текст
+Сумма заказа: число
+Статус (список): Новый, В работе, Готов, Отменён
+Дата встречи [дата]"></textarea>
+          <small class="muted-block">Принимает разделители <code>—</code> <code>-</code> <code>:</code> <code>=</code> <code>→</code>. Списки — через запятую/точку с запятой/слэш в скобках или после слова «список».</small>
+        </div>
+        <div id="bulk-preview"></div>
+        <div id="bulk-status" class="status hidden"></div>
+      </div>
+      <div class="modal__foot">
+        <button class="btn btn-ghost"   type="button" id="btn-bulk-cancel">Отмена</button>
+        <button class="btn btn-primary" type="button" id="btn-bulk-save" disabled>Создать все</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/demo-data.js"></script>
+  <script src="./js/demo-shim.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Контакты компании — Демо · вкладка в Битрикс24</title>
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <style>
+    /* ── обёртка-симуляция карточки компании Битрикс24 ── */
+    body { background: #f5f6fa; margin: 0; }
+    .b24-frame {
+      max-width: 1280px; margin: 0 auto; background: #fff;
+      min-height: 100vh; display: flex; flex-direction: column;
+      box-shadow: 0 0 0 1px #dfe0e3;
+    }
+    .b24-bar {
+      background: #2563eb; color: #fff; padding: 10px 18px;
+      display: flex; align-items: center; gap: 14px;
+      font: 13px -apple-system, 'Helvetica Neue', sans-serif;
+    }
+    .b24-bar__logo {
+      width: 24px; height: 24px; background: #fff; color: #2563eb;
+      border-radius: 4px; display: inline-flex; align-items: center;
+      justify-content: center; font-weight: 800; font-size: 11px;
+    }
+    .b24-bar__title { font-weight: 600; flex: 1; }
+    .b24-bar__url { opacity: .75; font-size: 11px; font-family: monospace; }
+    .b24-bar__pill {
+      background: rgba(255,255,255,.18); padding: 3px 10px;
+      border-radius: 11px; font-size: 11px; font-weight: 600;
+    }
+
+    .b24-card-head {
+      background: #fff; padding: 18px 24px 12px;
+      border-bottom: 1px solid #e6e7ea;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .b24-card-icon {
+      width: 48px; height: 48px; background: #2563eb; color: #fff;
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 18px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .b24-card-name {
+      font: 700 18px/1.2 -apple-system, 'Helvetica Neue', sans-serif;
+      color: #1a1a1a; margin: 0;
+    }
+    .b24-card-meta {
+      font: 12px -apple-system; color: #828b95; margin-top: 4px;
+    }
+
+    .b24-tabs {
+      background: #fff; padding: 0 24px;
+      border-bottom: 1px solid #e6e7ea; display: flex; gap: 0;
+    }
+    .b24-tab {
+      padding: 12px 16px; font: 600 13px/1 -apple-system, sans-serif;
+      color: #535c69; border-bottom: 2px solid transparent;
+      cursor: default; user-select: none;
+    }
+    .b24-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .b24-tab__count {
+      background: #eef2f4; color: #535c69; padding: 1px 7px;
+      border-radius: 10px; font-size: 11px; margin-left: 6px;
+    }
+    .b24-tab.active .b24-tab__count { background: #dbeafe; color: #2563eb; }
+
+    .b24-explainer {
+      background: #fff8e1; color: #6d4c00;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 18px; font: 12px/1.5 -apple-system, sans-serif;
+    }
+    .b24-explainer b { color: #4a3500; }
+    .b24-explainer-close {
+      float: right; cursor: pointer; opacity: .5;
+      font-size: 16px; line-height: 1;
+    }
+    .b24-explainer-close:hover { opacity: 1; }
+
+    /* приложение наполняет .app */
+    #app { padding: 8px 0 24px; }
+    .boot { padding: 24px; color: #828b95; }
+  </style>
+
+</head>
+
+<body>
+
+<div class="b24-frame">
+
+  <!-- симуляция URL-бара Битрикс24 -->
+  <div class="b24-bar">
+    <span class="b24-bar__logo">B24</span>
+    <span class="b24-bar__title">CRM · Карточка компании</span>
+    <span class="b24-bar__url">demo.bitrix24.ru/crm/company/details/12345/</span>
+    <span class="b24-bar__pill">Демо</span>
+  </div>
+
+  <!-- симуляция карточки компании -->
+  <div class="b24-card-head">
+    <div class="b24-card-icon">ТМ</div>
+    <div>
+      <h1 class="b24-card-name">ООО «ТД Магистраль» <span style="font-size:11px;color:#828b95;font-weight:500;background:#eef2f4;padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px">вымышленная компания</span></h1>
+      <div class="b24-card-meta">ИНН 0000000000 (демо) · Москва · ответственный: Соколов А.</div>
+    </div>
+  </div>
+
+  <!-- симуляция вкладок -->
+  <div class="b24-tabs">
+    <div class="b24-tab">О компании</div>
+    <div class="b24-tab">Сделки <span class="b24-tab__count">8</span></div>
+    <div class="b24-tab active">Контакты <span class="b24-tab__count">47</span></div>
+    <div class="b24-tab">Дела <span class="b24-tab__count">23</span></div>
+    <div class="b24-tab">Документы</div>
+    <div class="b24-tab">История</div>
+  </div>
+
+  <!-- объяснение что демо показывает -->
+  <div class="b24-explainer">
+    <span class="b24-explainer-close" onclick="this.parentElement.remove()">×</span>
+    <b>Что вы видите:</b> наша надстройка добавляет в карточку компании Битрикс24 новую вкладку
+    <b>«Контакты»</b> — со всеми привязанными людьми, фильтрами, поиском и массовыми действиями. Стандартная карточка показывает контакты только в боковом блоке без поиска и без массовых операций. Кликайте по списку, фильтруйте, выделяйте чекбоксы — всё работает на синтетических данных.
+  </div>
+
+  <!-- demo-data + BX24 mock грузятся ДО app.js -->
+  <script src="./assets/js/demo-data.js"></script>
+  <script src="./assets/js/demo-shim.js"></script>
+
+  <!-- сама вкладка с контактами -->
+  <div id="app" class="app">
+    <div class="boot">Загрузка…</div>
+  </div>
+
+</div>
+
+<script src="./assets/js/api.js"></script>
+<script src="./assets/js/filter.js"></script>
+<script src="./assets/js/list.js"></script>
+<script src="./assets/js/app.js"></script>
+</body>
+</html>

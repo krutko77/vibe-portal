@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/opt/vibe-portal/.claude",
+      "/data/vibe-students",
+      "/data/config/auth",
+      "/data/config/env",
+      "/data/config/sessions-vibe",
+      "/etc/systemd/system",
+      "/etc/nginx/sites-available",
+      "/opt/dev-portal"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-подсказчик возражений — Демо</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: 0, transform: 'translate(-50%, 8px)' },
+              '100%': { opacity: 1, transform: 'translate(-50%, 0)' },
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { background: #fafaf9; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::selection { background: #fde68a; color: #422006; }
+    kbd { font-family: 'SFMono-Regular', Consolas, monospace; }
+  </style>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script>
+    // Демо-флаг: показываем интерфейс как «AI подключён», но запросы не идут на провайдера —
+    // их перехватывает demo-shim.js и возвращает заранее заготовленные ответы.
+    window.__AI_AVAILABLE__ = true;
+    window.__AI_PROVIDER__ = { name: 'demo', model: 'sales-objections-v1' };
+    window.__B24_AUTH__ = { DOMAIN: 'demo.bitrix24.ru', PROTOCOL: '1', LANG: 'ru' };
+  </script>
+
+</head>
+
+<body>
+  <div id="root">
+    <div style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#a8a29e;font-size:14px;">
+      Загружаем «AI-подсказчик»…
+    </div>
+  </div>
+
+  <script src="./js/data.js"></script>
+  <script src="./js/demo-data.js"></script>
+  <script src="./js/demo-shim.js"></script>
+  <script src="./js/b24-bridge.js"></script>
+  <script type="text/babel" src="./js/app.jsx"></script>
+</body>
+</html>
