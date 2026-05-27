@@ -14,7 +14,7 @@ Environment=LISTEN_HOST=0.0.0.0
 Environment=LISTEN_PORT=8190
 Environment=ALLOWED_CIDRS=172.30.0.0/24,127.0.0.0/8
 ExecStart=/usr/bin/node /opt/vibe-portal/shim/server.js
-Restart=on-failure
+Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal

@@ -360,19 +360,13 @@ async function refreshUsers() {
         <div class="user-row-actions">
           <span class="user-role-pill ${s.role === 'admin' ? 'role-admin' : ''}">${escapeHtml(s.role)}</span>
           ${s.username !== ME.username
-            ? `<button class="btn btn-danger btn-sm" data-del="${escapeHtml(s.username)}">Удалить</button>`
+            ? `<button class="user-row-del" data-del="${escapeHtml(s.username)}">Удалить</button>`
             : ''}
         </div>
       </div>
     `).join('');
     $$('[data-del]', list).forEach(b => {
-      b.onclick = async () => {
-        if (!confirm(`Удалить ученика ${b.dataset.del}? Workspace будет архивирован.`)) return;
-        try {
-          await api('/api/students/' + encodeURIComponent(b.dataset.del), { method: 'DELETE' });
-        } catch (e) { alert(e.message); }
-        refreshUsers();
-      };
+      b.onclick = () => openDeleteStudentModal(b.dataset.del);
     });
   } catch {}
 }
@@ -400,6 +394,28 @@ async function doLogin() {
   } catch (e) {
     err.textContent = e.message === 'unauthorized' || /invalid/i.test(e.message)
       ? 'Неверный логин или пароль' : e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+function openDeleteStudentModal(username) {
+  $('#del-student-name').textContent = username;
+  $('#del-student-error').classList.add('hidden');
+  $('#modal-delete-student').dataset.target = username;
+  openModal('modal-delete-student');
+}
+
+async function doDeleteStudent() {
+  const username = $('#modal-delete-student').dataset.target;
+  const err = $('#del-student-error');
+  err.classList.add('hidden');
+  if (!username) return;
+  try {
+    await api('/api/students/' + encodeURIComponent(username), { method: 'DELETE' });
+    closeModal('modal-delete-student');
+    refreshUsers();
+  } catch (e) {
+    err.textContent = e.message;
     err.classList.remove('hidden');
   }
 }
@@ -587,6 +603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => $('#new-username').focus(), 30);
   };
   $('#add-user-submit').onclick = doAddUser;
+  $('#del-student-confirm').onclick = doDeleteStudent;
   ['new-username', 'new-password'].forEach(id => {
     $('#' + id).addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); doAddUser(); }

@@ -396,6 +396,26 @@
     </div>
   </div>
 
+  <!-- ── Modal: Confirm delete student ────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-delete-student" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <span class="modal-title">Удалить ученика?</span>
+        <button class="modal-close" data-close="modal-delete-student" aria-label="Закрыть">✕</button>
+      </div>
+      <p style="font-size:12px;line-height:1.55;color:hsl(var(--muted-foreground));padding:0 20px 14px">
+        Будет удалён логин <strong id="del-student-name" style="color:hsl(var(--foreground))">—</strong>,
+        его контейнер остановлен и удалён. Workspace переедет в архив
+        <code>.deleted/</code>, файлы не теряются.
+      </p>
+      <div class="form-error hidden" id="del-student-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-delete-student">Отмена</button>
+        <button class="btn btn-danger" id="del-student-confirm">Удалить</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Container starting ────────────────────────────-->
   <div class="modal-overlay hidden" id="modal-container-starting" role="dialog" aria-modal="true">
     <div class="modal" style="max-width:360px;text-align:center">

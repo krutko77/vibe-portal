@@ -476,20 +476,33 @@ body:not(.is-admin) .admin-only { display: none !important; }
   color: hsl(var(--muted-foreground));
   margin-top: 2px;
 }
-.user-row-actions { display: flex; gap: 4px; align-items: center; }
+.user-row-actions { display: flex; gap: 6px; align-items: center; }
 
-.user-role-pill {
+/* role-pill и delete-кнопка — одинаковая высота 22px, mono 10px. */
+.user-role-pill, .user-row-del {
+  display: inline-flex; align-items: center;
+  height: 22px; padding: 0 9px;
   font-family: var(--font-mono); font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .05em;
-  padding: 2px 8px;
   border: 1px solid hsl(var(--border));
-  color: hsl(var(--muted-foreground));
   background: transparent;
+  line-height: 1;
 }
+.user-role-pill { color: hsl(var(--muted-foreground)); }
 .user-role-pill.role-admin {
   border-color: hsl(var(--primary));
   color: hsl(var(--primary));
   background: hsl(var(--primary) / 0.08);
+}
+.user-row-del {
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive) / 0.55);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.user-row-del:hover {
+  background: hsl(var(--destructive) / 0.12);
+  border-color: hsl(var(--destructive));
 }
 .user-row-empty {
   padding: 20px;

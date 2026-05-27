@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Справка — vibe.kiselevgroup.com</title>
+  <link rel="icon" type="image/png" href="/KG_fi.png" />
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/help.css" />
+  <script>
+    (function() {
+      var t = localStorage.getItem('aif-theme');
+      if (t !== 'light') document.documentElement.classList.add('dark');
+    })();
+  </script>
+</head>
+<body class="app-bg">
+
+  <nav class="navbar">
+    <a href="/" class="navbar-kg">KG</a>
+    <span class="help-breadcrumb">Справка</span>
+    <span class="navbar-spacer"></span>
+    <a href="/" class="btn-hdr">← В портал</a>
+  </nav>
+
+  <div class="help-layout">
+
+    <!-- ── Sidebar nav ─────────────────────────────────── -->
+    <aside class="help-side">
+      <nav class="help-toc">
+        <a href="#intro" class="help-toc-link active">
+          <span class="help-toc-no">01</span>
+          <span class="help-toc-title">Начало</span>
+        </a>
+        <a href="#course" class="help-toc-link">
+          <span class="help-toc-no">02</span>
+          <span class="help-toc-title">Курс Vibecoding</span>
+        </a>
+        <a href="#claude" class="help-toc-link">
+          <span class="help-toc-no">03</span>
+          <span class="help-toc-title">Работа с Клодом</span>
+        </a>
+        <a href="#templates" class="help-toc-link">
+          <span class="help-toc-no">04</span>
+          <span class="help-toc-title">Шаблоны проектов</span>
+        </a>
+        <a href="#links" class="help-toc-link">
+          <span class="help-toc-no">05</span>
+          <span class="help-toc-title">Полезные ссылки</span>
+        </a>
+        <a href="#faq" class="help-toc-link">
+          <span class="help-toc-no">06</span>
+          <span class="help-toc-title">FAQ · Проблемы</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- ── Content ─────────────────────────────────────── -->
+    <main class="help-main">
+
+      <!-- 01 — НАЧАЛО -->
+      <section class="help-sect" id="intro">
+        <div class="help-sect-no">01</div>
+        <h1 class="help-h1">Начало</h1>
+        <p class="help-lead">
+          Vibe — это твой персональный рабочий портал курса.
+          У тебя есть изолированный Docker-контейнер, в нём — VS Code
+          в браузере, Claude Code и общие шаблоны курса.
+        </p>
+
+        <h2 class="help-h2">Что у тебя есть</h2>
+        <div class="help-grid">
+          <div class="help-card">
+            <div class="help-card-label">01</div>
+            <div class="help-card-title">Свой workspace</div>
+            <div class="help-card-desc">Папка <code>/home/student/workspace/</code> — твоя, никто кроме тебя её не видит. Здесь живут все твои проекты.</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-label">02</div>
+            <div class="help-card-title">VS Code в браузере</div>
+            <div class="help-card-desc">Полноценный редактор кода — открывается кнопкой «Открыть VS Code» в шапке.</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-label">03</div>
+            <div class="help-card-title">Claude (два варианта)</div>
+            <div class="help-card-desc">Чат с Claude прямо в портале по проекту (слева) и общий помощник (справа). Плюс Claude Code в терминале VS Code.</div>
+          </div>
+          <div class="help-card">
+            <div class="help-card-label">04</div>
+            <div class="help-card-title">Шаблоны курса</div>
+            <div class="help-card-desc">Готовые курсовые приложения (read-only) в <code>/home/student/templates/</code>. Скопируй и работай.</div>
+          </div>
+        </div>
+
+        <h2 class="help-h2">Первый шаг</h2>
+        <ol class="help-list">
+          <li>Нажми <strong>«+ Шаблон»</strong> и выбери <em>Шаблон для Битрикс24 + VibeCode</em>.</li>
+          <li>Введи имя проекта (латиница, дефис) — например, <code>my-first-app</code>.</li>
+          <li>Открой проект в VS Code → терминал → запусти <code>claude</code>.</li>
+          <li>Прочитай <code>CLAUDE.md</code> в корне проекта — там пошаговый онбординг.</li>
+        </ol>
+
+        <div class="help-callout">
+          <strong>Контейнер останавливается через 30 мин простоя.</strong>
+          Это нормально — workspace остаётся, при следующем клике на «Открыть VS Code» всё восстановится за 2–4 секунды.
+          Сверху в шапке виден таймер до автозакрытия.
+        </div>
+      </section>
+
+      <!-- 02 — КУРС -->
+      <section class="help-sect" id="course">
+        <div class="help-sect-no">02</div>
+        <h1 class="help-h1">Курс Vibecoding</h1>
+        <p class="help-lead">
+          Программа курса разбита на модули. В каждом — короткий конспект,
+          практическое задание и пример готового решения.
+        </p>
+
+        <h2 class="help-h2">Программа</h2>
+        <div class="help-modules">
+          <div class="help-module">
+            <div class="help-module-no">M1</div>
+            <div class="help-module-body">
+              <div class="help-module-title">Основы — что такое Битрикс24 и VibeCode</div>
+              <div class="help-module-desc">Зачем нужен портал, как устроены приложения, токены, типы ключей.</div>
+              <div class="help-module-links">
+                <a href="#">Конспект →</a>
+                <a href="#">Задание</a>
+              </div>
+            </div>
+          </div>
+          <div class="help-module">
+            <div class="help-module-no">M2</div>
+            <div class="help-module-body">
+              <div class="help-module-title">Первый дашборд — Node.js + VibeCode</div>
+              <div class="help-module-desc">Шаблон <code>_base</code>, API-ключ, Chart.js. Дашборд аналитики из коробки.</div>
+              <div class="help-module-links">
+                <a href="#">Конспект →</a>
+                <a href="#">Задание</a>
+              </div>
+            </div>
+          </div>
+          <div class="help-module">
+            <div class="help-module-no">M3</div>
+            <div class="help-module-body">
+              <div class="help-module-title">PHP-приложение с OAuth</div>
+              <div class="help-module-desc">Шаблон <code>_b24-single-php</code>, single-tenant local-app, файловый store.</div>
+              <div class="help-module-links">
+                <a href="#">Конспект →</a>
+                <a href="#">Задание</a>
+              </div>
+            </div>
+          </div>
+          <div class="help-module">
+            <div class="help-module-no">M4</div>
+            <div class="help-module-body">
+              <div class="help-module-title">Деплой и эксплуатация</div>
+              <div class="help-module-desc">Vibecode-деплой, .env, секреты, CRON, мониторинг.</div>
+              <div class="help-module-links">
+                <a href="#">Конспект →</a>
+                <a href="#">Задание</a>
+              </div>
+            </div>
+          </div>
+          <div class="help-module">
+            <div class="help-module-no">M5</div>
+            <div class="help-module-body">
+              <div class="help-module-title">Финальный проект</div>
+              <div class="help-module-desc">Твой собственный проект — от идеи до боевого деплоя.</div>
+              <div class="help-module-links">
+                <a href="#">Бриф →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 — КЛОД -->
+      <section class="help-sect" id="claude">
+        <div class="help-sect-no">03</div>
+        <h1 class="help-h1">Работа с Клодом</h1>
+        <p class="help-lead">
+          В Клоду можно обратиться тремя способами: в портале (чат по проекту),
+          в общем помощнике (справа в navbar) и из терминала VS Code (<code>claude</code>).
+        </p>
+
+        <h2 class="help-h2">Команды Claude Code</h2>
+        <table class="help-table">
+          <thead><tr><th>Команда</th><th>Что делает</th></tr></thead>
+          <tbody>
+            <tr><td><code>/init</code></td><td>Создаёт CLAUDE.md в текущем проекте с автоопределённой архитектурой.</td></tr>
+            <tr><td><code>/compact</code></td><td>Сжимает контекст: удаляет старые сообщения, оставляя суть.</td></tr>
+            <tr><td><code>/clear</code></td><td>Полностью очищает контекст. Используй когда сменил тему.</td></tr>
+            <tr><td><code>/diff</code></td><td>Показывает что Claude изменил с последней проверки.</td></tr>
+            <tr><td><code>/usage</code></td><td>Сколько токенов и денег потрачено в сессии.</td></tr>
+            <tr><td><code>/explain</code></td><td>Подробное объяснение кода без правки.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 class="help-h2">Установленные скиллы</h2>
+        <div class="help-grid">
+          <div class="help-card">
+            <div class="help-card-label">superpowers</div>
+            <div class="help-card-title">Общие практики</div>
+            <div class="help-card-desc">Brainstorming, planning, debugging, code-review — набор паттернов на каждый день.</div>
+            <a class="help-card-link" href="https://github.com/obra/superpowers" target="_blank">github →</a>
+          </div>
+          <div class="help-card">
+            <div class="help-card-label">ui-ux-pro-max</div>
+            <div class="help-card-title">Frontend / UI</div>
+            <div class="help-card-desc">Подсказки по дизайн-системе, типографике, доступности, layout.</div>
+            <a class="help-card-link" href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank">github →</a>
+          </div>
+          <div class="help-card">
+            <div class="help-card-label">claude-memory</div>
+            <div class="help-card-title">Структурная память</div>
+            <div class="help-card-desc">Память по проекту в одном .md файле — учится от исправлений, ловит противоречия, чистит дубли.</div>
+            <a class="help-card-link" href="https://github.com/SomeStay07/claude-memory-skill" target="_blank">github →</a>
+          </div>
+        </div>
+
+        <h2 class="help-h2">Как писать промпты</h2>
+        <ul class="help-list">
+          <li><strong>Контекст сначала</strong> — что за проект, что уже сделано, что не получилось.</li>
+          <li><strong>Чёткая задача</strong> — что должен сделать Claude, какой результат ждёшь.</li>
+          <li><strong>Ограничения</strong> — какие файлы трогать нельзя, что не использовать.</li>
+          <li>Не пиши «как обычно» — Claude не знает что у тебя обычно. Опиши явно.</li>
+        </ul>
+      </section>
+
+      <!-- 04 — ШАБЛОНЫ -->
+      <section class="help-sect" id="templates">
+        <div class="help-sect-no">04</div>
+        <h1 class="help-h1">Шаблоны проектов</h1>
+        <p class="help-lead">Два базовых стартовых шаблона + курсовые демо-приложения.</p>
+
+        <div class="help-modules">
+          <div class="help-module">
+            <div class="help-module-no">_base</div>
+            <div class="help-module-body">
+              <div class="help-module-title">Шаблон для Битрикс24 + VibeCode</div>
+              <div class="help-module-desc">
+                Node.js 20 + Express + vanilla JS. Деплой одной командой на <code>vibecode.bitrix24.tech</code>.
+                Подходит для дашбордов, виджетов CRM, инструментов администратора.
+              </div>
+              <div class="help-module-links">
+                <a href="#">Открыть в портале →</a>
+              </div>
+            </div>
+          </div>
+          <div class="help-module">
+            <div class="help-module-no">_b24</div>
+            <div class="help-module-body">
+              <div class="help-module-title">PHP / REST / API Битрикс24</div>
+              <div class="help-module-desc">
+                Single-tenant B24 local-app: PHP-бэк, vanilla JS, файловый store без БД,
+                защита <code>&lt;?php exit;?&gt;</code>. Подходит для in-house интеграций с REST API Битрикс24.
+              </div>
+              <div class="help-module-links">
+                <a href="#">Открыть в портале →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="help-h2">Курсовые демо</h2>
+        <p>10 готовых приложений — пройти, понять архитектуру, заимствовать куски.</p>
+        <div class="help-tags">
+          <span class="help-tag">ai-helper</span>
+          <span class="help-tag">chief24</span>
+          <span class="help-tag">contacts24</span>
+          <span class="help-tag">dina-soglasovanie</span>
+          <span class="help-tag">fieldsmap24</span>
+          <span class="help-tag">parser1c</span>
+          <span class="help-tag">pult24</span>
+          <span class="help-tag">quality24</span>
+          <span class="help-tag">support24</span>
+          <span class="help-tag">timepay24</span>
+        </div>
+      </section>
+
+      <!-- 05 — ССЫЛКИ -->
+      <section class="help-sect" id="links">
+        <div class="help-sect-no">05</div>
+        <h1 class="help-h1">Полезные ссылки</h1>
+
+        <h2 class="help-h2">Битрикс24</h2>
+        <ul class="help-links">
+          <li><a href="https://apidocs.bitrix24.ru/" target="_blank">apidocs.bitrix24.ru</a> — справочник REST API</li>
+          <li><a href="https://apidocs.bitrix24.ru/api-reference/widgets/crm/index.html" target="_blank">CRM widgets</a> — встраивание в карточки</li>
+          <li><a href="https://apidocs.bitrix24.ru/settings/oauth/auto-renewal.html" target="_blank">OAuth toks</a> — токены и обновление</li>
+        </ul>
+
+        <h2 class="help-h2">VibeCode</h2>
+        <ul class="help-links">
+          <li><a href="https://vibecode.bitrix24.tech/" target="_blank">vibecode.bitrix24.tech</a> — главная</li>
+          <li><a href="https://vibecode.bitrix24.tech/docs/quickstart" target="_blank">Quickstart</a></li>
+          <li><a href="https://vibecode.bitrix24.tech/llms-full.txt" target="_blank">llms-full.txt</a> — справочник для AI</li>
+        </ul>
+
+        <h2 class="help-h2">Claude</h2>
+        <ul class="help-links">
+          <li><a href="https://docs.claude.com/" target="_blank">docs.claude.com</a></li>
+          <li><a href="https://github.com/obra/superpowers" target="_blank">obra/superpowers</a></li>
+          <li><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank">ui-ux-pro-max-skill</a></li>
+          <li><a href="https://github.com/SomeStay07/claude-memory-skill" target="_blank">claude-memory-skill</a></li>
+        </ul>
+      </section>
+
+      <!-- 06 — FAQ -->
+      <section class="help-sect" id="faq">
+        <div class="help-sect-no">06</div>
+        <h1 class="help-h1">FAQ · Решение проблем</h1>
+
+        <details class="help-faq">
+          <summary>«Открыть VS Code» — открылось, но ничего не работает</summary>
+          <p>Контейнер только что запустился — code-server поднимается ~2 сек. Если страница пустая, закрой вкладку и нажми «Открыть VS Code» снова.</p>
+        </details>
+
+        <details class="help-faq">
+          <summary>Claude отвечает «Please run /login» или «401»</summary>
+          <p>Иногда токен надо обновить. Подожди 1–2 минуты — портал делает это автоматически каждые 5 минут. Если не помогло — обратись к админу.</p>
+        </details>
+
+        <details class="help-faq">
+          <summary>Удалил файлы случайно — можно восстановить?</summary>
+          <p>В терминале VS Code: <code>git log</code> в проекте → если коммитил, легко вернуть. Если не коммитил — увы. Совет: <code>git commit</code> после каждого крупного изменения.</p>
+        </details>
+
+        <details class="help-faq">
+          <summary>Контейнер всё время выключается</summary>
+          <p>Это idle-reaper — 30 мин без активности → stop. Сверху в шапке показывает таймер. Heartbeat от UI продлевает — держи вкладку портала открытой.</p>
+        </details>
+
+        <details class="help-faq">
+          <summary>Claude забывает контекст</summary>
+          <p>Используй скилл <code>claude-memory</code>: он структурно ведёт <code>.claude/memory/</code> в проекте. Или начни новую сессию из чата проекта в портале (там история сохраняется).</p>
+        </details>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Подсветка активной секции при скролле
+    const links = document.querySelectorAll('.help-toc-link');
+    const sects = document.querySelectorAll('.help-sect');
+    const onScroll = () => {
+      let active = sects[0];
+      for (const s of sects) {
+        if (s.getBoundingClientRect().top < 100) active = s;
+      }
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + active.id));
+    };
+    document.querySelector('.help-main').addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll);
+  </script>
+</body>
+</html>
