@@ -64,7 +64,8 @@ async function refreshContainerStatus() {
     const el = $('#containerStatus');
     const text = $('.banner-text', el);
     const open = $('#openCodeBtn');
-    open.href = `/code/${me.username}/`;
+    open.dataset.user = me.username;
+    open.dataset.running = me.container?.running ? '1' : '0';
     if (!me.containerPort) {
       text.textContent = 'Контейнер ещё не создан — обратись к админу.';
       el.classList.remove('running');
@@ -76,6 +77,41 @@ async function refreshContainerStatus() {
       el.classList.remove('running');
     }
   } catch {}
+}
+
+// Открыть VS Code: если контейнер не running — показать модалку, запустить,
+// дождаться, потом открыть в новой вкладке. Это убирает «открылось но недоступно».
+async function openVsCodeFor(username, folder = null) {
+  const url = `/code/${encodeURIComponent(username)}/`
+    + (folder ? `?folder=${encodeURIComponent(folder)}` : '');
+  const isOwn = ME && ME.username === username;
+  const needsStart = isOwn && ME.container && !ME.container.running;
+  if (!needsStart) {
+    window.open(url, '_blank');
+    return;
+  }
+  $('#container-start-error').classList.add('hidden');
+  openModal('modal-container-starting');
+  try {
+    // Docker создаёт/запускает контейнер. На холодный create — пару секунд.
+    await api('/api/container/start', { method: 'POST' });
+    // Опросим статус пару раз чтобы убедиться что точно running
+    for (let i = 0; i < 10; i++) {
+      const me = await api('/api/me');
+      if (me.container?.running) { ME = { ...ME, ...me }; break; }
+      await new Promise(r => setTimeout(r, 400));
+    }
+    // Доп. пауза — code-server иногда лезет на TCP не сразу после docker start
+    await new Promise(r => setTimeout(r, 600));
+    closeModal('modal-container-starting');
+    refreshContainerStatus();
+    window.open(url, '_blank');
+  } catch (e) {
+    const err = $('#container-start-error');
+    err.textContent = 'Не удалось запустить контейнер: ' + e.message;
+    err.classList.remove('hidden');
+    setTimeout(() => closeModal('modal-container-starting'), 3000);
+  }
 }
 
 // ── Projects / templates ───────────────────────────────────
@@ -120,7 +156,7 @@ async function refreshProjects() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 </button>
                 <button class="btn btn-sm" data-action="claude" title="Claude">CLAUDE</button>
-                <a class="btn btn-sm" target="_blank" href="${folderInVs(p.name)}">VS Code →</a>
+                <button class="btn btn-sm" data-action="vscode">VS Code →</button>
                 <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
                 </button>
@@ -134,6 +170,8 @@ async function refreshProjects() {
       const name = tr.dataset.project;
       $('[data-action="files"]', tr).onclick = () => openExplorer(name);
       $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
+      $('[data-action="vscode"]', tr).onclick = () =>
+        openVsCodeFor(ME.username, '/home/student/workspace/' + name);
       $('[data-action="delete"]', tr).onclick = async () => {
         if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
         try {
@@ -462,8 +500,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.target.id === 'explorer-overlay') $('#explorer-overlay').classList.add('hidden');
   });
 
+  // Open VS Code button (header dashboard)
+  $('#openCodeBtn').onclick = () => {
+    if (!ME) return;
+    openVsCodeFor(ME.username);
+  };
+
   // Project chat (left pane)
   $('#btn-close-left').onclick = pcCloseLeft;
+  // mode-seg КРАТКО/ПОЛНО
+  document.body.classList.toggle('pc-mode-compact', pcState.mode === 'compact');
+  $$('.pc-mode-btn').forEach(b => {
+    b.classList.toggle('is-active', b.dataset.mode === pcState.mode);
+    b.onclick = () => {
+      pcState.mode = b.dataset.mode;
+      localStorage.setItem('vibe.pcMode', pcState.mode);
+      document.body.classList.toggle('pc-mode-compact', pcState.mode === 'compact');
+      $$('.pc-mode-btn').forEach(x => x.classList.toggle('is-active', x.dataset.mode === pcState.mode));
+    };
+  });
+  // Fullscreen toggle
+  $('#btn-pc-fullscreen').onclick = () => {
+    document.body.classList.toggle('pc-fullscreen');
+  };
+  // Model dropdown
+  $('#pc-model-label').textContent = pcState.model;
+  $$('#pc-model-menu .pc-dd-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.value === pcState.model);
+    el.onclick = () => {
+      pcState.model = el.dataset.value;
+      localStorage.setItem('vibe.pcModel', pcState.model);
+      $('#pc-model-label').textContent = pcState.model;
+      $$('#pc-model-menu .pc-dd-item').forEach(x => x.classList.toggle('active', x === el));
+      $('#pc-model-dd').classList.remove('open');
+    };
+  });
+  $('#pc-model-btn').onclick = (e) => {
+    e.stopPropagation();
+    $('#pc-sessions-dd').classList.remove('open');
+    $('#pc-model-dd').classList.toggle('open');
+  };
+  // Attachments
+  $('#pc-attach').onclick = () => $('#pc-file-input').click();
+  $('#pc-file-input').addEventListener('change', (e) => {
+    for (const f of e.target.files) pcUploadFile(f);
+    e.target.value = '';
+  });
   $('#pc-sessions-btn').onclick = (e) => {
     e.stopPropagation();
     $('#pc-sessions-dd').classList.toggle('open');
@@ -500,6 +582,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ta = $('#pc-input'); ta.style.height = '';
     ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
   });
+
+  // Resizers — тяни чтобы изменить ширину левой/правой панелей
+  initResizer('#resizer-left', 'left');
+  initResizer('#resizer-right', 'right');
 
   // User chat (right pane)
   $('#btn-toggle-chat').onclick = () => toggleUserChat();
@@ -556,6 +642,9 @@ const pcState = {
   streaming: false,
   abort: null,
   toolUseNodes: new Map(),
+  attachments: [],  // [{ path, size, mime, name, _uploading? }]
+  model: localStorage.getItem('vibe.pcModel') || 'sonnet',
+  mode: localStorage.getItem('vibe.pcMode') || 'full',
 };
 
 function pcClearMessages() {
@@ -798,11 +887,16 @@ async function pcSend() {
   pcState.abort = ctrl;
 
   try {
+    // Прикрепляем пути загруженных файлов в начало текста (claude увидит их по абс. пути)
+    const attachLines = pcState.attachments.map(a => `Прикреплён файл: ${a.path}`).join('\n');
+    const fullText = attachLines ? `${attachLines}\n\n${text}` : text;
+    pcState.attachments = [];
+    pcRenderAttachments();
     const resp = await fetch('/api/project-chat/send', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-      body: JSON.stringify({ project: pcState.slug, sessionId: pcState.sessionId, text, model: 'sonnet' }),
+      body: JSON.stringify({ project: pcState.slug, sessionId: pcState.sessionId, text: fullText, model: pcState.model }),
       signal: ctrl.signal,
     });
     if (!resp.ok) {
@@ -839,6 +933,51 @@ async function pcSend() {
     pcEls.send().disabled = false;
     pcState.abort = null;
     pcEls.input().focus();
+  }
+}
+
+function pcFmtSize(n) {
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function pcRenderAttachments() {
+  const el = $('#pc-attachments');
+  if (!pcState.attachments.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  el.innerHTML = pcState.attachments.map((a, i) => `
+    <span class="pc-attach-chip">
+      📎 ${escapeHtml(a.name)} <span class="pc-attach-size">${pcFmtSize(a.size)}</span>
+      ${a._uploading ? '<span class="pc-attach-up">…</span>' : `<button class="pc-attach-x" data-idx="${i}" title="Убрать">✕</button>`}
+    </span>
+  `).join('');
+  $$('.pc-attach-x', el).forEach(b => {
+    b.onclick = () => { pcState.attachments.splice(+b.dataset.idx, 1); pcRenderAttachments(); };
+  });
+}
+
+async function pcUploadFile(file) {
+  if (!pcState.slug) return;
+  if (file.size > 10 * 1024 * 1024) { alert('Файл слишком большой (>10MB)'); return; }
+  const placeholder = { path: '', size: file.size, mime: file.type || 'application/octet-stream',
+                        name: file.name, _uploading: true };
+  pcState.attachments.push(placeholder);
+  pcRenderAttachments();
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    if (pcState.sessionId) fd.append('sessionId', pcState.sessionId);
+    const r = await fetch('/api/project-chat/upload?project=' + encodeURIComponent(pcState.slug),
+      { method: 'POST', credentials: 'same-origin', body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'upload failed');
+    Object.assign(placeholder, d, { _uploading: false });
+    pcRenderAttachments();
+  } catch (e) {
+    pcState.attachments = pcState.attachments.filter(x => x !== placeholder);
+    pcRenderAttachments();
+    alert('Загрузка не удалась: ' + e.message);
   }
 }
 
@@ -928,6 +1067,37 @@ async function sendChat() {
     chatAppendBubble('error', 'Сетевая ошибка');
   }
   $('#chat-send').disabled = false;
+}
+
+function initResizer(selector, side) {
+  const r = $(selector);
+  if (!r) return;
+  const storageKey = `vibe.chatW.${side}`;
+  const saved = parseInt(localStorage.getItem(storageKey) || '0', 10);
+  if (saved >= 280 && saved <= 800) {
+    document.documentElement.style.setProperty(`--${side === 'left' ? 'left' : 'right'}-chat-w`, saved + 'px');
+  }
+  r.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    r.classList.add('dragging');
+    const startX = e.clientX;
+    const startW = parseInt(getComputedStyle(document.documentElement).getPropertyValue(`--${side}-chat-w`) || '420', 10) || 420;
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX;
+      let w = side === 'left' ? startW + dx : startW - dx;
+      w = Math.max(280, Math.min(800, w));
+      document.documentElement.style.setProperty(`--${side}-chat-w`, w + 'px');
+    };
+    const onUp = () => {
+      r.classList.remove('dragging');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue(`--${side}-chat-w`), 10);
+      if (cur) localStorage.setItem(storageKey, cur);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
 }
 
 function toggleUserChat(forceClose = false) {

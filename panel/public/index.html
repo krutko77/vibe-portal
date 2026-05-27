@@ -76,24 +76,58 @@
           <span id="pc-title">Чат проекта</span>
         </span>
         <div class="pc-header-actions">
-          <div class="pc-dd pc-dd-sessions" id="pc-sessions-dd">
-            <button class="pc-dd-btn" id="pc-sessions-btn" type="button">
-              <span class="pc-dd-label" id="pc-sessions-label">— новая —</span>
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <div class="pc-dd-menu" id="pc-sessions-menu"></div>
+          <div class="pc-mode-seg" role="tablist" title="КРАТКО — только ответы; ПОЛНО — всё, включая инструменты">
+            <button class="pc-mode-btn" data-mode="compact" type="button">КРАТКО</button>
+            <button class="pc-mode-btn is-active" data-mode="full" type="button">ПОЛНО</button>
           </div>
-          <button class="pc-tool-btn" id="pc-new-session" title="Новая сессия">+</button>
-          <button class="pc-tool-btn" id="pc-delete-session" title="Удалить сессию">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          <button class="btn-close-box" id="btn-pc-fullscreen" title="Развернуть на весь экран">
+            <svg class="pc-icon-expand" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+            <svg class="pc-icon-collapse" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+              <line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>
             </svg>
           </button>
           <button class="btn-close-box" id="btn-close-left" title="Закрыть">✕</button>
         </div>
       </div>
+      <div class="pc-toolbar">
+        <div class="pc-dd pc-dd-sessions" id="pc-sessions-dd">
+          <button class="pc-dd-btn" id="pc-sessions-btn" type="button">
+            <span class="pc-dd-label" id="pc-sessions-label">— новая —</span>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="pc-dd-menu" id="pc-sessions-menu"></div>
+        </div>
+        <button class="pc-tool-btn" id="pc-new-session" title="Новая сессия">+</button>
+        <button class="pc-tool-btn" id="pc-delete-session" title="Удалить сессию">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          </svg>
+        </button>
+        <div class="pc-dd pc-dd-model" id="pc-model-dd">
+          <button class="pc-dd-btn" id="pc-model-btn" type="button">
+            <span class="pc-dd-label" id="pc-model-label">sonnet</span>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="pc-dd-menu pc-dd-menu-right" id="pc-model-menu">
+            <button class="pc-dd-item" data-value="sonnet">sonnet</button>
+            <button class="pc-dd-item" data-value="opus">opus</button>
+            <button class="pc-dd-item" data-value="auto">auto</button>
+          </div>
+        </div>
+      </div>
       <div class="chat-messages pc-messages" id="pc-messages"></div>
+      <div class="pc-attachments hidden" id="pc-attachments"></div>
       <div class="chat-input-row">
+        <button class="pc-attach-btn" id="pc-attach" title="Прикрепить файл">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+        <input type="file" id="pc-file-input" style="display:none" />
         <textarea class="chat-textarea" id="pc-input"
                   placeholder="Задача, вопрос, команда..." rows="1"></textarea>
         <button class="chat-send" id="pc-send" title="Отправить (Enter)">
@@ -104,6 +138,9 @@
         </button>
       </div>
     </aside>
+
+    <!-- Resizer между left chat и dashboard -->
+    <div class="resizer resizer-left" id="resizer-left" title="Тяни чтобы изменить ширину"></div>
 
   <!-- Центр: dashboard (когда залогинен) -->
   <main class="dashboard" id="app">
@@ -117,7 +154,7 @@
         </div>
         <div class="dashboard-actions">
           <button class="btn btn-ghost btn-sm" id="stopContainerBtn">Остановить</button>
-          <a class="btn btn-primary btn-sm" id="openCodeBtn" href="#" target="_blank">Открыть VS Code →</a>
+          <button class="btn btn-primary btn-sm" id="openCodeBtn">Открыть VS Code →</button>
         </div>
       </div>
       <div class="container-banner" id="containerStatus">
@@ -149,6 +186,9 @@
     </div>
 
   </main>
+
+    <!-- Resizer между dashboard и right chat -->
+    <div class="resizer resizer-right" id="resizer-right" title="Тяни чтобы изменить ширину"></div>
 
     <!-- Общий чат-помощник Claude (right, hidden по умолчанию) -->
     <aside class="chat-pane chat-pane-right hidden" id="chat-pane">
@@ -314,6 +354,20 @@
           <pre class="explorer-view-pre" id="explorer-view-pre"></pre>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Container starting ────────────────────────────-->
+  <div class="modal-overlay hidden" id="modal-container-starting" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:360px;text-align:center">
+      <div class="modal-header" style="border:none;justify-content:center">
+        <span class="modal-title">Контейнер запускается</span>
+      </div>
+      <p style="font-size:11px;color:hsl(var(--muted-foreground));padding:0 20px 16px">
+        Поднимаем твой workspace в Docker — это занимает 2–4 секунды. Откроем VS Code как только он будет готов.
+      </p>
+      <div class="container-starting-spinner"></div>
+      <div class="form-error hidden" id="container-start-error"></div>
     </div>
   </div>
 

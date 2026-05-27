@@ -19,6 +19,7 @@
 import express from 'express';
 import session from 'express-session';
 import FileStoreFactory from 'session-file-store';
+import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -238,6 +239,32 @@ app.post('/api/project-chat/send', requireAuth, requireOwnProject, async (req, r
     } catch {}
   }
 });
+
+// Upload файла для следующего сообщения. Файл попадает в workspace ученика
+// (внутри проекта в подпапку `.chat-uploads/`), чтобы claude-cli мог его прочитать.
+const chatUpload = multer({
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  storage: multer.memoryStorage(),
+});
+
+app.post('/api/project-chat/upload', requireAuth, requireOwnProject, chatUpload.single('file'),
+  async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'file required' });
+    const ws = workspaceDir(req.pc.username);
+    const sid = (req.body?.sessionId && /^[a-f0-9-]{8,}$/i.test(req.body.sessionId))
+      ? req.body.sessionId : 'pending';
+    const safe = (req.file.originalname || 'file').split(/[/\\]/).pop()
+      .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'file';
+    const name = `${Date.now()}-${safe}`;
+    const dir = path.join(ws, req.pc.slug, '.chat-uploads', sid);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.chownSync(dir, 1000, 1000);
+    const dst = path.join(dir, name);
+    fs.writeFileSync(dst, req.file.buffer);
+    fs.chownSync(dst, 1000, 1000);
+    res.json({ path: dst, size: req.file.size, mime: req.file.mimetype, name: safe });
+  }
+);
 
 app.delete('/api/project-chat/session/:id', requireAuth, requireOwnProject, async (req, res) => {
   const { id } = req.params;
