@@ -238,57 +238,17 @@
 
     <!-- ── view: КУРС ────────────────────────────────────── -->
     <section class="view view-course hidden" data-view="course">
-      <div class="course-head">
-        <span class="course-badge">DEV PORTAL · КУРС</span>
-        <h1 class="course-h1">Программа курса <em>Vibecoding</em></h1>
-        <p class="course-lead">
-          От нуля до приложения для Битрикс24 за 5 модулей. К каждому модулю —
-          видео-конспект и практическое задание.
-          Полная программа и конспекты —
-          <a href="https://analitik.kiselevgroup.com/vibecoding" target="_blank" rel="noopener">analitik.kiselevgroup.com/vibecoding ↗</a>
-        </p>
-      </div>
-      <div class="course-modules">
-        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m1" target="_blank">
-          <div class="course-module-no">M1</div>
-          <div class="course-module-body">
-            <div class="course-module-title">Основы — Битрикс24 и VibeCode</div>
-            <div class="course-module-desc">Зачем нужен портал, как устроены приложения, токены API, типы ключей. Что такое vibe-портал и как с ним работать.</div>
+      <div class="course-layout">
+        <aside class="course-side">
+          <div class="course-side-head">
+            <span class="course-side-title">Курс Vibecoding</span>
+            <span class="course-side-sub">программа · 6 модулей</span>
           </div>
-          <div class="course-module-cta">Конспект →</div>
-        </a>
-        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m2" target="_blank">
-          <div class="course-module-no">M2</div>
-          <div class="course-module-body">
-            <div class="course-module-title">Первый дашборд — Node.js + VibeCode</div>
-            <div class="course-module-desc">Шаблон <code>_base</code>, подключение API, Chart.js. Дашборд аналитики продаж за час.</div>
-          </div>
-          <div class="course-module-cta">Конспект →</div>
-        </a>
-        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m3" target="_blank">
-          <div class="course-module-no">M3</div>
-          <div class="course-module-body">
-            <div class="course-module-title">PHP-приложение с OAuth</div>
-            <div class="course-module-desc">Шаблон <code>_b24-single-php</code>, single-tenant local-app, файловый store без БД, защита кода.</div>
-          </div>
-          <div class="course-module-cta">Конспект →</div>
-        </a>
-        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m4" target="_blank">
-          <div class="course-module-no">M4</div>
-          <div class="course-module-body">
-            <div class="course-module-title">Деплой и эксплуатация</div>
-            <div class="course-module-desc">Vibecode-деплой, секреты в <code>.env</code>, мониторинг лимитов, CRON-задачи.</div>
-          </div>
-          <div class="course-module-cta">Конспект →</div>
-        </a>
-        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m5" target="_blank">
-          <div class="course-module-no">M5</div>
-          <div class="course-module-body">
-            <div class="course-module-title">Финальный проект</div>
-            <div class="course-module-desc">Свой собственный B24-приложение — от идеи до боевого деплоя. Защита проекта.</div>
-          </div>
-          <div class="course-module-cta">Бриф →</div>
-        </a>
+          <nav class="course-tree" id="course-tree"></nav>
+        </aside>
+        <main class="course-content" id="course-content">
+          <!-- наполняется из JS -->
+        </main>
       </div>
     </section>
 
@@ -299,9 +259,9 @@
           <span class="materials-tab-icon">📘</span>
           <span class="materials-tab-text">Инструкция</span>
         </button>
-        <button class="materials-tab" data-sub="architecture">
-          <span class="materials-tab-icon">🏗</span>
-          <span class="materials-tab-text">Архитектура</span>
+        <button class="materials-tab" data-sub="cheatsheet">
+          <span class="materials-tab-icon">📋</span>
+          <span class="materials-tab-text">Шпаргалка</span>
         </button>
         <button class="materials-tab" data-sub="claude">
           <span class="materials-tab-icon">🤖</span>
@@ -371,32 +331,120 @@
         </div>
       </div>
 
-      <!-- materials > Архитектура -->
-      <div class="materials-page hidden" data-sub="architecture">
-        <div class="page-meta">VIBE PORTAL · АРХИТЕКТУРА</div>
-        <h1 class="page-h1">Как <em>устроен</em> портал</h1>
-        <p class="page-lead">Высокоуровневая схема: где что живёт, как изолированы ученики, через что ходит Claude.</p>
+      <!-- materials > Шпаргалка Claude Code -->
+      <div class="materials-page hidden" data-sub="cheatsheet">
+        <div class="page-meta">VIBE PORTAL · CLAUDE CODE</div>
+        <h1 class="page-h1"><em>Шпаргалка</em> по Claude Code</h1>
+        <p class="page-lead">Горячие клавиши, slash-команды и флаги CLI. Подходит для печати на A4.</p>
         <div class="anchor-chips">
-          <a href="#b-overview" class="anchor-chip">Обзор</a>
-          <a href="#b-containers" class="anchor-chip">Контейнеры</a>
-          <a href="#b-shim" class="anchor-chip">Anthropic shim</a>
-          <a href="#b-isolation" class="anchor-chip">Изоляция</a>
+          <a href="#ch-input" class="anchor-chip">Поле ввода</a>
+          <a href="#ch-slash" class="anchor-chip">Slash-команды</a>
+          <a href="#ch-agent" class="anchor-chip">Agent View</a>
+          <a href="#ch-flags" class="anchor-chip">Флаги CLI</a>
         </div>
-        <div class="page-sect" id="b-overview">
-          <div class="page-sect-no">1. ОБЗОР</div>
-          <p>Каждый ученик работает в своём изолированном Docker-контейнере. Внутри — code-server (VS Code в браузере) + Claude Code CLI. Через nginx на хосте проксируется и UI портала, и сам VS Code.</p>
+
+        <div class="page-sect" id="ch-input">
+          <div class="page-sect-no">ШОРТКАТЫ В ПОЛЕ ВВОДА</div>
+          <table class="page-table">
+            <tbody>
+              <tr><td><code>Shift+Tab</code></td><td>режим: normal → auto-accept (▶▶) → plan</td></tr>
+              <tr><td><code>! команда</code></td><td>выполнить bash прямо из Клода</td></tr>
+              <tr><td><code># текст</code></td><td>сохранить факт в память (MEMORY.md)</td></tr>
+              <tr><td><code>@путь</code></td><td>вставить файл/папку в контекст</td></tr>
+              <tr><td><code>Esc</code></td><td>прервать текущий ответ</td></tr>
+              <tr><td><code>Esc Esc</code></td><td>откатиться к прошлому сообщению</td></tr>
+              <tr><td><code>Ctrl+C ×1</code></td><td>отменить ввод</td></tr>
+              <tr><td><code>Ctrl+C ×2</code></td><td>выйти из Клода</td></tr>
+              <tr><td><code>Ctrl+Z / fg</code></td><td>приостановить / вернуть</td></tr>
+              <tr><td><code>Ctrl+U</code></td><td>стереть строку ввода</td></tr>
+              <tr><td><code>Ctrl+B</code></td><td>фоновая задача (если включено)</td></tr>
+              <tr><td><code>← ←</code></td><td>войти в Agent View</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:8px;">
+            <code>!</code> и <code>@</code> работают только в начале строки. <code>#</code> — в любой момент.
+          </p>
         </div>
-        <div class="page-sect" id="b-containers">
-          <div class="page-sect-no">2. КОНТЕЙНЕРЫ</div>
-          <p>Образ <code>vibe-workspace:dev</code> (Debian 12 + Node 22 + code-server). Каждый ученик получает имя <code>vibe-&lt;login&gt;</code>, порт 8200+. Маунты: workspace (rw), templates (ro), extensions (shared rw), skills (shared ro).</p>
+
+        <div class="page-sect" id="ch-slash">
+          <div class="page-sect-no">СЛЭШ-КОМАНДЫ</div>
+          <table class="page-table">
+            <thead><tr><th colspan="2">Сессии</th></tr></thead>
+            <tbody>
+              <tr><td><code>/resume</code></td><td>список прошлых сессий папки</td></tr>
+              <tr><td><code>/clear</code></td><td>начать новую (старая сохранится)</td></tr>
+              <tr><td><code>/compact</code></td><td>сжать длинный контекст</td></tr>
+              <tr><td><code>/exit</code></td><td>выйти</td></tr>
+            </tbody>
+            <thead><tr><th colspan="2">Контекст и память</th></tr></thead>
+            <tbody>
+              <tr><td><code>/init</code></td><td>создать CLAUDE.md проекта</td></tr>
+              <tr><td><code>/memory</code></td><td>открыть MEMORY.md</td></tr>
+              <tr><td><code>/add-dir</code></td><td>добавить папку в рабочую область</td></tr>
+              <tr><td><code>/status</code></td><td>модель, токены, id сессии</td></tr>
+            </tbody>
+            <thead><tr><th colspan="2">Настройка</th></tr></thead>
+            <tbody>
+              <tr><td><code>/config</code></td><td>тема, модель и пр.</td></tr>
+              <tr><td><code>/model</code></td><td>Opus / Sonnet / Haiku</td></tr>
+              <tr><td><code>/permissions</code></td><td>что разрешено без спроса</td></tr>
+              <tr><td><code>/login /logout</code></td><td>аккаунт</td></tr>
+            </tbody>
+            <thead><tr><th colspan="2">Работа с кодом</th></tr></thead>
+            <tbody>
+              <tr><td><code>/review</code></td><td>ревью пулл-реквеста</td></tr>
+              <tr><td><code>/security-review</code></td><td>аудит безопасности</td></tr>
+              <tr><td><code>/agents</code></td><td>список сабагентов</td></tr>
+              <tr><td><code>/help</code></td><td>вся справка</td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="page-sect" id="b-shim">
-          <div class="page-sect-no">3. ANTHROPIC SHIM</div>
-          <p>Из контейнера Claude CLI ходит не напрямую в api.anthropic.com, а через локальный shim на <code>172.30.0.1:8190</code>. Шим подменяет токен на реальный OAuth и форвардит запрос.</p>
+
+        <div class="page-sect" id="ch-agent">
+          <div class="page-sect-no">AGENT VIEW — КАНБАН СЕССИЙ</div>
+          <table class="page-table">
+            <thead><tr><th colspan="2">Вход / выход</th></tr></thead>
+            <tbody>
+              <tr><td><code>← ←</code></td><td>войти из обычной сессии (дважды)</td></tr>
+              <tr><td><code>claude agents</code></td><td>открыть в новом терминале</td></tr>
+              <tr><td><code>→</code></td><td>вернуться в свою сессию</td></tr>
+            </tbody>
+            <thead><tr><th colspan="2">Навигация</th></tr></thead>
+            <tbody>
+              <tr><td><code>↑ ↓</code></td><td>листать карточки</td></tr>
+              <tr><td><code>Enter</code></td><td>войти в сессию (полный экран)</td></tr>
+              <tr><td><code>←</code></td><td>из сессии обратно в список</td></tr>
+              <tr><td><code>?</code></td><td>все горячие клавиши</td></tr>
+            </tbody>
+            <thead><tr><th colspan="2">Действия над сессией</th></tr></thead>
+            <tbody>
+              <tr><td><code>Space</code></td><td>peek — написать не входя</td></tr>
+              <tr><td><code>Ctrl+R</code></td><td>переименовать</td></tr>
+              <tr><td><code>Ctrl+T</code></td><td>закрепить (pin)</td></tr>
+              <tr><td><code>Ctrl+X</code></td><td>остановить (история сохранится)</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:11.5px;color:hsl(var(--muted-foreground));margin-top:10px;">
+            <strong>Статусы карточек:</strong>
+            <span style="color:#e8a33c">●</span> needs input · ждёт ответа &nbsp;
+            <span style="color:hsl(var(--primary))">●</span> working · думает &nbsp;
+            <span style="color:hsl(var(--smui-green))">●</span> completed · готово &nbsp;
+            <span style="color:hsl(var(--destructive))">●</span> error · упал
+          </p>
         </div>
-        <div class="page-sect" id="b-isolation">
-          <div class="page-sect-no">4. ИЗОЛЯЦИЯ</div>
-          <p>iptables-правила (chains <code>VIBE-FILTER</code> + <code>VIBE-INPUT</code>) запрещают контейнерам видеть друг друга, ходить в private RFC1918 и до хостового loopback. Можно только наружу в интернет и в шим.</p>
+
+        <div class="page-sect" id="ch-flags">
+          <div class="page-sect-no">ПОЛЕЗНЫЕ ФЛАГИ CLI</div>
+          <table class="page-table">
+            <tbody>
+              <tr><td><code>--cwd ~/path</code></td><td>фильтр по папке</td></tr>
+              <tr><td><code>--model opus</code></td><td>модель по умолчанию</td></tr>
+              <tr><td><code>--resume &lt;id&gt;</code></td><td>оживить конкретную сессию</td></tr>
+              <tr><td><code>-c / --continue</code></td><td>продолжить последнюю в папке</td></tr>
+              <tr><td><code>-p "промпт"</code></td><td>print-mode: один запрос, без TUI</td></tr>
+              <tr><td><code>--output-format stream-json</code></td><td>стрим NDJSON для скриптов</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -482,10 +530,49 @@
       <div class="materials-page hidden" data-sub="links">
         <div class="page-meta">VIBE PORTAL · LINKS</div>
         <h1 class="page-h1">Полезные <em>ссылки</em></h1>
-        <p class="page-lead">Документация, справочники, MCP-серверы и шпаргалки.</p>
+        <p class="page-lead">Главное — сверху. Альтернативы — отдельным блоком. Документация и MCP-серверы — ниже.</p>
+
+        <div class="link-tiles link-tiles-primary">
+          <a class="link-tile" href="https://claude.ai/login" target="_blank">
+            <div class="link-tile-label">Claude</div>
+            <div class="link-tile-title">claude.ai</div>
+            <div class="link-tile-desc">Логин в основной аккаунт Claude — диалоги, проекты, шаблоны.</div>
+          </a>
+          <a class="link-tile" href="https://code.visualstudio.com/" target="_blank">
+            <div class="link-tile-label">Editor</div>
+            <div class="link-tile-title">VS Code</div>
+            <div class="link-tile-desc">Локальная установка десктопного VS Code — для работы с проектами офлайн.</div>
+          </a>
+          <a class="link-tile" href="https://vibecode.bitrix24.tech/analytics" target="_blank">
+            <div class="link-tile-label">Деплой</div>
+            <div class="link-tile-title">Vibecode Bitrix24</div>
+            <div class="link-tile-desc">Платформа Vibecode — деплой и аналитика приложений Битрикс24.</div>
+          </a>
+        </div>
+
+        <h2 class="page-h2">Альтернативы</h2>
+        <div class="link-tiles">
+          <a class="link-tile link-tile-alt" href="https://cursor.com/" target="_blank">
+            <div class="link-tile-label">IDE с AI</div>
+            <div class="link-tile-title">Cursor</div>
+            <div class="link-tile-desc">Альтернативный AI-редактор. Подмена модели «под капотом».</div>
+          </a>
+          <a class="link-tile link-tile-alt" href="https://openai.com/ru-RU/index/introducing-codex/" target="_blank">
+            <div class="link-tile-label">OpenAI</div>
+            <div class="link-tile-title">Codex</div>
+            <div class="link-tile-desc">Кодовый ассистент от OpenAI. Хорош на алгоритмах и проверках.</div>
+          </a>
+          <a class="link-tile link-tile-alt" href="https://www.deepseek.com/" target="_blank">
+            <div class="link-tile-label">Open-source</div>
+            <div class="link-tile-title">DeepSeek</div>
+            <div class="link-tile-desc">Дешёвая модель сопоставимого качества. Подходит для черновой работы.</div>
+          </a>
+        </div>
+
+        <h2 class="page-h2">Документация и справочники</h2>
         <div class="anchor-chips">
           <a href="#l-b24" class="anchor-chip">Битрикс24</a>
-          <a href="#l-vibe" class="anchor-chip">VibeCode</a>
+          <a href="#l-vibe" class="anchor-chip">Vibecode</a>
           <a href="#l-claude" class="anchor-chip">Claude</a>
         </div>
         <div class="page-sect" id="l-b24">

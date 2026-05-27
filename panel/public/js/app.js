@@ -47,6 +47,254 @@ function renderAuth() {
   }
 }
 
+// ── COURSE: данные программы Vibecoding (M1-M6) ─────────────
+const COURSE = [
+  {
+    id: 'm1', title: 'Старт: Claude, проекты и безопасный фундамент',
+    lessons: [
+      { id: 'l1', title: 'Что такое Claude и почему именно он · отличие от GPT, Cursor, Codex, DeepSeek' },
+      { id: 'l2', title: 'Где и как работать с Claude · лайфхаки и типовые ошибки' },
+      { id: 'l3', title: 'В чём волшебство проектов · чаты vs проекты' },
+      { id: 'l4', title: 'Как правильно организовать проект, чтобы он подошёл под любую модель' },
+      { id: 'l5', title: 'CLAUDE.md — что это, в чём его магия и как написать свой' },
+      { id: 'l6', title: 'Skills — зачем нужны и как использовать' },
+      { id: 'l7', title: 'Как работать с Claude эффективно и не бояться потерять контекст' },
+      { id: 'l8', title: 'Полезные промпты и команды для работы с Claude' },
+    ],
+    materials: 'Готовый шаблон идеального проекта · CLAUDE.md и системные файлы · список Skills, которые реально работают · подборка полезных промптов.',
+    homework: 'Создать первый проект на нашем dev-портале и запустить первый сайт-лендинг.',
+    meetup: { date: 'чт 28.05', title: 'Мастер-класс МК-1', desc: 'Три способа начать работу с проектом, как выстроить процесс для команды.' },
+  },
+  {
+    id: 'm2', title: 'Свой dev-портал + Claude в Б24',
+    lessons: [
+      { id: 'l1', title: 'В чём особенность работы Claude в России и как обеспечить максимальную безопасность' },
+      { id: 'l2', title: 'Детальный обзор нашего dev-портала · как мы используем Claude из Битрикс24 и ушли от ChatGPT в браузере' },
+      { id: 'l3', title: 'Как мы сделали проекты и файл-опросник для аналитиков и интеграторов, которые в вайбкодинг не уходили' },
+      { id: 'l4', title: 'Как оплачивать, регистрировать и обойти блокировку РФ для Claude (или альтернативы)' },
+      { id: 'l5', title: 'Достойные альтернативы «без танцев с бубном» — используем структуру Claude, меняем модель «под капотом»' },
+      { id: 'l6', title: 'Как я «хитрю» с Claude — лайфхаки для не-программистов' },
+    ],
+    materials: 'Шаблон проектов для Битрикс24 со Skills и инструкциями · системные файлы для готового dev-портала · 8 шаблонов рабочих проектов · список проверенных площадок для оплаты/SMS/регистрации/«КВН».',
+    homework: 'Создать свой dev-портал и получить свой Claude.',
+    meetup: { date: 'вт 02.06', title: 'Мастер-класс МК-2', desc: 'Создаю удобное приложение для учеников через dev-портал, в режиме live для вас.' },
+  },
+  {
+    id: 'm3', title: 'Платформа Vibe Code и сравнение инструментов',
+    lessons: [
+      { id: 'l1', title: 'Платформа vibecode.bitrix24.tech — что даёт и зачем (можно и без неё)' },
+      { id: 'l2', title: 'Шаблоны проектов и Skills под Б24-задачи · персональный пресет' },
+      { id: 'l3', title: 'Cursor, Codex и DeepSeek для vibecode — как использовать и настроить' },
+      { id: 'l4', title: 'Сравнение моделей на одной задаче для Битрикс24 · выводы' },
+      { id: 'l5', title: 'Ответ на главный вопрос: а зачем мне вообще платформа vibecode?' },
+      { id: 'l6', title: 'Как писать приложения, вообще не используя vibecode' },
+      { id: 'l7', title: 'Что такое .env и как «безопасно» хранить API-ключи' },
+    ],
+    materials: 'Готовый Skill для vibecode от Битрикс24 · 8 шаблонов рабочих проектов на vibecode · бенчмарк Claude/Cursor/Codex/DeepSeek · шаблон .env.',
+    homework: 'Создать локальное приложение для Битрикс24 и разместить на своём портале через серверы vibecode.',
+    meetup: { date: 'чт 04.06', title: 'Мастер-класс МК-3', desc: 'Делаю «пульт собственника» и публикую его на своём портале.' },
+  },
+  {
+    id: 'm4', title: 'Приложения и дашборды на Битрикс24',
+    lessons: [
+      { id: 'l1', title: 'REST Битрикс24 для не-программистов · webhook, OAuth, методы' },
+      { id: 'l2', title: 'Локальное приложение Б24 · Hello World в карточке сделки' },
+      { id: 'l3', title: 'Дашборд: визуализация данных портала · базовый шаблон из apps.kiselevgroup.com' },
+      { id: 'l4', title: 'Деплой на свой VPS · SSH, Nginx, домен, SSL' },
+      { id: 'l5', title: 'Базы данных без боли · SQLite/Supabase, когда хватает Б24' },
+      { id: 'l6', title: 'Внешние интеграции · Telegram-бот → Б24, AI-функции в карточке' },
+    ],
+    materials: 'Список запросов и файлов, которые нужно скормить Б24-проекту · скрипты деплоя на VPS · Postman-коллекция для REST Б24 · свой дашборд из шаблона apps.kiselevgroup.com.',
+    homework: 'Собрать приложение для своей компании (дадим несколько идей).',
+    meetup: { date: 'вт 09.06', title: 'Встреча 4', desc: 'Отвечаю на вопросы, разбираем «секретную задачу» онлайн.' },
+  },
+  {
+    id: 'm5', title: 'Как это продавать клиентам',
+    lessons: [
+      { id: 'l1', title: 'Безопасная работа с клиентскими порталами' },
+      { id: 'l2', title: 'Эффект «вау» за 30 минут · сценарий пресейл-встречи в zoom' },
+      { id: 'l3', title: 'Цены, рынок, развенчание иллюзий · куда движется рынок и что будет через полгода' },
+      { id: 'l4', title: 'Как подготовить спич для клиента на 5 минут' },
+      { id: 'l5', title: 'Что реально покупают, а что — только иллюзия' },
+      { id: 'l6', title: 'Почему мы не продаём новым клиентам, а только старым и текущим' },
+      { id: 'l7', title: 'Почему PDF-презентации — это прошлый век · две стратегии' },
+    ],
+    materials: 'Примеры наших презентаций клиентам — реальные zoom-встречи · сценарий пресейл-встречи на 30 минут · чек-лист безопасности · готовый спич на 5 минут.',
+    homework: 'Составить список 10 идей для приложений + спич для своего приложения на 5 минут.',
+    meetup: { date: 'чт 02.07', title: 'Выпускной · Встреча 5', desc: 'Приложение себе на портал, защита live demo.' },
+  },
+  {
+    id: 'm6', title: 'ИИ-инструменты вокруг бизнеса',
+    lessons: [
+      { id: 'l1', title: 'Что такое n8n · как применять, обзор инструмента' },
+      { id: 'l2', title: 'Что такое OpenClaw — плюсы и минусы · как я использую и раскатал на руководителей' },
+      { id: 'l3', title: 'Как сделать свою базу знаний — wiki, статьи, графы — и держать её актуальной' },
+      { id: 'l4', title: 'RAG и векторные базы знаний · кейс KISELEV GROUP — плюсы и минусы' },
+      { id: 'l5', title: 'Что ещё важно знать, чего мне не сказали на обучениях, которые я проходил' },
+    ],
+    materials: 'Карта применимых ИИ-инструментов вокруг Б24-практики · кейс RAG/wiki из KG · диплом · бонусный урок «одна фраза» после защиты.',
+    homework: 'Провести 3 встречи и совершить 1 продажу — отбить стоимость курса.',
+    meetup: { date: 'чт 09.07', title: 'Финал · Встреча 6', desc: 'Инсайды KISELEV GROUP, что мы делаем сейчас и куда движемся.' },
+    bonus: { title: 'БОНУС-урок', desc: 'Одна фраза, которая заменит всё обучение — открывается только после сдачи выпускной работы.' },
+  },
+];
+
+// Текущий выбранный пункт. Форматы: "m1.l3" (урок), "m1.materials", "m1.homework", "m1.meetup", "m6.bonus", "intro" (welcome)
+let courseSelected = localStorage.getItem('vibe.course.sel') || 'intro';
+const courseExpanded = new Set(JSON.parse(localStorage.getItem('vibe.course.exp') || '["m1"]'));
+
+function renderCourse() {
+  renderCourseTree();
+  renderCourseContent();
+}
+
+function renderCourseTree() {
+  const tree = $('#course-tree');
+  if (!tree) return;
+  let html = `
+    <button class="course-tree-intro${courseSelected === 'intro' ? ' active' : ''}" data-sel="intro">
+      <span class="course-tree-intro-no">★</span>
+      <span class="course-tree-intro-title">О курсе</span>
+    </button>
+  `;
+  for (const mod of COURSE) {
+    const isOpen = courseExpanded.has(mod.id);
+    html += `
+      <div class="course-tree-module${isOpen ? ' is-open' : ''}">
+        <button class="course-tree-mod-head" data-mod="${mod.id}">
+          <span class="course-tree-caret">▸</span>
+          <span class="course-tree-mod-no">${mod.id.toUpperCase()}</span>
+          <span class="course-tree-mod-title">${escapeHtml(mod.title)}</span>
+        </button>
+        <div class="course-tree-mod-body">
+          ${mod.lessons.map((lsn, i) => `
+            <button class="course-tree-lesson${courseSelected === mod.id + '.' + lsn.id ? ' active' : ''}" data-sel="${mod.id}.${lsn.id}">
+              <span class="course-tree-lesson-no">${i + 1}</span>
+              <span class="course-tree-lesson-title">${escapeHtml(lsn.title)}</span>
+            </button>
+          `).join('')}
+          <button class="course-tree-card course-tree-card-materials${courseSelected === mod.id + '.materials' ? ' active' : ''}" data-sel="${mod.id}.materials">
+            <span class="course-tree-card-icon">📦</span>
+            <span>Материалы модуля</span>
+          </button>
+          <button class="course-tree-card course-tree-card-hw${courseSelected === mod.id + '.homework' ? ' active' : ''}" data-sel="${mod.id}.homework">
+            <span class="course-tree-card-icon">✓</span>
+            <span>Домашка</span>
+          </button>
+          ${mod.meetup ? `
+            <button class="course-tree-card course-tree-card-mk${courseSelected === mod.id + '.meetup' ? ' active' : ''}" data-sel="${mod.id}.meetup">
+              <span class="course-tree-card-icon">★</span>
+              <span>${escapeHtml(mod.meetup.title)} · ${escapeHtml(mod.meetup.date)}</span>
+            </button>
+          ` : ''}
+          ${mod.bonus ? `
+            <button class="course-tree-card course-tree-card-bonus${courseSelected === mod.id + '.bonus' ? ' active' : ''}" data-sel="${mod.id}.bonus">
+              <span class="course-tree-card-icon">🎁</span>
+              <span>${escapeHtml(mod.bonus.title)}</span>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+  tree.innerHTML = html;
+  // bindings
+  $$('.course-tree-mod-head', tree).forEach(b => {
+    b.onclick = () => {
+      const id = b.dataset.mod;
+      if (courseExpanded.has(id)) courseExpanded.delete(id); else courseExpanded.add(id);
+      localStorage.setItem('vibe.course.exp', JSON.stringify([...courseExpanded]));
+      renderCourseTree();
+    };
+  });
+  $$('[data-sel]', tree).forEach(b => {
+    b.onclick = () => {
+      courseSelected = b.dataset.sel;
+      localStorage.setItem('vibe.course.sel', courseSelected);
+      renderCourse();
+    };
+  });
+}
+
+function renderCourseContent() {
+  const root = $('#course-content');
+  if (!root) return;
+  if (courseSelected === 'intro') {
+    root.innerHTML = `
+      <div class="page-meta">VIBE PORTAL · КУРС</div>
+      <h1 class="page-h1">Программа курса <em>Vibecoding</em></h1>
+      <p class="page-lead">
+        6 модулей: от первого проекта до продажи клиенту. К каждому уроку — конспект,
+        к каждому модулю — материалы, домашка и мастер-класс.
+        Полная программа: <a href="https://analitik.kiselevgroup.com/vibecoding" target="_blank">analitik.kiselevgroup.com/vibecoding ↗</a>
+      </p>
+      <div class="course-intro-grid">
+        ${COURSE.map(m => `
+          <div class="course-intro-card">
+            <div class="course-intro-card-no">${m.id.toUpperCase()}</div>
+            <div class="course-intro-card-title">${escapeHtml(m.title)}</div>
+            <div class="course-intro-card-meta">${m.lessons.length} уроков · ${m.meetup ? escapeHtml(m.meetup.date) : '—'}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    return;
+  }
+  const [mId, partRaw] = courseSelected.split('.');
+  const mod = COURSE.find(m => m.id === mId);
+  if (!mod) { root.innerHTML = '<div class="empty">не найдено</div>'; return; }
+
+  // Урок
+  if (partRaw && partRaw.startsWith('l')) {
+    const idx = mod.lessons.findIndex(l => l.id === partRaw);
+    if (idx < 0) { root.innerHTML = '<div class="empty">урок не найден</div>'; return; }
+    const lsn = mod.lessons[idx];
+    const prev = idx > 0 ? mod.lessons[idx - 1] : null;
+    const next = idx < mod.lessons.length - 1 ? mod.lessons[idx + 1] : null;
+    root.innerHTML = `
+      <div class="page-meta">${mod.id.toUpperCase()} · УРОК ${idx + 1}</div>
+      <h1 class="page-h1">${escapeHtml(lsn.title)}</h1>
+      <div class="course-placeholder">
+        <div class="course-placeholder-icon">📝</div>
+        <div class="course-placeholder-title">Конспект готовится</div>
+        <div class="course-placeholder-desc">Текстовый конспект и видео появятся здесь после записи мастер-класса. Полная программа — на <a href="https://analitik.kiselevgroup.com/vibecoding" target="_blank">analitik.kiselevgroup.com/vibecoding</a>.</div>
+      </div>
+      <div class="course-nav">
+        ${prev ? `<button class="course-nav-prev" data-sel="${mod.id}.${prev.id}">← ${escapeHtml(prev.title.slice(0, 50))}${prev.title.length > 50 ? '…' : ''}</button>` : '<span></span>'}
+        ${next ? `<button class="course-nav-next" data-sel="${mod.id}.${next.id}">${escapeHtml(next.title.slice(0, 50))}${next.title.length > 50 ? '…' : ''} →</button>` : '<span></span>'}
+      </div>
+    `;
+    $$('[data-sel]', root).forEach(b => {
+      b.onclick = () => {
+        courseSelected = b.dataset.sel;
+        localStorage.setItem('vibe.course.sel', courseSelected);
+        renderCourse();
+      };
+    });
+    return;
+  }
+
+  // Карточки: материалы / домашка / встреча / бонус
+  const PARTS = {
+    materials: { meta: 'МАТЕРИАЛЫ МОДУЛЯ', title: 'Материалы', icon: '📦', body: mod.materials },
+    homework:  { meta: 'ДОМАШНЕЕ ЗАДАНИЕ',  title: 'Домашка',   icon: '✓', body: mod.homework },
+    meetup:    { meta: 'МАСТЕР-КЛАСС',      title: mod.meetup?.title || 'Встреча', icon: '★', body: mod.meetup ? `${mod.meetup.desc} · <strong>${mod.meetup.date}</strong>` : '' },
+    bonus:     { meta: 'БОНУС',             title: mod.bonus?.title || 'Бонус', icon: '🎁', body: mod.bonus?.desc || '' },
+  };
+  const p = PARTS[partRaw];
+  if (!p) { root.innerHTML = '<div class="empty">не найдено</div>'; return; }
+  root.innerHTML = `
+    <div class="page-meta">${mod.id.toUpperCase()} · ${p.meta}</div>
+    <h1 class="page-h1">${p.icon} ${escapeHtml(p.title)}</h1>
+    <div class="page-lead">${p.body || '—'}</div>
+    <div class="course-placeholder">
+      <div class="course-placeholder-icon">📝</div>
+      <div class="course-placeholder-title">Файлы и материалы готовятся</div>
+      <div class="course-placeholder-desc">Полная подборка появится здесь после старта модуля. Следи за обновлениями на <a href="https://analitik.kiselevgroup.com/vibecoding" target="_blank">analitik.kiselevgroup.com/vibecoding</a>.</div>
+    </div>
+  `;
+}
+
 // ── View tab switcher (VS CODE / Проекты / Курс / Материалы) ──
 function setActiveView(view) {
   const allowed = ['vscode', 'projects', 'course', 'materials'];
@@ -56,6 +304,7 @@ function setActiveView(view) {
   $$('.view').forEach(s => s.classList.toggle('hidden', s.dataset.view !== view));
   // подгрузка контента view-зависимо
   if (view === 'vscode') refreshRecentProjects();
+  if (view === 'course') renderCourse();
 }
 
 function setActiveMaterialsTab(sub) {
