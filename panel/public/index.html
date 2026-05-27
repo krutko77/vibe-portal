@@ -21,17 +21,35 @@
   <nav class="navbar">
     <a href="/" class="navbar-kg">KG</a>
 
-    <button class="nav-btn-vscode hidden-when-no-auth" id="openCodeBtn">
-      <span class="nav-btn-vscode-top">Открыть →</span>
-      <span class="nav-btn-vscode-sub">VS Code</span>
-    </button>
-    <button class="nav-btn-container hidden-when-no-auth" id="containerToggleBtn" title="Запустить/Остановить контейнер">
-      <span class="nav-btn-container-top">
-        <span class="nav-btn-container-dot"></span>
-        <span class="nav-btn-container-label">…</span>
-      </span>
-      <span class="nav-btn-container-sub" id="containerTimerLabel"></span>
-    </button>
+    <span class="navbar-spacer"></span>
+
+    <!-- Центральное меню (4 view-таб'а) -->
+    <div class="navbar-center hidden-when-no-auth">
+      <button class="btn-nav" data-view="vscode" title="VS Code">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+        </svg>
+        <span class="btn-nav-text">VS Code</span>
+      </button>
+      <button class="btn-nav" data-view="projects" title="Проекты">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="btn-nav-text">Проекты</span>
+      </button>
+      <button class="btn-nav" data-view="course" title="Курс Vibecoding">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+        <span class="btn-nav-text">Курс</span>
+      </button>
+      <button class="btn-nav" data-view="materials" title="Материалы и инструкции">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="btn-nav-text">Материалы</span>
+      </button>
+    </div>
 
     <span class="navbar-spacer"></span>
 
@@ -155,34 +173,375 @@
     <!-- Resizer между left chat и dashboard -->
     <div class="resizer resizer-left" id="resizer-left" title="Тяни чтобы изменить ширину"></div>
 
-  <!-- Центр: dashboard (когда залогинен) -->
+  <!-- Центр: dashboard с 4 view'ами -->
   <main class="dashboard" id="app">
 
-    <!-- Секция: Мои проекты -->
-    <div class="section-block">
-      <div class="section-head">
-        <div class="section-head-left">
-          <span class="section-label">Мои проекты</span>
-          <span class="section-path"><span id="projectsCount">0</span> шт</span>
+    <!-- ── view: VS CODE ───────────────────────────────────── -->
+    <section class="view view-vscode" data-view="vscode">
+      <div class="vscode-hero">
+        <div class="vscode-hero-left">
+          <div class="vscode-hero-label">Workspace</div>
+          <div class="vscode-hero-path">/home/student/workspace/</div>
         </div>
-        <div class="dashboard-actions">
-          <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
-          <button class="btn btn-primary" id="btn-create">+ Шаблон</button>
+        <div class="vscode-hero-mid">
+          <button class="nav-btn-container" id="containerToggleBtn" title="Запустить/Остановить контейнер">
+            <span class="nav-btn-container-top">
+              <span class="nav-btn-container-dot"></span>
+              <span class="nav-btn-container-label">…</span>
+            </span>
+            <span class="nav-btn-container-sub" id="containerTimerLabel"></span>
+          </button>
+        </div>
+        <div class="vscode-hero-right">
+          <button class="nav-btn-vscode" id="openCodeBtn">
+            <span class="nav-btn-vscode-top">Открыть →</span>
+            <span class="nav-btn-vscode-sub">VS Code</span>
+          </button>
         </div>
       </div>
-      <div class="projects-table-wrap" id="projectsList"></div>
-    </div>
+      <div class="vscode-recent">
+        <div class="section-head">
+          <div class="section-head-left">
+            <span class="section-label">Недавние проекты</span>
+            <span class="section-path" id="vscodeRecentCount">—</span>
+          </div>
+        </div>
+        <div class="projects-table-wrap" id="vscodeRecentList"></div>
+      </div>
+    </section>
 
-    <!-- Секция: Шаблоны -->
-    <div class="section-block">
-      <div class="section-head">
-        <div class="section-head-left">
-          <span class="section-label">Шаблоны</span>
-          <span class="section-path">/opt/vibe-portal/templates/ (read-only)</span>
+    <!-- ── view: ПРОЕКТЫ ─────────────────────────────────── -->
+    <section class="view view-projects hidden" data-view="projects">
+      <div class="section-block">
+        <div class="section-head">
+          <div class="section-head-left">
+            <span class="section-label">Мои проекты</span>
+            <span class="section-path"><span id="projectsCount">0</span> шт</span>
+          </div>
+          <div class="dashboard-actions">
+            <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
+            <button class="btn btn-primary" id="btn-create">+ Шаблон</button>
+          </div>
+        </div>
+        <div class="projects-table-wrap" id="projectsList"></div>
+      </div>
+      <div class="section-block">
+        <div class="section-head">
+          <div class="section-head-left">
+            <span class="section-label">Шаблоны</span>
+            <span class="section-path">/opt/vibe-portal/templates/ (read-only)</span>
+          </div>
+        </div>
+        <div class="projects-grid" id="templatesList"></div>
+      </div>
+    </section>
+
+    <!-- ── view: КУРС ────────────────────────────────────── -->
+    <section class="view view-course hidden" data-view="course">
+      <div class="course-head">
+        <span class="course-badge">DEV PORTAL · КУРС</span>
+        <h1 class="course-h1">Программа курса <em>Vibecoding</em></h1>
+        <p class="course-lead">
+          От нуля до приложения для Битрикс24 за 5 модулей. К каждому модулю —
+          видео-конспект и практическое задание.
+          Полная программа и конспекты —
+          <a href="https://analitik.kiselevgroup.com/vibecoding" target="_blank" rel="noopener">analitik.kiselevgroup.com/vibecoding ↗</a>
+        </p>
+      </div>
+      <div class="course-modules">
+        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m1" target="_blank">
+          <div class="course-module-no">M1</div>
+          <div class="course-module-body">
+            <div class="course-module-title">Основы — Битрикс24 и VibeCode</div>
+            <div class="course-module-desc">Зачем нужен портал, как устроены приложения, токены API, типы ключей. Что такое vibe-портал и как с ним работать.</div>
+          </div>
+          <div class="course-module-cta">Конспект →</div>
+        </a>
+        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m2" target="_blank">
+          <div class="course-module-no">M2</div>
+          <div class="course-module-body">
+            <div class="course-module-title">Первый дашборд — Node.js + VibeCode</div>
+            <div class="course-module-desc">Шаблон <code>_base</code>, подключение API, Chart.js. Дашборд аналитики продаж за час.</div>
+          </div>
+          <div class="course-module-cta">Конспект →</div>
+        </a>
+        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m3" target="_blank">
+          <div class="course-module-no">M3</div>
+          <div class="course-module-body">
+            <div class="course-module-title">PHP-приложение с OAuth</div>
+            <div class="course-module-desc">Шаблон <code>_b24-single-php</code>, single-tenant local-app, файловый store без БД, защита кода.</div>
+          </div>
+          <div class="course-module-cta">Конспект →</div>
+        </a>
+        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m4" target="_blank">
+          <div class="course-module-no">M4</div>
+          <div class="course-module-body">
+            <div class="course-module-title">Деплой и эксплуатация</div>
+            <div class="course-module-desc">Vibecode-деплой, секреты в <code>.env</code>, мониторинг лимитов, CRON-задачи.</div>
+          </div>
+          <div class="course-module-cta">Конспект →</div>
+        </a>
+        <a class="course-module" href="https://analitik.kiselevgroup.com/vibecoding#m5" target="_blank">
+          <div class="course-module-no">M5</div>
+          <div class="course-module-body">
+            <div class="course-module-title">Финальный проект</div>
+            <div class="course-module-desc">Свой собственный B24-приложение — от идеи до боевого деплоя. Защита проекта.</div>
+          </div>
+          <div class="course-module-cta">Бриф →</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ── view: МАТЕРИАЛЫ ───────────────────────────────── -->
+    <section class="view view-materials hidden" data-view="materials">
+      <div class="materials-subnav">
+        <button class="materials-tab active" data-sub="how-to">
+          <span class="materials-tab-icon">📘</span>
+          <span class="materials-tab-text">Инструкция</span>
+        </button>
+        <button class="materials-tab" data-sub="architecture">
+          <span class="materials-tab-icon">🏗</span>
+          <span class="materials-tab-text">Архитектура</span>
+        </button>
+        <button class="materials-tab" data-sub="claude">
+          <span class="materials-tab-icon">🤖</span>
+          <span class="materials-tab-text">Работа с Клодом</span>
+        </button>
+        <button class="materials-tab" data-sub="skills">
+          <span class="materials-tab-icon">✨</span>
+          <span class="materials-tab-text">Скиллы</span>
+        </button>
+        <button class="materials-tab" data-sub="links">
+          <span class="materials-tab-icon">🔗</span>
+          <span class="materials-tab-text">Ссылки</span>
+        </button>
+        <button class="materials-tab" data-sub="faq">
+          <span class="materials-tab-icon">⚠</span>
+          <span class="materials-tab-text">FAQ</span>
+        </button>
+      </div>
+
+      <!-- materials > Инструкция -->
+      <div class="materials-page" data-sub="how-to">
+        <div class="page-meta">VIBE PORTAL · ИНСТРУКЦИЯ</div>
+        <h1 class="page-h1">Как <em>работать</em> с порталом</h1>
+        <p class="page-lead">Пошаговый гайд: что где находится, как создать проект, как открыть VS Code и где Claude.</p>
+        <div class="anchor-chips">
+          <a href="#a-login" class="anchor-chip">Вход</a>
+          <a href="#a-navbar" class="anchor-chip">Навбар</a>
+          <a href="#a-vscode" class="anchor-chip">VS Code</a>
+          <a href="#a-projects" class="anchor-chip">Проекты</a>
+          <a href="#a-create" class="anchor-chip">Создание проекта</a>
+          <a href="#a-chat" class="anchor-chip">Чат Claude</a>
+          <a href="#a-files" class="anchor-chip">Файлы</a>
+          <a href="#a-container" class="anchor-chip">Контейнер</a>
+        </div>
+
+        <div class="page-sect" id="a-login">
+          <div class="page-sect-no">1. ВХОД В ПОРТАЛ</div>
+          <p>Портал живёт на <code>vibe.kiselevgroup.com</code>. Если ты уже зарегистрирован — нажми «Войти →», введи логин и пароль. Если ты новый ученик — попроси администратора создать тебе аккаунт.</p>
+        </div>
+        <div class="page-sect" id="a-navbar">
+          <div class="page-sect-no">2. НАВБАР</div>
+          <p>В шапке: <strong>KG</strong> — логотип, <strong>4 таба</strong> (VS Code, Проекты, Курс, Материалы), справа — кнопки <em>Claude</em>, тема, история, настройки.</p>
+        </div>
+        <div class="page-sect" id="a-vscode">
+          <div class="page-sect-no">3. VS CODE</div>
+          <p>На таб’е «VS Code» — большая серая кнопка «Открыть → VS Code». Слева от неё — состояние контейнера (Вкл/Выкл) с таймером авто-стопа.</p>
+        </div>
+        <div class="page-sect" id="a-projects">
+          <div class="page-sect-no">4. ПРОЕКТЫ</div>
+          <p>Таблица: <em>Тип, Статус, Название, Автор, Дата, Действия</em>. По кнопкам: 📁 Файлы, CLAUDE (чат по проекту), VS Code, 🗑 Удалить (в архив <code>.deleted/</code>).</p>
+        </div>
+        <div class="page-sect" id="a-create">
+          <div class="page-sect-no">5. СОЗДАНИЕ ПРОЕКТА</div>
+          <p>Две кнопки сверху: <strong>+ Пустой</strong> (пустая папка) и <strong>+ Шаблон</strong> (выбор из двух базовых шаблонов).</p>
+        </div>
+        <div class="page-sect" id="a-chat">
+          <div class="page-sect-no">6. ЧАТ С CLAUDE</div>
+          <p>В строке проекта — кнопка <strong>CLAUDE</strong>. Открывается левая панель: сессии, выбор модели (sonnet/opus), история, attachments. Справа сверху — общий помощник Claude (по всему workspace).</p>
+        </div>
+        <div class="page-sect" id="a-files">
+          <div class="page-sect-no">7. ФАЙЛЫ</div>
+          <p>Кнопка 📁 в строке проекта — открывает встроенный просмотрщик файлов. Дерево слева, содержимое справа.</p>
+        </div>
+        <div class="page-sect" id="a-container">
+          <div class="page-sect-no">8. КОНТЕЙНЕР</div>
+          <p>У тебя свой Docker-контейнер (1.5GB RAM / 1 CPU). Авто-останавливается через 30 мин простоя. Таймер виден сверху. Workspace сохраняется — следующий клик «Открыть VS Code» подымет контейнер за 2–4 сек.</p>
         </div>
       </div>
-      <div class="projects-grid" id="templatesList"></div>
-    </div>
+
+      <!-- materials > Архитектура -->
+      <div class="materials-page hidden" data-sub="architecture">
+        <div class="page-meta">VIBE PORTAL · АРХИТЕКТУРА</div>
+        <h1 class="page-h1">Как <em>устроен</em> портал</h1>
+        <p class="page-lead">Высокоуровневая схема: где что живёт, как изолированы ученики, через что ходит Claude.</p>
+        <div class="anchor-chips">
+          <a href="#b-overview" class="anchor-chip">Обзор</a>
+          <a href="#b-containers" class="anchor-chip">Контейнеры</a>
+          <a href="#b-shim" class="anchor-chip">Anthropic shim</a>
+          <a href="#b-isolation" class="anchor-chip">Изоляция</a>
+        </div>
+        <div class="page-sect" id="b-overview">
+          <div class="page-sect-no">1. ОБЗОР</div>
+          <p>Каждый ученик работает в своём изолированном Docker-контейнере. Внутри — code-server (VS Code в браузере) + Claude Code CLI. Через nginx на хосте проксируется и UI портала, и сам VS Code.</p>
+        </div>
+        <div class="page-sect" id="b-containers">
+          <div class="page-sect-no">2. КОНТЕЙНЕРЫ</div>
+          <p>Образ <code>vibe-workspace:dev</code> (Debian 12 + Node 22 + code-server). Каждый ученик получает имя <code>vibe-&lt;login&gt;</code>, порт 8200+. Маунты: workspace (rw), templates (ro), extensions (shared rw), skills (shared ro).</p>
+        </div>
+        <div class="page-sect" id="b-shim">
+          <div class="page-sect-no">3. ANTHROPIC SHIM</div>
+          <p>Из контейнера Claude CLI ходит не напрямую в api.anthropic.com, а через локальный shim на <code>172.30.0.1:8190</code>. Шим подменяет токен на реальный OAuth и форвардит запрос.</p>
+        </div>
+        <div class="page-sect" id="b-isolation">
+          <div class="page-sect-no">4. ИЗОЛЯЦИЯ</div>
+          <p>iptables-правила (chains <code>VIBE-FILTER</code> + <code>VIBE-INPUT</code>) запрещают контейнерам видеть друг друга, ходить в private RFC1918 и до хостового loopback. Можно только наружу в интернет и в шим.</p>
+        </div>
+      </div>
+
+      <!-- materials > Работа с Клодом -->
+      <div class="materials-page hidden" data-sub="claude">
+        <div class="page-meta">VIBE PORTAL · CLAUDE CODE</div>
+        <h1 class="page-h1"><em>Claude Code</em> и команды</h1>
+        <p class="page-lead">Список slash-команд, советы по промптам, особенности работы в порталe.</p>
+        <div class="anchor-chips">
+          <a href="#c-commands" class="anchor-chip">Команды</a>
+          <a href="#c-prompts" class="anchor-chip">Промпты</a>
+          <a href="#c-memory" class="anchor-chip">Память</a>
+          <a href="#c-context" class="anchor-chip">Контекст</a>
+        </div>
+        <div class="page-sect" id="c-commands">
+          <div class="page-sect-no">1. КОМАНДЫ</div>
+          <table class="page-table">
+            <thead><tr><th>Команда</th><th>Что делает</th></tr></thead>
+            <tbody>
+              <tr><td><code>/init</code></td><td>Создаёт <code>CLAUDE.md</code> в проекте с автоопределённой архитектурой.</td></tr>
+              <tr><td><code>/compact</code></td><td>Сжимает контекст: удаляет старые сообщения, оставляя суть.</td></tr>
+              <tr><td><code>/clear</code></td><td>Полностью очищает контекст. Используй при смене темы.</td></tr>
+              <tr><td><code>/diff</code></td><td>Показывает что Claude изменил с последней проверки.</td></tr>
+              <tr><td><code>/usage</code></td><td>Сколько токенов и денег потрачено в сессии.</td></tr>
+              <tr><td><code>/explain</code></td><td>Подробное объяснение кода без правки.</td></tr>
+              <tr><td><code>/skill</code></td><td>Вызвать конкретный установленный скилл (superpowers / memory / ui-ux).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="page-sect" id="c-prompts">
+          <div class="page-sect-no">2. ХОРОШИЕ ПРОМПТЫ</div>
+          <ul class="page-list">
+            <li><strong>Контекст сначала</strong> — что за проект, что уже сделано, что не получилось.</li>
+            <li><strong>Чёткая задача</strong> — что должен сделать Claude и какой результат ждёшь.</li>
+            <li><strong>Ограничения</strong> — какие файлы трогать нельзя, что не использовать.</li>
+            <li>Не пиши «как обычно» — Claude не знает что у тебя обычно. Опиши явно.</li>
+          </ul>
+        </div>
+        <div class="page-sect" id="c-memory">
+          <div class="page-sect-no">3. ПАМЯТЬ</div>
+          <p>Используй скилл <code>claude-memory</code>: один <code>.md</code> файл в <code>.claude/memory/</code> — учится от исправлений, ловит противоречия, чистит дубли. Запускается командой <code>/memory update</code>.</p>
+        </div>
+        <div class="page-sect" id="c-context">
+          <div class="page-sect-no">4. КОНТЕКСТ И СЕССИИ</div>
+          <p>Сессии чата Claude хранятся в <code>/root/.claude/projects/-data-vibe-students-&lt;user&gt;-&lt;project&gt;/</code>. В портале они доступны через dropdown «сессии». Можно создавать новые, удалять, переключаться между ними.</p>
+        </div>
+      </div>
+
+      <!-- materials > Скиллы -->
+      <div class="materials-page hidden" data-sub="skills">
+        <div class="page-meta">VIBE PORTAL · SKILLS</div>
+        <h1 class="page-h1">Установленные <em>скиллы</em></h1>
+        <p class="page-lead">Скиллы — это переиспользуемые промпт-инструкции для Claude. Загружаются автоматически когда подходят по контексту.</p>
+        <div class="course-modules">
+          <a class="course-module" href="https://github.com/obra/superpowers" target="_blank">
+            <div class="course-module-no">SP</div>
+            <div class="course-module-body">
+              <div class="course-module-title">superpowers</div>
+              <div class="course-module-desc">Набор общих практик: brainstorming, planning, debugging, code-review, TDD. На каждый день.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank">
+            <div class="course-module-no">UI</div>
+            <div class="course-module-body">
+              <div class="course-module-title">ui-ux-pro-max</div>
+              <div class="course-module-desc">Frontend и UI: дизайн-система, типографика, доступность, layout-паттерны.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/SomeStay07/claude-memory-skill" target="_blank">
+            <div class="course-module-no">MM</div>
+            <div class="course-module-body">
+              <div class="course-module-title">claude-memory</div>
+              <div class="course-module-desc">Структурная память по проекту в одном .md файле. Учится от исправлений, ловит противоречия, чистит дубли.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- materials > Ссылки -->
+      <div class="materials-page hidden" data-sub="links">
+        <div class="page-meta">VIBE PORTAL · LINKS</div>
+        <h1 class="page-h1">Полезные <em>ссылки</em></h1>
+        <p class="page-lead">Документация, справочники, MCP-серверы и шпаргалки.</p>
+        <div class="anchor-chips">
+          <a href="#l-b24" class="anchor-chip">Битрикс24</a>
+          <a href="#l-vibe" class="anchor-chip">VibeCode</a>
+          <a href="#l-claude" class="anchor-chip">Claude</a>
+        </div>
+        <div class="page-sect" id="l-b24">
+          <div class="page-sect-no">БИТРИКС24</div>
+          <ul class="page-list">
+            <li><a href="https://apidocs.bitrix24.ru/" target="_blank">apidocs.bitrix24.ru</a> — справочник REST API</li>
+            <li><a href="https://apidocs.bitrix24.ru/api-reference/widgets/crm/index.html" target="_blank">CRM widgets</a> — встраивание в карточки CRM</li>
+            <li><a href="https://apidocs.bitrix24.ru/settings/oauth/auto-renewal.html" target="_blank">OAuth tokens</a> — токены и обновление</li>
+          </ul>
+        </div>
+        <div class="page-sect" id="l-vibe">
+          <div class="page-sect-no">VIBECODE</div>
+          <ul class="page-list">
+            <li><a href="https://vibecode.bitrix24.tech/" target="_blank">vibecode.bitrix24.tech</a> — главная</li>
+            <li><a href="https://vibecode.bitrix24.tech/docs/quickstart" target="_blank">Quickstart</a></li>
+            <li><a href="https://vibecode.bitrix24.tech/llms-full.txt" target="_blank">llms-full.txt</a> — справочник для AI</li>
+          </ul>
+        </div>
+        <div class="page-sect" id="l-claude">
+          <div class="page-sect-no">CLAUDE</div>
+          <ul class="page-list">
+            <li><a href="https://docs.claude.com/" target="_blank">docs.claude.com</a></li>
+            <li><a href="https://github.com/obra/superpowers" target="_blank">obra/superpowers</a></li>
+            <li><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank">ui-ux-pro-max-skill</a></li>
+            <li><a href="https://github.com/SomeStay07/claude-memory-skill" target="_blank">claude-memory-skill</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- materials > FAQ -->
+      <div class="materials-page hidden" data-sub="faq">
+        <div class="page-meta">VIBE PORTAL · FAQ</div>
+        <h1 class="page-h1">FAQ · <em>Решение проблем</em></h1>
+        <p class="page-lead">Типовые ситуации и как из них выбраться.</p>
+        <details class="page-faq">
+          <summary>«Открыть VS Code» открыло пустую страницу</summary>
+          <p>Контейнер только что запустился — code-server поднимается ~2 сек. Закрой вкладку и нажми снова. Если опять — обратись к админу.</p>
+        </details>
+        <details class="page-faq">
+          <summary>Claude отвечает «Please run /login» или «401»</summary>
+          <p>Токен на хосте устарел и не обновился. Подожди 5 минут — sync-таймер делает обновление каждые 5 мин. Если не помогло — пингуй админа.</p>
+        </details>
+        <details class="page-faq">
+          <summary>Контейнер всё время выключается</summary>
+          <p>Idle-reaper: 30 мин без heartbeat → stop. Держи вкладку портала открытой — UI шлёт heartbeat каждую минуту.</p>
+        </details>
+        <details class="page-faq">
+          <summary>Удалил файлы — можно восстановить?</summary>
+          <p>Если делал <code>git commit</code> — да, <code>git checkout HEAD~ -- &lt;file&gt;</code>. Если нет — увы. Совет: commit'ить после каждого крупного шага.</p>
+        </details>
+        <details class="page-faq">
+          <summary>Claude забывает контекст</summary>
+          <p>Используй скилл <code>claude-memory</code>: <code>/memory update</code> в чате — сохранит ключевые моменты. Или открой новую сессию из чата проекта в портале (история в портале сохраняется).</p>
+        </details>
+      </div>
+    </section>
 
   </main>
 

@@ -42,8 +42,25 @@ function renderAuth() {
   $('#main-layout').classList.toggle('hidden', !isAuth);
   if (isAuth) {
     $('#authUsername').textContent = ME.username + (ME.isAdmin ? ' (admin)' : '');
+    setActiveView(localStorage.getItem('vibe.view') || 'vscode');
     refreshAll();
   }
+}
+
+// ── View tab switcher (VS CODE / Проекты / Курс / Материалы) ──
+function setActiveView(view) {
+  const allowed = ['vscode', 'projects', 'course', 'materials'];
+  if (!allowed.includes(view)) view = 'vscode';
+  localStorage.setItem('vibe.view', view);
+  $$('.btn-nav').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  $$('.view').forEach(s => s.classList.toggle('hidden', s.dataset.view !== view));
+  // подгрузка контента view-зависимо
+  if (view === 'vscode') refreshRecentProjects();
+}
+
+function setActiveMaterialsTab(sub) {
+  $$('.materials-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === sub));
+  $$('.materials-page').forEach(p => p.classList.toggle('hidden', p.dataset.sub !== sub));
 }
 
 async function refreshAll() {
@@ -139,6 +156,46 @@ async function openVsCodeFor(username, folder = null) {
 }
 
 // ── Projects / templates ───────────────────────────────────
+
+// «Недавние проекты» в VS CODE view — 3 самых свежих по mtime
+async function refreshRecentProjects() {
+  if (!ME?.username) return;
+  try {
+    const { projects } = await api('/api/projects');
+    projects.sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
+    const top = projects.slice(0, 3);
+    $('#vscodeRecentCount').textContent = projects.length + ' всего';
+    const wrap = $('#vscodeRecentList');
+    if (!top.length) {
+      wrap.innerHTML = '<div class="empty">пока нет проектов — открой таб «Проекты» чтобы создать</div>';
+      return;
+    }
+    const folderInVs = (n) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent('/home/student/workspace/' + n)}`;
+    wrap.innerHTML = `
+      <table class="projects-table">
+        <thead><tr><th class="th-name">Название</th><th class="th-date">Изменён</th><th class="th-actions">Действия</th></tr></thead>
+        <tbody>
+          ${top.map(p => `
+            <tr data-project="${escapeHtml(p.name)}">
+              <td class="td-name">${escapeHtml(p.name)}</td>
+              <td>${fmtDate(p.modified)}</td>
+              <td class="td-actions">
+                <button class="btn btn-sm" data-action="files">📁</button>
+                <button class="btn btn-sm" data-action="claude">CLAUDE</button>
+                <a class="btn btn-sm" target="_blank" href="${folderInVs(p.name)}">VS Code →</a>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    $$('tbody tr', wrap).forEach(tr => {
+      const name = tr.dataset.project;
+      $('[data-action="files"]', tr).onclick = () => openExplorer(name);
+      $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
+    });
+  } catch {}
+}
 
 async function refreshProjects() {
   try {
@@ -642,7 +699,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   $('#explorer-close').onclick = closeExplorer;
 
-  // Open VS Code button (header dashboard)
+  // Tab switcher (view-таб'ы в centre)
+  $$('.btn-nav').forEach(b => {
+    b.onclick = () => setActiveView(b.dataset.view);
+  });
+  // Materials sub-tabs
+  $$('.materials-tab').forEach(b => {
+    b.onclick = () => setActiveMaterialsTab(b.dataset.sub);
+  });
+
+  // Open VS Code button (на VS CODE view)
   $('#openCodeBtn').onclick = () => {
     if (!ME) return;
     openVsCodeFor(ME.username);
