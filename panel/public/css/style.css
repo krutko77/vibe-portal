@@ -1032,3 +1032,35 @@ body.has-right-chat .nav-btn-claude {
   color: hsl(var(--primary));
   border-color: hsl(var(--primary) / 0.4);
 }
+
+/* ── Унифицированные кнопки в header'ах чатов и explorer'а (24px) ── */
+.btn-hdr {
+  height: 24px;
+  display: inline-flex; align-items: center;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.btn-hdr:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--smui-border-hover));
+}
+.btn-hdr-primary {
+  background: hsl(var(--primary) / 0.15);
+  border-color: hsl(var(--primary) / 0.4);
+  color: hsl(var(--primary));
+}
+.btn-hdr-primary:hover {
+  background: hsl(var(--primary) / 0.25);
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+}
