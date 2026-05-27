@@ -39,6 +39,12 @@
       </svg>
     </a>
 
+    <button class="nav-icon hidden-when-no-auth" id="btn-toggle-chat" title="Помощник Claude">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+    </button>
+
     <button class="nav-icon hidden-when-no-auth admin-only" id="settingsBtn" title="Настройки">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -59,8 +65,48 @@
     <button class="btn-welcome" id="welcomeLoginBtn">Войти →</button>
   </div>
 
-  <!-- ── Dashboard (когда залогинен) ───────────────────────── -->
-  <main class="dashboard hidden" id="app">
+  <!-- ── Main layout: chat-left | dashboard | chat-right ───── -->
+  <div class="main-layout hidden" id="main-layout">
+
+    <!-- Project chat (left, hidden by default) -->
+    <aside class="chat-pane chat-pane-left hidden" id="pane-left">
+      <div class="chat-header pc-header">
+        <span class="chat-title">
+          <span class="chat-status-dot"></span>
+          <span id="pc-title">Чат проекта</span>
+        </span>
+        <div class="pc-header-actions">
+          <div class="pc-dd pc-dd-sessions" id="pc-sessions-dd">
+            <button class="pc-dd-btn" id="pc-sessions-btn" type="button">
+              <span class="pc-dd-label" id="pc-sessions-label">— новая —</span>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="pc-dd-menu" id="pc-sessions-menu"></div>
+          </div>
+          <button class="pc-tool-btn" id="pc-new-session" title="Новая сессия">+</button>
+          <button class="pc-tool-btn" id="pc-delete-session" title="Удалить сессию">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            </svg>
+          </button>
+          <button class="btn-close-box" id="btn-close-left" title="Закрыть">✕</button>
+        </div>
+      </div>
+      <div class="chat-messages pc-messages" id="pc-messages"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-textarea" id="pc-input"
+                  placeholder="Задача, вопрос, команда..." rows="1"></textarea>
+        <button class="chat-send" id="pc-send" title="Отправить (Enter)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+  <!-- Центр: dashboard (когда залогинен) -->
+  <main class="dashboard" id="app">
 
     <!-- Секция: Контейнер -->
     <div class="section-block">
@@ -103,6 +149,38 @@
     </div>
 
   </main>
+
+    <!-- Общий чат-помощник Claude (right, hidden по умолчанию) -->
+    <aside class="chat-pane chat-pane-right hidden" id="chat-pane">
+      <div class="chat-header">
+        <span class="chat-title">
+          <span class="chat-status-dot"></span>
+          Claude
+        </span>
+        <div class="pc-header-actions">
+          <button class="btn-icon-sm" id="btn-clear-chat" title="Очистить историю">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            </svg>
+          </button>
+          <button class="btn-close-box" id="btn-close-chat" title="Закрыть">✕</button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-textarea" id="chat-input"
+                  placeholder="Спроси помощника о новом проекте..." rows="1"></textarea>
+        <button class="chat-send" id="chat-send" title="Отправить (Enter)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+  </div>
+  <!-- /main-layout -->
 
   <!-- ── Settings panel (admin) ────────────────────────────── -->
   <div class="settings-panel" id="settings-panel">

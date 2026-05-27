@@ -34,6 +34,14 @@ import {
 } from './lib/students.js';
 import { listTemplates, instantiateTemplate } from './lib/templates.js';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
+import {
+  listSessions as pcListSessions,
+  loadSessionHistory as pcLoadHistory,
+  sendMessage as pcSendMessage,
+  deleteSession as pcDeleteSession,
+  ensureProjectCwd as pcEnsureCwd,
+} from './lib/project-chat.js';
+import * as userChat from './lib/user-chat.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -163,6 +171,95 @@ function exploreRoot(req, kind, name) {
   if (!fs.existsSync(base) || !fs.statSync(base).isDirectory()) return null;
   return base;
 }
+
+// ---------- project-chat (claude по проекту) ----------
+
+function requireOwnProject(req, res, next) {
+  const slug = req.query.project || req.body?.project;
+  if (!slug || !/^[a-zA-Z0-9._-]+$/.test(slug)) {
+    return res.status(400).json({ error: 'invalid project' });
+  }
+  // Ученик имеет доступ только к своим проектам; admin — ко всем (передаётся
+  // ?asUser=<other> для доступа к чужому проекту).
+  const asUser = req.session.isAdmin && req.query.asUser
+    ? req.query.asUser : req.session.user;
+  if (!/^[a-zA-Z0-9._-]+$/.test(asUser)) return res.status(400).json({ error: 'invalid user' });
+  const ws = workspaceDir(asUser);
+  const dir = path.join(ws, slug);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    return res.status(404).json({ error: 'no such project' });
+  }
+  req.pc = { username: asUser, slug };
+  next();
+}
+
+app.get('/api/project-chat/sessions', requireAuth, requireOwnProject, async (req, res) => {
+  try {
+    const sessions = await pcListSessions(req.pc.username, req.pc.slug);
+    res.json({ sessions });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/project-chat/session/:id', requireAuth, requireOwnProject, async (req, res) => {
+  const { id } = req.params;
+  if (!/^[a-f0-9-]{8,}$/i.test(id)) return res.status(400).json({ error: 'invalid session id' });
+  try {
+    const blocks = await pcLoadHistory(req.pc.username, req.pc.slug, id);
+    res.json({ sessionId: id, blocks });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/project-chat/send', requireAuth, requireOwnProject, async (req, res) => {
+  const { text, sessionId, model } = req.body || {};
+  if (!text || typeof text !== 'string' || !text.trim()) {
+    return res.status(400).json({ error: 'text required' });
+  }
+  if (sessionId && !/^[a-f0-9-]{8,}$/i.test(sessionId)) {
+    return res.status(400).json({ error: 'invalid session id' });
+  }
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+  try {
+    await pcEnsureCwd(req.pc.username, req.pc.slug);
+    await pcSendMessage(res, {
+      username: req.pc.username,
+      projectSlug: req.pc.slug,
+      sessionId: sessionId || null,
+      text: text.trim(),
+      model: model || 'sonnet',
+    });
+  } catch (e) {
+    try {
+      res.write(`event: error\ndata: ${JSON.stringify({ message: e.message })}\n\n`);
+      res.end();
+    } catch {}
+  }
+});
+
+app.delete('/api/project-chat/session/:id', requireAuth, requireOwnProject, async (req, res) => {
+  const { id } = req.params;
+  if (!/^[a-f0-9-]{8,}$/i.test(id)) return res.status(400).json({ error: 'invalid session id' });
+  try {
+    await pcDeleteSession(req.pc.username, req.pc.slug, id);
+    res.json({ ok: true });
+  } catch (e) { res.status(409).json({ error: e.message }); }
+});
+
+// ---------- user-chat (общий помощник в /data/vibe-students/<user>/) ----------
+
+app.post('/api/chat', requireAuth, (req, res) => userChat.send(req, res));
+app.get('/api/chat/history', requireAuth, (req, res) => {
+  res.json(userChat.getHistory(req.session.user));
+});
+app.delete('/api/chat', requireAuth, (req, res) => {
+  userChat.clearHistory(req.session.user);
+  res.json({ ok: true });
+});
+
+// ---------- file explorer (user) ----------
 
 app.get('/api/explore/tree', requireAuth, (req, res) => {
   const kind = req.query.kind === 'template' ? 'template' : 'project';

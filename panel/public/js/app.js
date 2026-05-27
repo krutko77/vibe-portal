@@ -39,7 +39,7 @@ function renderAuth() {
   document.body.classList.toggle('is-auth', isAuth);
   document.body.classList.toggle('is-admin', !!ME?.isAdmin);
   $('#welcome').classList.toggle('hidden', isAuth);
-  $('#app').classList.toggle('hidden', !isAuth);
+  $('#main-layout').classList.toggle('hidden', !isAuth);
   if (isAuth) {
     $('#authUsername').textContent = ME.username + (ME.isAdmin ? ' (admin)' : '');
     refreshAll();
@@ -119,6 +119,7 @@ async function refreshProjects() {
                 <button class="btn btn-sm" data-action="files" title="Файлы">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 </button>
+                <button class="btn btn-sm" data-action="claude" title="Claude">CLAUDE</button>
                 <a class="btn btn-sm" target="_blank" href="${folderInVs(p.name)}">VS Code →</a>
                 <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
@@ -132,6 +133,7 @@ async function refreshProjects() {
     $$('tbody tr', wrap).forEach(tr => {
       const name = tr.dataset.project;
       $('[data-action="files"]', tr).onclick = () => openExplorer(name);
+      $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
       $('[data-action="delete"]', tr).onclick = async () => {
         if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
         try {
@@ -460,6 +462,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.target.id === 'explorer-overlay') $('#explorer-overlay').classList.add('hidden');
   });
 
+  // Project chat (left pane)
+  $('#btn-close-left').onclick = pcCloseLeft;
+  $('#pc-sessions-btn').onclick = (e) => {
+    e.stopPropagation();
+    $('#pc-sessions-dd').classList.toggle('open');
+  };
+  document.addEventListener('click', (e) => {
+    if (!$('#pc-sessions-dd').contains(e.target)) $('#pc-sessions-dd').classList.remove('open');
+  });
+  $('#pc-new-session').onclick = () => {
+    pcState.sessionId = null;
+    $('#pc-sessions-label').textContent = '— новая —';
+    pcClearMessages();
+    pcShowEmpty('Новая сессия — напиши первое сообщение.');
+    pcEls.input().focus();
+  };
+  $('#pc-delete-session').onclick = async () => {
+    if (!pcState.sessionId) return;
+    if (!confirm('Удалить эту сессию? История чата будет потеряна.')) return;
+    try {
+      const r = await fetch(`/api/project-chat/session/${encodeURIComponent(pcState.sessionId)}?project=${encodeURIComponent(pcState.slug)}`,
+        { method: 'DELETE', credentials: 'same-origin' });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'delete failed');
+      pcState.sessionId = null;
+      await pcLoadSessions();
+      pcClearMessages();
+      pcShowEmpty('Сессия удалена. Напиши сообщение чтобы начать новую.');
+    } catch (e) { alert(e.message); }
+  };
+  $('#pc-send').onclick = pcSend;
+  $('#pc-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); pcSend(); }
+  });
+  $('#pc-input').addEventListener('input', () => {
+    const ta = $('#pc-input'); ta.style.height = '';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  });
+
+  // User chat (right pane)
+  $('#btn-toggle-chat').onclick = () => toggleUserChat();
+  $('#btn-close-chat').onclick = () => toggleUserChat(true);
+  $('#btn-clear-chat').onclick = async () => {
+    try {
+      await fetch('/api/chat', { method: 'DELETE', credentials: 'same-origin' });
+      $('#chat-messages').innerHTML = '';
+    } catch {}
+  };
+  $('#chat-send').onclick = sendChat;
+  $('#chat-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+  $('#chat-input').addEventListener('input', () => {
+    const ta = $('#chat-input'); ta.style.height = '';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  });
+
   // Init session
   try { ME = await api('/api/me'); } catch { ME = null; }
   renderAuth();
@@ -473,6 +532,416 @@ function generatePassword() {
   crypto.getRandomValues(arr);
   for (const b of arr) p += alphabet[b % alphabet.length];
   return p;
+}
+
+// ── Project chat (left pane) ────────────────────────────────
+
+const pcEls = {
+  pane: () => $('#pane-left'),
+  title: () => $('#pc-title'),
+  sessionsDd: () => $('#pc-sessions-dd'),
+  sessionsBtn: () => $('#pc-sessions-btn'),
+  sessionsLabel: () => $('#pc-sessions-label'),
+  sessionsMenu: () => $('#pc-sessions-menu'),
+  newBtn: () => $('#pc-new-session'),
+  delBtn: () => $('#pc-delete-session'),
+  messages: () => $('#pc-messages'),
+  input: () => $('#pc-input'),
+  send: () => $('#pc-send'),
+};
+
+const pcState = {
+  slug: null,
+  sessionId: null,
+  streaming: false,
+  abort: null,
+  toolUseNodes: new Map(),
+};
+
+function pcClearMessages() {
+  pcEls.messages().innerHTML = '';
+  pcState.toolUseNodes.clear();
+}
+
+function pcShowEmpty(msg) {
+  pcEls.messages().innerHTML = `<div class="pc-empty">${escapeHtml(msg)}</div>`;
+}
+
+function pcScrollToBottom() {
+  const m = pcEls.messages();
+  m.scrollTop = m.scrollHeight;
+}
+
+function pcToolArgSummary(tool, input) {
+  if (!input || typeof input !== 'object') return '';
+  for (const k of ['file_path', 'path', 'pattern', 'command', 'url', 'query']) {
+    if (input[k]) return String(input[k]);
+  }
+  try { return JSON.stringify(input).slice(0, 120); } catch { return ''; }
+}
+
+// Простой markdown → HTML (заголовки, **bold**, *italic*, `code`, ``` fenced, списки, ссылки)
+function pcRenderMarkdown(src) {
+  if (!src) return '';
+  const lines = String(src).split('\n');
+  const out = [];
+  let i = 0;
+  let listType = null;
+  const closeList = () => { if (listType) { out.push(`</${listType}>`); listType = null; } };
+  const inline = (s) => {
+    let t = escapeHtml(s);
+    t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      (m, txt, url) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(txt)}</a>`);
+    t = t.replace(/`([^`\n]+)`/g, (m, c) => `<code class="md-inline-code">${escapeHtml(c)}</code>`);
+    t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    return t;
+  };
+  while (i < lines.length) {
+    const line = lines[i];
+    const fence = line.match(/^```(\w*)\s*$/);
+    if (fence) {
+      closeList();
+      const lang = fence[1] || '';
+      const codeLines = []; i++;
+      while (i < lines.length && !/^```\s*$/.test(lines[i])) { codeLines.push(lines[i]); i++; }
+      i++;
+      out.push(`<pre class="md-code"${lang ? ` data-lang="${escapeHtml(lang)}"` : ''}><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+      continue;
+    }
+    const h = line.match(/^(#{1,3})\s+(.+?)\s*#*\s*$/);
+    if (h) { closeList(); out.push(`<h${h[1].length + 2} class="md-h md-h${h[1].length}">${inline(h[2])}</h${h[1].length + 2}>`); i++; continue; }
+    if (/^\s*---+\s*$/.test(line)) { closeList(); out.push('<hr class="md-hr">'); i++; continue; }
+    const ol = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (ol) { if (listType !== 'ol') { closeList(); out.push('<ol class="md-list">'); listType = 'ol'; } out.push(`<li>${inline(ol[1])}</li>`); i++; continue; }
+    const ul = line.match(/^\s*[-*+]\s+(.+)$/);
+    if (ul) { if (listType !== 'ul') { closeList(); out.push('<ul class="md-list">'); listType = 'ul'; } out.push(`<li>${inline(ul[1])}</li>`); i++; continue; }
+    if (/^\s*$/.test(line)) { closeList(); out.push(''); i++; continue; }
+    closeList();
+    const para = [];
+    while (i < lines.length && lines[i].trim() !== '' && !/^(#{1,3}\s|```|\s*---+|\s*\d+\.\s|\s*[-*+]\s)/.test(lines[i])) {
+      para.push(lines[i]); i++;
+    }
+    out.push(`<p>${inline(para.join('\n')).replace(/\n/g, '<br>')}</p>`);
+  }
+  closeList();
+  return out.join('\n');
+}
+
+function pcRenderBlock(b) {
+  const messages = pcEls.messages();
+  const empty = messages.querySelector('.pc-empty');
+  if (empty) empty.remove();
+
+  if (b.type === 'text' && b.role === 'user') {
+    const el = document.createElement('div');
+    el.className = 'pc-block pc-block-user';
+    el.textContent = b.text;
+    messages.appendChild(el);
+  } else if (b.type === 'text' && b.role === 'assistant') {
+    const el = document.createElement('div');
+    el.className = 'pc-block pc-block-assistant md';
+    el.innerHTML = pcRenderMarkdown(b.text);
+    messages.appendChild(el);
+  } else if (b.type === 'thinking') {
+    const el = document.createElement('div');
+    el.className = 'pc-block pc-block-thinking';
+    el.textContent = b.text;
+    messages.appendChild(el);
+  } else if (b.type === 'tool_use') {
+    const details = document.createElement('details');
+    details.className = 'pc-block pc-block-tool';
+    const arg = pcToolArgSummary(b.tool, b.input);
+    details.innerHTML = `
+      <summary>
+        <span class="pc-tool-name">🔧 ${escapeHtml(b.tool || '?')}</span>
+        <span class="pc-tool-arg">${escapeHtml(arg)}</span>
+      </summary>
+      <pre class="pc-tool-input">${escapeHtml(JSON.stringify(b.input, null, 2))}</pre>
+    `;
+    messages.appendChild(details);
+    if (b.toolUseId) pcState.toolUseNodes.set(b.toolUseId, details);
+  } else if (b.type === 'tool_result') {
+    const parent = b.toolUseId && pcState.toolUseNodes.get(b.toolUseId);
+    if (parent) {
+      if (b.isError) parent.classList.add('is-error');
+      const pre = document.createElement('pre');
+      pre.textContent = b.content || '(empty)';
+      parent.appendChild(pre);
+    } else {
+      const el = document.createElement('details');
+      el.className = 'pc-block pc-block-tool' + (b.isError ? ' is-error' : '');
+      el.innerHTML = `<summary><span class="pc-tool-name">← result</span></summary><pre>${escapeHtml(b.content || '')}</pre>`;
+      messages.appendChild(el);
+    }
+  } else if (b.type === 'error') {
+    const el = document.createElement('div');
+    el.className = 'pc-block pc-block-error';
+    el.textContent = b.message || 'Ошибка';
+    messages.appendChild(el);
+  }
+  pcScrollToBottom();
+}
+
+function pcRenderSessionList(sessions) {
+  const menu = pcEls.sessionsMenu();
+  menu.innerHTML = '';
+  if (!sessions.length) {
+    pcEls.sessionsLabel().textContent = '— новая —';
+    const item = document.createElement('div');
+    item.className = 'pc-dd-item is-empty';
+    item.textContent = 'Сессий пока нет';
+    menu.appendChild(item);
+    return;
+  }
+  const cur = sessions.find(s => s.sessionId === pcState.sessionId);
+  pcEls.sessionsLabel().textContent = cur
+    ? (cur.title || cur.sessionId.slice(0, 8)) + (cur.lockedBy ? ' 🔒' : '')
+    : '— новая —';
+  for (const s of sessions) {
+    const item = document.createElement('button');
+    item.className = 'pc-dd-item' + (s.sessionId === pcState.sessionId ? ' active' : '');
+    item.type = 'button';
+    const title = escapeHtml(s.title || s.sessionId.slice(0, 8));
+    const lockLabel = s.lockedBy ? ' · 🔒 ' + escapeHtml(s.lockedBy) : '';
+    item.innerHTML = `<span class="pc-dd-item-title">${title}</span><span class="pc-dd-item-meta">${escapeHtml(s.createdBy || '')}${lockLabel}</span>`;
+    item.addEventListener('click', async () => {
+      pcEls.sessionsDd().classList.remove('open');
+      if (s.sessionId === pcState.sessionId) return;
+      pcState.sessionId = s.sessionId;
+      await pcLoadHistory(s.sessionId);
+      pcRenderSessionList(sessions);
+    });
+    menu.appendChild(item);
+  }
+}
+
+async function pcLoadSessions() {
+  try {
+    const r = await fetch(`/api/project-chat/sessions?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin' });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'sessions load failed');
+    pcRenderSessionList(d.sessions || []);
+    return d.sessions || [];
+  } catch (e) {
+    pcShowEmpty('Не удалось загрузить сессии: ' + e.message);
+    return [];
+  }
+}
+
+async function pcLoadHistory(sessionId) {
+  pcClearMessages();
+  if (!sessionId) { pcShowEmpty('Напиши первое сообщение — сессия создастся.'); return; }
+  try {
+    const r = await fetch(`/api/project-chat/session/${encodeURIComponent(sessionId)}?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin' });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'history load failed');
+    if (!d.blocks?.length) pcShowEmpty('Пустая сессия — напиши сообщение.');
+    else d.blocks.forEach(pcRenderBlock);
+  } catch (e) {
+    pcShowEmpty('Не удалось загрузить историю: ' + e.message);
+  }
+}
+
+async function openProjectChat(slug) {
+  pcState.slug = slug;
+  pcState.sessionId = null;
+  if (pcState.abort) { try { pcState.abort.abort(); } catch {} pcState.abort = null; }
+  pcEls.pane().classList.remove('hidden');
+  document.body.classList.add('has-left-chat');
+  pcEls.title().textContent = 'Чат · ' + slug;
+  pcShowEmpty('Загрузка сессий…');
+  const sessions = await pcLoadSessions();
+  if (sessions.length) {
+    pcState.sessionId = sessions[0].sessionId;
+    pcRenderSessionList(sessions);
+    await pcLoadHistory(pcState.sessionId);
+  } else {
+    pcShowEmpty('Нет сессий. Напиши первое сообщение — сессия создастся.');
+  }
+  pcEls.input().focus();
+}
+
+function pcCloseLeft() {
+  pcEls.pane().classList.add('hidden');
+  document.body.classList.remove('has-left-chat');
+}
+
+async function pcSend() {
+  if (pcState.streaming) return;
+  const ta = pcEls.input();
+  const text = ta.value.trim();
+  if (!text || !pcState.slug) return;
+
+  ta.value = '';
+  ta.style.height = '';
+  pcState.streaming = true;
+  pcEls.send().disabled = true;
+
+  pcRenderBlock({ role: 'user', type: 'text', text });
+
+  const typingEl = document.createElement('div');
+  typingEl.className = 'pc-typing';
+  typingEl.innerHTML = `<span class="pc-typing-dot">▋</span><span>Claude думает</span><span class="pc-typing-elapsed">0s</span>`;
+  pcEls.messages().appendChild(typingEl);
+  pcScrollToBottom();
+
+  const startTs = Date.now();
+  const elapsedEl = typingEl.querySelector('.pc-typing-elapsed');
+  const elapsedTimer = setInterval(() => {
+    if (!elapsedEl.isConnected) { clearInterval(elapsedTimer); return; }
+    const s = Math.floor((Date.now() - startTs) / 1000);
+    elapsedEl.textContent = s >= 60 ? `${Math.floor(s/60)}m ${s%60}s` : `${s}s`;
+  }, 1000);
+
+  const ctrl = new AbortController();
+  pcState.abort = ctrl;
+
+  try {
+    const resp = await fetch('/api/project-chat/send', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+      body: JSON.stringify({ project: pcState.slug, sessionId: pcState.sessionId, text, model: 'sonnet' }),
+      signal: ctrl.signal,
+    });
+    if (!resp.ok) {
+      let errMsg = `HTTP ${resp.status}`;
+      try { const j = await resp.json(); errMsg = j.error || errMsg; } catch {}
+      typingEl.remove();
+      pcRenderBlock({ type: 'error', message: errMsg });
+      return;
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buf = '';
+    let typingRemoved = false;
+    const removeTyping = () => { if (!typingRemoved) { typingEl.remove(); typingRemoved = true; } };
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let sep;
+      while ((sep = buf.indexOf('\n\n')) >= 0) {
+        const raw = buf.slice(0, sep); buf = buf.slice(sep + 2);
+        handlePcSseEvent(raw, removeTyping);
+      }
+    }
+    removeTyping();
+    clearInterval(elapsedTimer);
+    await pcLoadSessions();
+  } catch (e) {
+    typingEl.remove();
+    clearInterval(elapsedTimer);
+    if (e.name !== 'AbortError') pcRenderBlock({ type: 'error', message: 'Сетевая ошибка: ' + e.message });
+  } finally {
+    pcState.streaming = false;
+    pcEls.send().disabled = false;
+    pcState.abort = null;
+    pcEls.input().focus();
+  }
+}
+
+function handlePcSseEvent(raw, removeTyping) {
+  let event = 'message', data = '';
+  for (const line of raw.split('\n')) {
+    if (line.startsWith('event:')) event = line.slice(6).trim();
+    else if (line.startsWith('data:')) data += line.slice(5).trimStart();
+  }
+  if (!data) return;
+  let obj; try { obj = JSON.parse(data); } catch { return; }
+  if (event === 'session') {
+    pcState.sessionId = obj.sessionId;
+  } else if (event === 'block') {
+    removeTyping();
+    pcRenderBlock(obj);
+  } else if (event === 'summary') {
+    const el = document.createElement('div');
+    el.className = 'pc-block-summary';
+    const cost = typeof obj.costUsd === 'number' ? ` · $${obj.costUsd.toFixed(4)}` : '';
+    const dur = typeof obj.durationMs === 'number' ? ` · ${(obj.durationMs / 1000).toFixed(1)}s` : '';
+    el.textContent = `${obj.tokenInput ?? 0} in / ${obj.tokenOutput ?? 0} out${cost}${dur}`;
+    pcEls.messages().appendChild(el);
+    pcScrollToBottom();
+  } else if (event === 'error') {
+    removeTyping();
+    pcRenderBlock({ type: 'error', message: obj.message || 'stream error' });
+  }
+}
+
+// ── User chat (right pane, общий помощник) ──────────────────
+
+function chatAppendBubble(type, text) {
+  const div = document.createElement('div');
+  if      (type === 'user')      div.className = 'chat-bubble chat-bubble-user';
+  else if (type === 'assistant') div.className = 'chat-bubble chat-bubble-assistant';
+  else if (type === 'thinking')  div.className = 'chat-bubble chat-bubble-thinking';
+  else if (type === 'error')     div.className = 'chat-bubble chat-bubble-error';
+  div.textContent = text;
+  const c = $('#chat-messages');
+  c.appendChild(div);
+  c.scrollTop = c.scrollHeight;
+  return div;
+}
+
+async function loadChatHistory() {
+  try {
+    const r = await fetch('/api/chat/history', { credentials: 'same-origin' });
+    if (!r.ok) return;
+    const history = await r.json();
+    $('#chat-messages').innerHTML = '';
+    history.forEach(m => chatAppendBubble(m.role === 'user' ? 'user' : 'assistant', m.content));
+  } catch {}
+}
+
+async function sendChat() {
+  const input = $('#chat-input');
+  const message = input.value.trim();
+  if (!message || $('#chat-send').disabled) return;
+
+  chatAppendBubble('user', message);
+  input.value = '';
+  input.style.height = '';
+  $('#chat-send').disabled = true;
+  const thinkingEl = chatAppendBubble('thinking', 'Думаю...');
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    const d = await r.json();
+    thinkingEl.remove();
+    if (r.ok) {
+      chatAppendBubble('assistant', d.response);
+      if (d.createProject) {
+        $('#newproject-tpl').value = d.createProject.template;
+        $('#newproject-name').value = d.createProject.name;
+        $('#newproject-error').classList.add('hidden');
+        openModal('modal-newproject');
+      }
+    } else {
+      chatAppendBubble('error', d.error || 'Ошибка');
+    }
+  } catch {
+    thinkingEl.remove();
+    chatAppendBubble('error', 'Сетевая ошибка');
+  }
+  $('#chat-send').disabled = false;
+}
+
+function toggleUserChat(forceClose = false) {
+  const pane = $('#chat-pane');
+  const isHidden = pane.classList.contains('hidden');
+  if (forceClose || !isHidden) {
+    pane.classList.add('hidden');
+    document.body.classList.remove('has-right-chat');
+  } else {
+    pane.classList.remove('hidden');
+    document.body.classList.add('has-right-chat');
+    loadChatHistory();
+    setTimeout(() => $('#chat-input').focus(), 30);
+  }
 }
 
 // Heartbeat (для idle reaper)
