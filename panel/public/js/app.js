@@ -398,6 +398,76 @@ async function doAddUser() {
   }
 }
 
+async function doCreateEmpty() {
+  const name = $('#empty-name').value.trim();
+  const err = $('#empty-error');
+  err.classList.add('hidden');
+  try {
+    await api('/api/projects/empty', { method: 'POST', body: { name } });
+    closeModal('modal-empty');
+    refreshProjects();
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+let createSelectedTemplate = null;
+async function openCreateModal() {
+  createSelectedTemplate = null;
+  $('#create-name').value = '';
+  $('#create-error').classList.add('hidden');
+  const wrap = $('#create-templates');
+  wrap.innerHTML = '<div class="empty">загрузка…</div>';
+  openModal('modal-create');
+  try {
+    const { templates } = await api('/api/templates/base');
+    if (!templates.length) {
+      wrap.innerHTML = '<div class="empty">базовые шаблоны не найдены</div>';
+      return;
+    }
+    wrap.innerHTML = templates.map((t, i) => `
+      <button class="template-card-pick${i === 0 ? ' active' : ''}" data-name="${escapeHtml(t.name)}" type="button">
+        <div class="t-pick-title">${escapeHtml(t.title || t.name)}</div>
+        <div class="t-pick-desc">${escapeHtml(t.description || '')}</div>
+        <div class="t-pick-folder">${escapeHtml(t.name)}/</div>
+      </button>
+    `).join('');
+    createSelectedTemplate = templates[0].name;
+    $$('.template-card-pick', wrap).forEach(b => {
+      b.onclick = () => {
+        createSelectedTemplate = b.dataset.name;
+        $$('.template-card-pick', wrap).forEach(x => x.classList.toggle('active', x === b));
+      };
+    });
+    setTimeout(() => $('#create-name').focus(), 30);
+  } catch (e) {
+    wrap.innerHTML = `<div class="empty">ошибка: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function doCreateFromBase() {
+  const name = $('#create-name').value.trim();
+  const err = $('#create-error');
+  err.classList.add('hidden');
+  if (!createSelectedTemplate) {
+    err.textContent = 'Выбери шаблон';
+    err.classList.remove('hidden');
+    return;
+  }
+  try {
+    await api('/api/projects/from-template', {
+      method: 'POST',
+      body: { template: createSelectedTemplate, name },
+    });
+    closeModal('modal-create');
+    refreshProjects();
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  }
+}
+
 async function doCreateProject() {
   const template = $('#newproject-tpl').value;
   const name = $('#newproject-name').value.trim();
@@ -489,10 +559,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // New project
+  // New project (старая модалка — для секции «Шаблоны» app-*)
   $('#newproject-submit').onclick = doCreateProject;
   $('#newproject-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doCreateProject(); }
+  });
+
+  // «+ Пустой»
+  $('#btn-empty').onclick = () => {
+    $('#empty-name').value = '';
+    $('#empty-error').classList.add('hidden');
+    openModal('modal-empty');
+    setTimeout(() => $('#empty-name').focus(), 30);
+  };
+  $('#empty-submit').onclick = doCreateEmpty;
+  $('#empty-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doCreateEmpty(); }
+  });
+
+  // «+ Шаблон»
+  $('#btn-create').onclick = openCreateModal;
+  $('#create-submit').onclick = doCreateFromBase;
+  $('#create-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doCreateFromBase(); }
   });
 
   // Explorer close — скрываем панель и убираем body class чтобы dashboard вернулся

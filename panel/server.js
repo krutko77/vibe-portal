@@ -33,7 +33,7 @@ import {
   dockerStart, dockerStop, containerStatus, workspaceDir,
   touchActivity, startReaper,
 } from './lib/students.js';
-import { listTemplates, instantiateTemplate } from './lib/templates.js';
+import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject } from './lib/templates.js';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 import {
   listSessions as pcListSessions,
@@ -111,6 +111,24 @@ app.get('/api/me', (req, res) => {
 
 app.get('/api/templates', requireAuth, (req, res) => {
   res.json({ templates: listTemplates() });
+});
+
+// Базовые шаблоны (для модалки «+ Шаблон»): _base, _b24-single-php
+app.get('/api/templates/base', requireAuth, (req, res) => {
+  res.json({ templates: listBaseTemplates() });
+});
+
+// Создать пустой проект (без шаблона)
+app.post('/api/projects/empty', requireAuth, (req, res) => {
+  const { name } = req.body || {};
+  try {
+    const ws = workspaceDir(req.session.user);
+    fs.mkdirSync(ws, { recursive: true });
+    const out = createEmptyProject({ workspaceDir: ws, projectName: name });
+    res.json({ ok: true, project: out });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 app.get('/api/projects', requireAuth, (req, res) => {

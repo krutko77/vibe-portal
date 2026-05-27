@@ -171,6 +171,10 @@
           <span class="section-label">Мои проекты</span>
           <span class="section-path"><span id="projectsCount">0</span> шт</span>
         </div>
+        <div class="dashboard-actions">
+          <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
+          <button class="btn btn-primary" id="btn-create">+ Шаблон</button>
+        </div>
       </div>
       <div class="projects-table-wrap" id="projectsList"></div>
     </div>
@@ -324,7 +328,7 @@
     </div>
   </div>
 
-  <!-- ── Modal: Create project from template ──────────────── -->
+  <!-- ── Modal: Create project from template (старая, для секции «Шаблоны»)── -->
   <div class="modal-overlay hidden" id="modal-newproject" role="dialog" aria-modal="true">
     <div class="modal">
       <div class="modal-header">
@@ -346,6 +350,54 @@
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-newproject">Отмена</button>
         <button class="btn btn-primary" id="newproject-submit">Создать проект →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: «+ Пустой» (пустая папка) ────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-empty" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <span class="modal-title">Пустой проект</span>
+        <button class="modal-close" data-close="modal-empty" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="empty-name">Имя проекта</label>
+        <input id="empty-name" type="text" class="form-input"
+               placeholder="my-project" autocomplete="off" spellcheck="false"
+               pattern="[a-z][a-z0-9_-]{1,50}" />
+        <span class="form-hint">Только a-z, 0-9, дефис, подчёркивание. Создаётся в твоём workspace.</span>
+      </div>
+      <div class="form-error hidden" id="empty-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-empty">Отмена</button>
+        <button class="btn btn-primary" id="empty-submit">Создать →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: «+ Шаблон» (выбор из _base / _b24-single-php) ── -->
+  <div class="modal-overlay hidden" id="modal-create" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header">
+        <span class="modal-title">Новый проект из шаблона</span>
+        <button class="modal-close" data-close="modal-create" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Выбери шаблон</label>
+        <div class="template-cards" id="create-templates"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="create-name">Имя проекта</label>
+        <input id="create-name" type="text" class="form-input"
+               placeholder="my-project" autocomplete="off" spellcheck="false"
+               pattern="[a-z][a-z0-9_-]{1,50}" />
+        <span class="form-hint">Только a-z, 0-9, дефис, подчёркивание.</span>
+      </div>
+      <div class="form-error hidden" id="create-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-create">Отмена</button>
+        <button class="btn btn-primary" id="create-submit">Создать проект →</button>
       </div>
     </div>
   </div>

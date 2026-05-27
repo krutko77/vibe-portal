@@ -1064,3 +1064,44 @@ body.has-right-chat .nav-btn-claude {
   border-color: hsl(var(--primary));
   color: hsl(var(--primary));
 }
+
+/* ── Template-cards (модалка «+ Шаблон») ──────────────────── */
+.template-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.template-card-pick {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  transition: border-color .15s, background .15s;
+}
+.template-card-pick:hover { border-color: hsl(var(--smui-border-hover)); }
+.template-card-pick.active {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08);
+}
+.template-card-pick .t-pick-title {
+  font-size: 12px; font-weight: 700;
+  color: hsl(var(--foreground));
+  letter-spacing: .02em;
+}
+.template-card-pick .t-pick-desc {
+  font-size: 10.5px; line-height: 1.45;
+  color: hsl(var(--muted-foreground));
+  margin-top: 2px;
+}
+.template-card-pick .t-pick-folder {
+  font-size: 9.5px; color: hsl(var(--muted-foreground));
+  opacity: .6;
+  margin-top: 6px;
+}
+.template-card-pick.active .t-pick-folder { color: hsl(var(--primary)); opacity: 1; }
+@media (max-width: 600px) {
+  .template-cards { grid-template-columns: 1fr; }
+}

@@ -23,6 +23,38 @@ export function listTemplates() {
     });
 }
 
+// «Базовые» (стартовые) шаблоны — папки с префиксом `_`, для модалки «+ Шаблон».
+// Жёстко прописанные label/desc — чтобы пользователю показывался человекочитаемый
+// заголовок без необходимости править CLAUDE.md.
+const BASE_TEMPLATES = [
+  {
+    name: '_base',
+    title: 'Шаблон для Битрикс24 + VibeCode',
+    description: 'Node.js + Express + vanilla JS. Деплой на vibecode.bitrix24.tech. Для большинства приложений Б24.',
+  },
+  {
+    name: '_b24-single-php',
+    title: 'PHP / REST / API Битрикс24',
+    description: 'Single-tenant B24 local-app: PHP-бэк, vanilla JS, файловый store без БД. Для интеграций с REST API Битрикс24.',
+  },
+];
+
+export function listBaseTemplates() {
+  if (!fs.existsSync(TEMPLATES_DIR)) return [];
+  return BASE_TEMPLATES.filter(t => fs.existsSync(path.join(TEMPLATES_DIR, t.name)));
+}
+
+export function createEmptyProject({ workspaceDir, projectName }) {
+  if (!/^[a-z][a-z0-9_-]{1,50}$/i.test(projectName)) {
+    throw new Error('invalid project name');
+  }
+  const dst = path.join(workspaceDir, projectName);
+  if (fs.existsSync(dst)) throw new Error('project already exists');
+  fs.mkdirSync(dst, { recursive: true });
+  spawnSync('chown', ['1000:1000', dst]);
+  return { name: projectName, path: dst };
+}
+
 export function instantiateTemplate({ templateName, workspaceDir, projectName }) {
   if (!/^[a-z][a-z0-9_-]{1,50}$/i.test(projectName)) {
     throw new Error('invalid project name');
