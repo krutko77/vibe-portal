@@ -28,6 +28,13 @@ server {
         root /var/www/letsencrypt;
     }
 
+    # Публичная страничка про модель безопасности (без auth, минует vibe-panel)
+    location = /security.html {
+        alias /opt/vibe-portal/public-docs/security.html;
+        default_type text/html;
+        add_header Cache-Control "public, max-age=300";
+    }
+
     location / {
         proxy_pass http://vibe_panel;
         proxy_http_version 1.1;

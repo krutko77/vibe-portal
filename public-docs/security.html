@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe Portal — изоляция учеников и отделение от dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e10;
+    --bg-elev: #17171a;
+    --bg-code: #1c1c20;
+    --border: #2a2a30;
+    --text: #e6e6ea;
+    --text-dim: #9a9aa3;
+    --accent: #7dd3fc;
+    --accent-2: #fbbf24;
+    --green: #86efac;
+    --red: #fca5a5;
+    --purple: #c4b5fd;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 56px 32px 96px;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  header .tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    background: rgba(125, 211, 252, 0.08);
+    border: 1px solid rgba(125, 211, 252, 0.25);
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    letter-spacing: 0.04em;
+  }
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    letter-spacing: -0.02em;
+  }
+  header .sub {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin: 0;
+  }
+  h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 56px 0 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+  }
+  h2:first-of-type { border-top: none; padding-top: 0; }
+  h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 36px 0 12px;
+    color: var(--accent);
+  }
+  h3 .num {
+    color: var(--text-dim);
+    margin-right: 8px;
+    font-weight: 400;
+  }
+  p { margin: 0 0 14px; }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9em;
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--accent-2);
+  }
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 16px 0 22px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text);
+    font-size: inherit;
+  }
+  .k-drop { color: var(--red); font-weight: 600; }
+  .k-accept { color: var(--green); font-weight: 600; }
+  .k-comment { color: var(--text-dim); font-style: italic; }
+  .k-num { color: var(--purple); }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(125, 211, 252, 0.4);
+  }
+  a:hover { border-bottom-style: solid; }
+  ul {
+    margin: 0 0 18px;
+    padding-left: 24px;
+  }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 24px;
+    font-size: 14.5px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    color: var(--text-dim);
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--bg-elev);
+  }
+  td code { font-size: 0.88em; }
+  .callout {
+    background: var(--bg-elev);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px;
+    margin: 22px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .callout.tldr { border-left-color: var(--accent-2); }
+  .callout-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .callout.tldr .callout-title { color: var(--accent-2); }
+  .diagram {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+  .diagram .ok { color: var(--green); }
+  .diagram .no { color: var(--red); }
+  .diagram .lbl { color: var(--accent); }
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 32px 18px 60px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    h3 { font-size: 16px; }
+    pre { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">vibe.kiselevgroup.com · security model</span>
+  <h1>Изоляция учеников и отделение vibe от dev</h1>
+  <p class="sub">Как мы заперли учебные контейнеры на одном сервере с продакшеном dev-портала — для среднего разработчика, без воды.</p>
+</header>
+
+<h2>Часть 1. Защита сервера от учеников</h2>
+
+<p>Ученик внутри своего контейнера — это, считай, человек с root'ом в Debian 12 и интернетом. Задача: максимум, что он может наружу — пойти в <code>npm</code>/<code>github</code> и постучаться в наш <code>anthropic-shim</code>. Всё остальное на машине для него не существует.</p>
+
+<p>Защита строится в четыре слоя: container caps → docker network → iptables → shim.</p>
+
+<h3><span class="num">1.</span>Контейнерные капы (последняя линия обороны)</h3>
+
+<p>Запуск под пользователем <code>student</code> (uid 1000), без sudo:</p>
+
+<pre><code><span class="k-comment"># docker run</span>
+--user 1000:1000
+--cap-drop=ALL
+--no-new-privileges
+--memory=1.5g --cpus=1.0</code></pre>
+
+<p>Это страховка на случай kernel-LPE или namespace-бага: без капов и с <code>no-new-privileges</code> эскалация заметно сложнее.</p>
+
+<p>Bind-mount'ы выданы точечно:</p>
+<ul>
+  <li><code>/data/vibe-students/&lt;user&gt;</code> → <code>/home/student/workspace</code> (только своя папка, rw)</li>
+  <li><code>/opt/vibe-portal/templates</code> → <code>/home/student/templates</code> (ro)</li>
+</ul>
+<p>Чужих workspace'ов он не видит просто потому, что их нет в mount-table. Хостовая ФС вообще не торчит.</p>
+
+<h3><span class="num">2.</span>Своя docker-сеть <code>vibe-net</code></h3>
+
+<p>Все контейнеры учеников живут в отдельном bridge <code>br-vibe</code> (<code>172.30.0.0/24</code>). Inter-container communication выключен — даже если двое учеников онлайн одновременно, пакет от Васи к Пете дропается на самом мосту.</p>
+
+<h3><span class="num">3.</span>iptables — главный замок</h3>
+
+<p>Файл <code>scripts/setup-iptables.sh</code> собирает две цепочки и подвешивает их <strong>раньше</strong> дефолтных docker-правил. Важно: <code>VIBE-FILTER</code> цепляется в <code>DOCKER-USER</code>, которая срабатывает до автодженерённых docker-правил — иначе ничего бы не работало.</p>
+
+<p><strong>VIBE-FILTER</strong> — контейнер → внешний мир:</p>
+
+<pre><code><span class="k-num">1.</span> ESTABLISHED/RELATED            <span class="k-accept">ACCEPT</span>   <span class="k-comment">← return-трафик</span>
+<span class="k-num">2.</span> dst 172.30.0.1:8190             <span class="k-accept">ACCEPT</span>   <span class="k-comment">← shim, единственная разрешённая хостовая служба</span>
+<span class="k-num">3.</span> dst 172.30.0.1 (любой порт)     <span class="k-drop">DROP</span>     <span class="k-comment">← всё остальное на gateway</span>
+<span class="k-num">4.</span> dst 10/8, 172.16/12, 192.168/16 <span class="k-drop">DROP</span>     <span class="k-comment">← другие docker-bridges, RFC1918</span>
+<span class="k-num">5.</span> dst 169.254/16, 127/8           <span class="k-drop">DROP</span>     <span class="k-comment">← link-local, loopback, cloud metadata</span>
+<span class="k-num">6.</span> dst 80.87.104.193               <span class="k-drop">DROP</span>     <span class="k-comment">← публичный IP сервера (NAT-loopback)</span>
+<span class="k-num">7.</span> остальное                       <span class="k-accept">ACCEPT</span>   <span class="k-comment">← интернет (npm, github, dns)</span></code></pre>
+
+<p><strong>VIBE-INPUT</strong> — контейнер → IP хоста:</p>
+
+<pre><code><span class="k-num">1.</span> ESTABLISHED/RELATED            <span class="k-accept">ACCEPT</span>
+<span class="k-num">2.</span> dst 172.30.0.1:8190             <span class="k-accept">ACCEPT</span>
+<span class="k-num">3.</span> всё остальное                  <span class="k-drop">DROP</span>     <span class="k-comment">← sshd, nginx, postgres хоста — для ученика их нет</span></code></pre>
+
+<p>Что это вместе блокирует:</p>
+<ul>
+  <li><strong>другие docker-bridges</strong> (dev-portal, postgres, что угодно) — RFC1918 целиком в DROP'е;</li>
+  <li><strong>других vibe-учеников</strong> — их IP тоже в 172.30/24, попадают в drop по 172.16/12;</li>
+  <li><strong>127.0.0.1 хоста</strong> — vibe-panel:3020, dev-сервисы недоступны;</li>
+  <li><strong>публичный IP сервера</strong> — главное: иначе ученик бы постучался в <code>80.87.104.193:443</code> и попал на наш же nginx (NAT-loopback), оттуда на dev-портал. Закрыли явным DROP по <code>HOST_PUBLIC_IP</code>;</li>
+  <li><strong>169.254/16</strong> — на случай cloud metadata endpoints.</li>
+</ul>
+
+<p>Применяется при загрузке через <code>vibe-iptables.service</code> (oneshot). Скрипт идемпотентный — можно дёргать руками, ничего не сломается.</p>
+
+<h3><span class="num">4.</span>Anthropic-shim — единственная «дырка» наружу</h3>
+
+<p><code>shim/server.js</code> на хосте слушает <code>:8190</code>, принимает запросы <strong>только</strong> с <code>172.30.0.0/24</code> и <code>127/8</code> (whitelist в коде, поверх iptables — defence in depth). Внутри:</p>
+<ul>
+  <li>срывает <code>Authorization</code> от ученика;</li>
+  <li>подставляет настоящий <code>Bearer</code> из <code>/data/config/auth/claude-vibe.credentials.json</code> (chmod 600, не в git);</li>
+  <li>форвардит в <code>api.anthropic.com</code> через внешний HTTP-прокси.</li>
+</ul>
+
+<div class="callout">
+  <div class="callout-title">Ключевая идея</div>
+  Ученик никогда не видит наш OAuth-токен Claude. Он живёт только на хосте, в файле с chmod 600, и контейнер до него не дотягивается ни по сети, ни по ФС.
+</div>
+
+<h3>Карта разрешённого трафика</h3>
+
+<div class="diagram">┌──────────────────────────┐
+│  vibe-&lt;user&gt; container   │   172.30.0.X
+│  uid 1000, no caps       │
+└────────────┬─────────────┘
+             │
+             ├─→ <span class="ok">172.30.0.1:8190</span>          <span class="lbl">shim → api.anthropic.com</span>
+             ├─→ <span class="ok">internet (53, 80, 443)</span>   <span class="lbl">npm, github, dns</span>
+             │
+             ├─✗ <span class="no">10/8, 172.16/12, 192/16</span>   другие docker-сети, RFC1918
+             ├─✗ <span class="no">127.0.0.1</span>                 vibe-panel, dev, postgres
+             ├─✗ <span class="no">80.87.104.193</span>             nginx публичный (NAT-loopback)
+             ├─✗ <span class="no">169.254/16</span>                cloud metadata
+             └─✗ <span class="no">vibe-net peers</span>            ICC off + drop по 172.16/12</div>
+
+<h2>Часть 2. Изоляция vibe от dev</h2>
+
+<p>Vibe и dev-portal крутятся на одном сервере (<code>80.87.104.193</code>), но это два <strong>независимых</strong> проекта — общего у них только git-репо для бэкапа и сам факт хостинга.</p>
+
+<h3>По коду</h3>
+<ul>
+  <li>Раньше vibe жил подкаталогом в <code>/opt/dev-portal/vibe/</code>. 2026-05-26 вынесли в <code>/opt/vibe-portal/</code> целиком.</li>
+  <li>Шаблоны переехали из <code>/opt/dev-portal/templates/vibe/</code> в <code>/opt/vibe-portal/templates/</code>.</li>
+  <li>В vibe <strong>нет импортов</strong> из dev. Свой <code>panel/server.js</code>, свой <code>lib/</code>, свои public-ассеты. Визуально похоже (тёмная тема, IBM Plex Mono), но это копия стилей, не shared-модуль.</li>
+</ul>
+
+<h3>По auth</h3>
+<p>Отдельная стопка:</p>
+<ul>
+  <li><code>/data/config/auth/.htpasswd-vibe</code> — отдельный htpasswd;</li>
+  <li><code>/data/config/auth/users-vibe.json</code> — отдельный список пользователей с ролями;</li>
+  <li><code>/data/config/sessions-vibe/</code> — отдельный session-file-store;</li>
+  <li>свой <code>SESSION_SECRET</code> в <code>/data/config/env/vibe-panel.env</code>.</li>
+</ul>
+<p>Залогиниться в dev-портал учёткой vibe-ученика физически невозможно — это разные базы и разные процессы вообще не делятся сессиями.</p>
+
+<h3>По процессам и портам</h3>
+
+<table>
+  <thead>
+    <tr><th></th><th>dev-portal</th><th>vibe-portal</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>systemd unit</td><td><code>dev-portal.service</code></td><td><code>vibe-panel.service</code></td></tr>
+    <tr><td>порт панели</td><td>свой</td><td><code>127.0.0.1:3020</code></td></tr>
+    <tr><td>docker-сеть</td><td>своя</td><td><code>vibe-net</code> · <code>br-vibe</code> · 172.30.0.0/24</td></tr>
+    <tr><td>auth-конфиги</td><td><code>.htpasswd</code></td><td><code>.htpasswd-vibe</code></td></tr>
+    <tr><td>контейнеры</td><td><code>kg.dev.*</code> лейблы</td><td><code>kg.vibe.role=workspace</code></td></tr>
+  </tbody>
+</table>
+
+<h3>По сети — это ключ</h3>
+
+<p>Тут как раз работает та же <code>VIBE-FILTER</code>-цепочка. Контейнеры dev'а сидят в <strong>других</strong> docker-bridges (<code>10.x</code> / <code>172.17.x</code> / <code>172.18.x</code> — стандартные docker-диапазоны). Все они попадают под правила:</p>
+
+<pre><code>-A VIBE-FILTER -d 10.0.0.0/8    -j <span class="k-drop">DROP</span>
+-A VIBE-FILTER -d 172.16.0.0/12 -j <span class="k-drop">DROP</span></code></pre>
+
+<p>Пакет от vibe-ученика в сторону любого dev-контейнера дропается на FORWARD-стадии. Плюс ученик не может постучаться в <code>127.0.0.1</code> хоста — а значит не достанет dev-panel, не достанет postgres, не достанет ничего, что слушает loopback. И не может обойти это через NAT-loopback по публичному IP — мы отдельно дропнули <code>80.87.104.193</code>.</p>
+
+<h3>По бэкапу — единственное общее</h3>
+
+<p><code>/opt/dev-portal/scripts/backup-all.sh</code> rsync'ит и <code>/opt/dev-portal/</code>, и <code>/opt/vibe-portal/</code> в <code>/srv/server-backup/</code> и пушит в один gitflic-репо (vibe лежит подпапкой <code>vibe-portal/</code>). Это операционное удобство, на runtime-изоляцию никак не влияет.</p>
+
+<div class="callout tldr">
+  <div class="callout-title">TL;DR</div>
+  Ученик заперт в docker-контейнере без капов, его сеть пропущена через явный iptables-whitelist, где открыто ровно две вещи — <code>shim:8190</code> и публичный интернет (минус наш собственный IP). Всё остальное — другие ученики, dev-portal, хостовые сервисы, loopback, metadata-endpoints — задропано на уровне ядра. Vibe и dev делят железо и git-репо для бэкапа, но не делят ни код, ни auth, ни сеть, ни процессы.
+</div>
+
+<footer>
+  /opt/vibe-portal · CLAUDE.md · 2026-05-27
+</footer>
+
+</div>
+</body>
+</html>
