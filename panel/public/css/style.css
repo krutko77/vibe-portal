@@ -43,8 +43,8 @@ body.app-bg {
   background: hsl(var(--card));
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 8px;
+  padding: 0 12px;
+  gap: 4px;
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -60,16 +60,26 @@ body.app-bg {
   background: hsl(var(--foreground) / 0.65);
   padding: 8px 11px;
   flex-shrink: 0;
-  margin-right: 4px;
   transition: opacity .15s;
 }
 .navbar-kg:hover { opacity: .8; }
 
 .navbar-spacer { flex: 1; }
 
-/* Theme toggle + nav-icon (квадратные кнопки 32x32 с иконкой 16x16) */
-.theme-toggle, .nav-icon, .btn-icon-sm {
-  width: 32px; height: 32px;
+/* Theme toggle + nav-icon — единая высота 30px как остальные navbar-кнопки */
+.theme-toggle, .nav-icon {
+  width: 30px; height: 30px;
+  border: 1px solid hsl(var(--border));
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+  text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.btn-icon-sm {
+  width: 30px; height: 30px;
   border: 1px solid hsl(var(--border));
   background: transparent;
   color: hsl(var(--muted-foreground));
@@ -1011,8 +1021,8 @@ body.pc-fullscreen .resizer { display: none; }
 
 /* ── Navbar Claude button ─────────────────────────────────── */
 .nav-btn-claude {
-  display: inline-flex; gap: 7px; align-items: center;
-  height: 32px; padding: 0 12px;
+  display: inline-flex; gap: 6px; align-items: center;
+  height: 30px; padding: 0 10px;
   background: transparent;
   border: 1px solid hsl(var(--border));
   color: hsl(var(--muted-foreground));
@@ -1108,18 +1118,31 @@ body.has-right-chat .nav-btn-claude {
 
 /* ── Navbar: container toggle + open-vscode ───────────────── */
 .nav-btn-container {
-  display: inline-flex; gap: 7px; align-items: center;
-  height: 32px; padding: 0 12px;
+  display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  height: 30px; padding: 2px 10px;
   background: transparent;
   border: 1px solid hsl(var(--border));
   color: hsl(var(--muted-foreground));
   font-family: var(--font-mono);
-  font-size: 10px; font-weight: 600;
-  letter-spacing: .08em; text-transform: uppercase;
+  line-height: 1;
   cursor: pointer;
   transition: background .15s, color .15s, border-color .15s;
 }
 .nav-btn-container:hover { border-color: hsl(var(--smui-border-hover)); }
+.nav-btn-container-top {
+  display: inline-flex; gap: 5px; align-items: center;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .03em;
+}
+.nav-btn-container-sub {
+  font-size: 8px; font-weight: 500;
+  letter-spacing: .05em;
+  opacity: .75;
+  font-variant-numeric: tabular-nums;
+  min-height: 9px;
+}
 .nav-btn-container-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: hsl(var(--muted-foreground));
@@ -1155,17 +1178,25 @@ body.has-right-chat .nav-btn-claude {
   cursor: not-allowed;
 }
 
-/* Open VS Code — серый фон как у логотипа KG */
+/* Open VS Code — серый фон как у логотипа KG, две строки как у auth-group */
 .nav-btn-vscode {
-  display: inline-flex; align-items: center;
-  height: 32px; padding: 0 14px;
+  display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  height: 30px; padding: 2px 10px;
   background: hsl(var(--foreground) / 0.65);
   color: hsl(var(--background));
   border: none;
   font-family: var(--font-mono);
-  font-size: 10px; font-weight: 700;
-  letter-spacing: .08em; text-transform: uppercase;
+  line-height: 1;
   cursor: pointer;
   transition: opacity .15s;
+  white-space: nowrap;
 }
 .nav-btn-vscode:hover { opacity: .85; }
+.nav-btn-vscode-top { font-size: 10px; font-weight: 600; letter-spacing: .03em; }
+.nav-btn-vscode-sub {
+  font-size: 8px; font-weight: 500;
+  letter-spacing: .08em; text-transform: uppercase;
+  opacity: .85;
+}

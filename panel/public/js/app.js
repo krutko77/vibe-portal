@@ -69,6 +69,7 @@ async function refreshContainerStatus() {
       toggle.classList.remove('running');
       toggle.classList.add('disabled');
       $('.nav-btn-container-label', toggle).textContent = 'Не создан';
+      $('#containerTimerLabel').textContent = '';
       toggle.title = 'Контейнер не создан — обратись к админу';
     } else if (me.container?.running) {
       toggle.classList.add('running');
@@ -78,10 +79,29 @@ async function refreshContainerStatus() {
     } else {
       toggle.classList.remove('running', 'disabled');
       $('.nav-btn-container-label', toggle).textContent = 'Выкл';
+      $('#containerTimerLabel').textContent = '';
       toggle.title = 'Контейнер остановлен · клик → запустить';
     }
+    updateContainerTimer();
   } catch {}
 }
+
+// Обновление лейбла «осталось мин:сек до автозакрытия» (idle reaper)
+function updateContainerTimer() {
+  if (!ME?.container?.running || !ME?.lastActivityAt || !ME?.idleStopMinutes) {
+    $('#containerTimerLabel').textContent = '';
+    return;
+  }
+  const last = Date.parse(ME.lastActivityAt);
+  const deadline = last + ME.idleStopMinutes * 60 * 1000;
+  const ms = deadline - Date.now();
+  if (ms <= 0) { $('#containerTimerLabel').textContent = '0:00'; return; }
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  $('#containerTimerLabel').textContent = m + ':' + String(s).padStart(2, '0');
+}
+setInterval(updateContainerTimer, 1000);
 
 // Открыть VS Code: если контейнер не running — показать модалку, запустить,
 // дождаться, потом открыть в новой вкладке. Это убирает «открылось но недоступно».

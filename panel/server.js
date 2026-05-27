@@ -99,6 +99,8 @@ app.get('/api/me', (req, res) => {
       role: info.role || 'user',
       containerPort: info.containerPort || null,
       container: cs,
+      lastActivityAt: info.lastActivityAt || null,
+      idleStopMinutes: parseInt(process.env.IDLE_STOP_MIN || '30', 10),
     });
   }).catch(e => res.json({
     username: u, isAdmin: !!req.session.isAdmin,

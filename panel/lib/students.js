@@ -13,6 +13,7 @@ const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
 const IMAGE = process.env.VIBE_IMAGE || 'vibe-workspace:dev';
 const NETWORK = process.env.VIBE_NETWORK || 'vibe-net';
 const EXTENSIONS_VOLUME = process.env.VIBE_EXTENSIONS_VOLUME || 'vibe-extensions';
+const SKILLS_VOLUME = process.env.VIBE_SKILLS_VOLUME || 'vibe-claude-skills';
 const SHIM_BASE_URL = process.env.SHIM_BASE_URL || 'http://172.30.0.1:8190';
 const MEM_LIMIT_MB = parseInt(process.env.STUDENT_MEM_LIMIT_MB || '1536', 10);
 const CPU_LIMIT = parseFloat(process.env.STUDENT_CPU_LIMIT || '1.0');
@@ -51,6 +52,10 @@ export async function createStudent({ username, password, role = 'user' }) {
   // uid=1000 — это user student внутри контейнера
   fs.chownSync(ws, 1000, 1000);
 
+  // Workspace-level CLAUDE.md: Claude поднимется по dir-tree и прочитает.
+  // Учим его сразу что это курс, какие скиллы и где память.
+  writeWorkspaceClaudeMd(ws, username);
+
   const port = allocatePort(state);
   state.users[username] = {
     role,
@@ -82,6 +87,48 @@ export async function deleteStudent(username) {
 
   delete state.users[username];
   saveUsers(state);
+}
+
+// Workspace-level CLAUDE.md — раскатывается при создании ученика
+// и при первом dockerCreate. Идемпотентно — если файл уже есть, не трогаем.
+export function writeWorkspaceClaudeMd(ws, username) {
+  const file = path.join(ws, 'CLAUDE.md');
+  if (fs.existsSync(file)) return;
+  const body = `# Workspace ученика курса VibeCoding
+
+Это твой личный workspace на портале \`vibe.kiselevgroup.com\`.
+
+- **Ученик:** \`${username}\`
+- **Расположение:** \`/home/student/workspace/\` (внутри твоего Docker-контейнера)
+- **Шаблоны курса (read-only):** \`/home/student/templates/\`
+
+## Что важно для Claude
+
+- **Память.** Для длительного контекста по проекту используй skill \`claude-memory\` —
+  он структурно ведёт \`.claude/memory/\` (что было сделано, какие решения приняты).
+- **Скиллы.** Под рукой: \`superpowers\` (общие практики), \`ui-ux-pro-max\` (frontend/UI),
+  \`claude-memory\` (память). Все лежат в \`~/.claude/skills/\` (read-only volume).
+- **Правила работы:**
+  - Общайся и думай по-русски, код и имена файлов — латиницей.
+  - Сначала действуй, потом коротко отчитайся (без длинных преамбул).
+  - Деплой проектов — только когда явно попросили.
+
+## Структура
+
+\`\`\`
+/home/student/
+├── workspace/            ← здесь твои проекты (видна только тебе)
+│   ├── CLAUDE.md         ← этот файл
+│   └── <проект>/
+│       ├── .claude/      ← локальная память и настройки проекта
+│       └── CLAUDE.md     ← инструкции конкретного проекта
+├── templates/            ← курсовые шаблоны (read-only)
+└── .claude/
+    └── skills/           ← общие скиллы (superpowers / ui-ux-pro-max / claude-memory)
+\`\`\`
+`;
+  fs.writeFileSync(file, body, 'utf-8');
+  try { fs.chownSync(file, 1000, 1000); } catch {}
 }
 
 export function listStudents() {
@@ -125,6 +172,9 @@ async function dockerCreate(username, port) {
         // Общий volume для расширений code-server: ставишь раз — у всех есть.
         // User-settings/keybindings/state у каждого свои (не маунтятся).
         `${EXTENSIONS_VOLUME}:/home/student/.local/share/code-server/extensions:rw`,
+        // Общие Claude-скиллы (superpowers / ui-ux-pro-max / claude-memory)
+        // — read-only, чтобы клод-внутри-контейнера их видел в ~/.claude/skills.
+        `${SKILLS_VOLUME}:/home/student/.claude/skills:ro`,
       ],
       PortBindings: {
         '8080/tcp': [{ HostIp: '127.0.0.1', HostPort: String(port) }],
