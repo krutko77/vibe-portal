@@ -21,6 +21,12 @@
   <nav class="navbar">
     <a href="/" class="navbar-kg">KG</a>
 
+    <button class="nav-btn-container hidden-when-no-auth" id="containerToggleBtn" title="Запустить/Остановить контейнер">
+      <span class="nav-btn-container-dot"></span>
+      <span class="nav-btn-container-label">…</span>
+    </button>
+    <button class="nav-btn-vscode hidden-when-no-auth" id="openCodeBtn">Открыть VS Code →</button>
+
     <span class="navbar-spacer"></span>
 
     <button class="theme-toggle" id="themeToggle" title="Сменить тему">
@@ -145,24 +151,6 @@
 
   <!-- Центр: dashboard (когда залогинен) -->
   <main class="dashboard" id="app">
-
-    <!-- Секция: Контейнер -->
-    <div class="section-block">
-      <div class="section-head">
-        <div class="section-head-left">
-          <span class="section-label">VS Code</span>
-          <span class="section-path">/home/student/workspace/</span>
-        </div>
-        <div class="dashboard-actions">
-          <button class="btn btn-ghost btn-sm" id="stopContainerBtn">Остановить</button>
-          <button class="btn btn-primary btn-sm" id="openCodeBtn">Открыть VS Code →</button>
-        </div>
-      </div>
-      <div class="container-banner" id="containerStatus">
-        <span class="dot"></span>
-        <span class="banner-text">Загрузка статуса контейнера…</span>
-      </div>
-    </div>
 
     <!-- Секция: Мои проекты -->
     <div class="section-block">

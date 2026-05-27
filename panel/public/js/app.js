@@ -61,20 +61,24 @@ async function refreshContainerStatus() {
   try {
     const me = await api('/api/me');
     ME = { ...ME, ...me };
-    const el = $('#containerStatus');
-    const text = $('.banner-text', el);
+    const toggle = $('#containerToggleBtn');
     const open = $('#openCodeBtn');
     open.dataset.user = me.username;
     open.dataset.running = me.container?.running ? '1' : '0';
     if (!me.containerPort) {
-      text.textContent = 'Контейнер ещё не создан — обратись к админу.';
-      el.classList.remove('running');
+      toggle.classList.remove('running');
+      toggle.classList.add('disabled');
+      $('.nav-btn-container-label', toggle).textContent = 'Не создан';
+      toggle.title = 'Контейнер не создан — обратись к админу';
     } else if (me.container?.running) {
-      text.textContent = `Контейнер запущен с ${fmtDate(me.container.startedAt)}.`;
-      el.classList.add('running');
+      toggle.classList.add('running');
+      toggle.classList.remove('disabled');
+      $('.nav-btn-container-label', toggle).textContent = 'Вкл';
+      toggle.title = `Запущен ${fmtDate(me.container.startedAt)} · клик → остановить`;
     } else {
-      text.textContent = 'Контейнер остановлен — запустится при клике на «Открыть VS Code».';
-      el.classList.remove('running');
+      toggle.classList.remove('running', 'disabled');
+      $('.nav-btn-container-label', toggle).textContent = 'Выкл';
+      toggle.title = 'Контейнер остановлен · клик → запустить';
     }
   } catch {}
 }
@@ -526,12 +530,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAuth();
   };
 
-  // Stop container
-  $('#stopContainerBtn').onclick = async () => {
+  // Container toggle (вкл/выкл)
+  $('#containerToggleBtn').onclick = async () => {
+    const btn = $('#containerToggleBtn');
+    if (btn.classList.contains('disabled')) return;
+    const running = btn.classList.contains('running');
+    const label = $('.nav-btn-container-label', btn);
+    label.textContent = running ? 'остановка…' : 'запуск…';
     try {
-      await api('/api/container/stop', { method: 'POST' });
+      await api(running ? '/api/container/stop' : '/api/container/start', { method: 'POST' });
+      // дать docker 1-2 сек чтобы статус успел переключиться
+      await new Promise(r => setTimeout(r, 800));
       refreshContainerStatus();
-    } catch (e) { alert(e.message); }
+    } catch (e) {
+      alert(e.message);
+      refreshContainerStatus();
+    }
   };
 
   // Settings panel toggle

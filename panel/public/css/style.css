@@ -1105,3 +1105,67 @@ body.has-right-chat .nav-btn-claude {
 @media (max-width: 600px) {
   .template-cards { grid-template-columns: 1fr; }
 }
+
+/* ── Navbar: container toggle + open-vscode ───────────────── */
+.nav-btn-container {
+  display: inline-flex; gap: 7px; align-items: center;
+  height: 32px; padding: 0 12px;
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.nav-btn-container:hover { border-color: hsl(var(--smui-border-hover)); }
+.nav-btn-container-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: hsl(var(--muted-foreground));
+  flex-shrink: 0;
+}
+/* Running = зелёный */
+.nav-btn-container.running {
+  background: hsl(var(--smui-green) / 0.18);
+  border-color: hsl(var(--smui-green) / 0.55);
+  color: hsl(var(--smui-green));
+}
+.nav-btn-container.running .nav-btn-container-dot { background: hsl(var(--smui-green)); }
+.nav-btn-container.running:hover {
+  background: hsl(var(--smui-green) / 0.28);
+  border-color: hsl(var(--smui-green));
+}
+/* Stopped = красный */
+.nav-btn-container:not(.running):not(.disabled) {
+  background: hsl(var(--smui-red) / 0.15);
+  border-color: hsl(var(--smui-red) / 0.5);
+  color: hsl(var(--smui-red));
+}
+.nav-btn-container:not(.running):not(.disabled) .nav-btn-container-dot {
+  background: hsl(var(--smui-red));
+}
+.nav-btn-container:not(.running):not(.disabled):hover {
+  background: hsl(var(--smui-red) / 0.25);
+  border-color: hsl(var(--smui-red));
+}
+/* Disabled = серый (контейнер не создан) */
+.nav-btn-container.disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Open VS Code — серый фон как у логотипа KG */
+.nav-btn-vscode {
+  display: inline-flex; align-items: center;
+  height: 32px; padding: 0 14px;
+  background: hsl(var(--foreground) / 0.65);
+  color: hsl(var(--background));
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.nav-btn-vscode:hover { opacity: .85; }
