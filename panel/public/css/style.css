@@ -1754,3 +1754,115 @@ html:not(.dark) .page-lead a:hover,
 html:not(.dark) .course-placeholder-desc a:hover {
   color: hsl(210 90% 35%);
 }
+
+/* ── Course intro card → кликабельная ──────────────────── */
+.course-intro-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 16px 18px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, background .15s;
+}
+.course-intro-card:hover {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.06);
+}
+.course-intro-card-cta {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .04em;
+  color: hsl(var(--primary));
+}
+
+/* ── Module overview: 2 big action buttons + lessons list ── */
+.module-actions {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px; margin-bottom: 8px;
+}
+.module-action-btn {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px 16px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  cursor: pointer; text-align: left;
+  font-family: inherit;
+  transition: border-color .15s, background .15s;
+}
+.module-action-btn:hover {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.06);
+}
+.module-action-icon {
+  font-size: 18px; line-height: 1; flex-shrink: 0;
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+.module-action-body {
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.module-action-label {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: hsl(var(--foreground));
+}
+.module-action-sub {
+  font-size: 11.5px; line-height: 1.4;
+  color: hsl(var(--muted-foreground));
+}
+.module-action-hw .module-action-icon { background: hsl(var(--smui-green) / 0.15); color: hsl(var(--smui-green)); }
+.module-action-mk .module-action-icon { background: hsl(40 80% 55% / 0.15); color: hsl(40 80% 55%); }
+.module-action-bonus .module-action-icon { background: hsl(280 60% 65% / 0.15); color: hsl(280 60% 65%); }
+
+.module-lessons {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.module-lesson {
+  display: grid; grid-template-columns: 28px 1fr auto;
+  align-items: baseline; gap: 12px;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid hsl(var(--border));
+  cursor: pointer; text-align: left;
+  font-family: var(--font-mono);
+  transition: border-color .15s, background .15s, color .15s;
+}
+.module-lesson:hover {
+  border-color: hsl(var(--primary) / 0.6);
+  background: hsl(var(--primary) / 0.04);
+}
+.module-lesson-no {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .04em;
+  color: hsl(var(--primary));
+  text-align: center;
+}
+.module-lesson-title {
+  font-size: 12px; line-height: 1.45;
+  color: hsl(var(--foreground));
+}
+.module-lesson-cta {
+  font-size: 14px;
+  color: hsl(var(--muted-foreground));
+}
+.module-lesson:hover .module-lesson-cta { color: hsl(var(--primary)); }
+
+@media (max-width: 700px) {
+  .module-actions { grid-template-columns: 1fr; }
+}
+
+/* Подсветка для выбранного модуля в sidebar */
+.course-tree-mod-head.active {
+  background: hsl(var(--primary) / 0.10);
+  border-left: 2px solid hsl(var(--primary));
+  padding-left: 16px;
+}
+.course-tree-mod-head.active .course-tree-mod-no,
+.course-tree-mod-head.active .course-tree-mod-title { color: hsl(var(--primary)); }

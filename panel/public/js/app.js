@@ -159,9 +159,10 @@ function renderCourseTree() {
   `;
   for (const mod of COURSE) {
     const isOpen = courseExpanded.has(mod.id);
+    const modSelected = courseSelected === mod.id;
     html += `
       <div class="course-tree-module${isOpen ? ' is-open' : ''}">
-        <button class="course-tree-mod-head" data-mod="${mod.id}">
+        <button class="course-tree-mod-head${modSelected ? ' active' : ''}" data-mod="${mod.id}">
           <span class="course-tree-caret">▸</span>
           <span class="course-tree-mod-no">${mod.id.toUpperCase()}</span>
           <span class="course-tree-mod-title">${escapeHtml(mod.title)}</span>
@@ -202,9 +203,13 @@ function renderCourseTree() {
   $$('.course-tree-mod-head', tree).forEach(b => {
     b.onclick = () => {
       const id = b.dataset.mod;
-      if (courseExpanded.has(id)) courseExpanded.delete(id); else courseExpanded.add(id);
+      // Раскрыть если свёрнут + перейти на оверью модуля
+      if (!courseExpanded.has(id)) courseExpanded.add(id);
+      else if (courseSelected === id) courseExpanded.delete(id);  // повторный клик на уже открытом — свернуть
       localStorage.setItem('vibe.course.exp', JSON.stringify([...courseExpanded]));
-      renderCourseTree();
+      courseSelected = id;
+      localStorage.setItem('vibe.course.sel', courseSelected);
+      renderCourse();
     };
   });
   $$('[data-sel]', tree).forEach(b => {
@@ -230,19 +235,92 @@ function renderCourseContent() {
       </p>
       <div class="course-intro-grid">
         ${COURSE.map(m => `
-          <div class="course-intro-card">
+          <button class="course-intro-card" data-sel="${m.id}" type="button">
             <div class="course-intro-card-no">${m.id.toUpperCase()}</div>
             <div class="course-intro-card-title">${escapeHtml(m.title)}</div>
             <div class="course-intro-card-meta">${m.lessons.length} уроков · ${m.meetup ? escapeHtml(m.meetup.date) : '—'}</div>
-          </div>
+            <div class="course-intro-card-cta">Открыть модуль →</div>
+          </button>
         `).join('')}
       </div>
     `;
+    $$('[data-sel]', root).forEach(b => {
+      b.onclick = () => {
+        courseSelected = b.dataset.sel;
+        localStorage.setItem('vibe.course.sel', courseSelected);
+        if (!courseExpanded.has(courseSelected)) {
+          courseExpanded.add(courseSelected);
+          localStorage.setItem('vibe.course.exp', JSON.stringify([...courseExpanded]));
+        }
+        renderCourse();
+      };
+    });
     return;
   }
   const [mId, partRaw] = courseSelected.split('.');
   const mod = COURSE.find(m => m.id === mId);
   if (!mod) { root.innerHTML = '<div class="empty">не найдено</div>'; return; }
+
+  // Модуль (без выбранного урока/карточки) — overview
+  if (!partRaw) {
+    root.innerHTML = `
+      <div class="page-meta">${mod.id.toUpperCase()} · МОДУЛЬ</div>
+      <h1 class="page-h1">${escapeHtml(mod.title)}</h1>
+      <div class="module-actions">
+        <button class="module-action-btn module-action-hw" data-sel="${mod.id}.homework">
+          <span class="module-action-icon">✓</span>
+          <span class="module-action-body">
+            <span class="module-action-label">Домашнее задание</span>
+            <span class="module-action-sub">${escapeHtml(mod.homework.slice(0, 90))}${mod.homework.length > 90 ? '…' : ''}</span>
+          </span>
+        </button>
+        <button class="module-action-btn module-action-mat" data-sel="${mod.id}.materials">
+          <span class="module-action-icon">📦</span>
+          <span class="module-action-body">
+            <span class="module-action-label">Материалы модуля</span>
+            <span class="module-action-sub">${escapeHtml(mod.materials.slice(0, 90))}${mod.materials.length > 90 ? '…' : ''}</span>
+          </span>
+        </button>
+      </div>
+      <h2 class="page-h2">Уроки · ${mod.lessons.length}</h2>
+      <div class="module-lessons">
+        ${mod.lessons.map((lsn, i) => `
+          <button class="module-lesson" data-sel="${mod.id}.${lsn.id}" type="button">
+            <span class="module-lesson-no">${i + 1}</span>
+            <span class="module-lesson-title">${escapeHtml(lsn.title)}</span>
+            <span class="module-lesson-cta">→</span>
+          </button>
+        `).join('')}
+      </div>
+      ${mod.meetup ? `
+        <h2 class="page-h2">Мастер-класс / встреча</h2>
+        <button class="module-action-btn module-action-mk" data-sel="${mod.id}.meetup">
+          <span class="module-action-icon">★</span>
+          <span class="module-action-body">
+            <span class="module-action-label">${escapeHtml(mod.meetup.title)} · ${escapeHtml(mod.meetup.date)}</span>
+            <span class="module-action-sub">${escapeHtml(mod.meetup.desc)}</span>
+          </span>
+        </button>
+      ` : ''}
+      ${mod.bonus ? `
+        <button class="module-action-btn module-action-bonus" data-sel="${mod.id}.bonus" style="margin-top:10px">
+          <span class="module-action-icon">🎁</span>
+          <span class="module-action-body">
+            <span class="module-action-label">${escapeHtml(mod.bonus.title)}</span>
+            <span class="module-action-sub">${escapeHtml(mod.bonus.desc)}</span>
+          </span>
+        </button>
+      ` : ''}
+    `;
+    $$('[data-sel]', root).forEach(b => {
+      b.onclick = () => {
+        courseSelected = b.dataset.sel;
+        localStorage.setItem('vibe.course.sel', courseSelected);
+        renderCourse();
+      };
+    });
+    return;
+  }
 
   // Урок
   if (partRaw && partRaw.startsWith('l')) {
