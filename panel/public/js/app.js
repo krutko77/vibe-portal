@@ -205,6 +205,7 @@ async function openExplorer(name, kind = 'project') {
   $('#explorer-view-size').textContent = '';
   $('#explorer-view-pre').textContent = '';
   overlay.classList.remove('hidden');
+  document.body.classList.add('has-explorer');
 
   const treeUrl = isTpl
     ? '/api/explore/tree?kind=template&template=' + encodeURIComponent(name)
@@ -494,11 +495,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Enter') { e.preventDefault(); doCreateProject(); }
   });
 
-  // Explorer close
-  $('#explorer-close').onclick = () => $('#explorer-overlay').classList.add('hidden');
-  $('#explorer-overlay').addEventListener('click', (e) => {
-    if (e.target.id === 'explorer-overlay') $('#explorer-overlay').classList.add('hidden');
-  });
+  // Explorer close — скрываем панель и убираем body class чтобы dashboard вернулся
+  const closeExplorer = () => {
+    $('#explorer-overlay').classList.add('hidden');
+    document.body.classList.remove('has-explorer');
+  };
+  $('#explorer-close').onclick = closeExplorer;
 
   // Open VS Code button (header dashboard)
   $('#openCodeBtn').onclick = () => {

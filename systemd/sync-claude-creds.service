@@ -1,0 +1,10 @@
+[Unit]
+Description=Sync host Claude OAuth creds → vibe-shim creds
+After=network-online.target anthropic-shim.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vibe-portal/scripts/sync-claude-creds.sh
+User=root
+StandardOutput=journal
+StandardError=journal

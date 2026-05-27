@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep host Claude OAuth tokens fresh (короткий ping)
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/data/config/env/proxy.env
+ExecStart=/opt/vibe-portal/scripts/keepalive-claude.sh
+User=root
+StandardOutput=journal
+StandardError=journal
