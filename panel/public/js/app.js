@@ -1345,9 +1345,9 @@ function pcRenderSessionList(sessions) {
 
 async function pcLoadSessions() {
   try {
-    const r = await fetch(`/api/project-chat/sessions?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin' });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'sessions load failed');
+    const r = await fetch(`/api/project-chat/sessions?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin', cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `sessions load failed (${r.status})`);
     pcRenderSessionList(d.sessions || []);
     return d.sessions || [];
   } catch (e) {
@@ -1360,9 +1360,9 @@ async function pcLoadHistory(sessionId) {
   pcClearMessages();
   if (!sessionId) { pcShowEmpty('Напиши первое сообщение — сессия создастся.'); return; }
   try {
-    const r = await fetch(`/api/project-chat/session/${encodeURIComponent(sessionId)}?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin' });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'history load failed');
+    const r = await fetch(`/api/project-chat/session/${encodeURIComponent(sessionId)}?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin', cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `history load failed (${r.status})`);
     if (!d.blocks?.length) pcShowEmpty('Пустая сессия — напиши сообщение.');
     else d.blocks.forEach(pcRenderBlock);
   } catch (e) {

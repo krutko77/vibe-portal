@@ -58,6 +58,12 @@ const FileStore = FileStoreFactory(session);
 
 const app = express();
 app.disable('x-powered-by');
+// API-ответы динамические: запрещаем кэш/ETag, иначе браузер ревалидирует и
+// получает 304 с пустым телом → r.json() на фронте падает «Unexpected end of JSON input».
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 app.use(express.json({ limit: '1mb' }));
 app.use(session({
   store: new FileStore({ path: SESSIONS_DIR, ttl: 30 * 24 * 3600, retries: 1 }),
