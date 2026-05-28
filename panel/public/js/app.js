@@ -491,7 +491,10 @@ async function refreshRecentProjects() {
     const { projects } = await api('/api/projects');
     projects.sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
     const top = projects.slice(0, 3);
-    $('#vscodeRecentCount').textContent = projects.length + ' всего';
+    const recentCount = $('#vscodeRecentCount');
+    recentCount.textContent = projects.length + ' всего →';
+    recentCount.style.cursor = 'pointer';
+    recentCount.onclick = () => setActiveView('projects');
     const wrap = $('#vscodeRecentList');
     if (!top.length) {
       wrap.innerHTML = '<div class="empty">пока нет проектов — открой таб «Проекты» чтобы создать</div>';
@@ -620,7 +623,7 @@ async function openExplorer(name, kind = 'project') {
     : '/api/explore/tree?project=' + encodeURIComponent(name);
   try {
     const { tree } = await api(treeUrl);
-    $('#explorer-tree').innerHTML = renderTree(tree, '');
+    $('#explorer-tree').innerHTML = renderTree(tree, '', true);
     $$('.explorer-node-file', $('#explorer-tree')).forEach(el => {
       el.onclick = () => loadFile(el.dataset.path);
     });
@@ -632,13 +635,13 @@ async function openExplorer(name, kind = 'project') {
   }
 }
 
-function renderTree(nodes, parentPath) {
-  if (!nodes.length) return '<div class="empty">пусто</div>';
+function renderTree(nodes, parentPath, isRoot = false) {
+  if (!nodes.length) return isRoot ? '<div class="empty">пусто</div>' : '';
   return '<ul class="explorer-tree-list">' + nodes.map(n => {
     const p = parentPath ? `${parentPath}/${n.name}` : n.name;
     if (n.type === 'dir') {
       return `
-        <li class="explorer-tree-item">
+        <li class="explorer-tree-item collapsed">
           <div class="explorer-node-dir" data-path="${escapeHtml(p)}">
             <span class="explorer-icon-caret">▸</span>
             <span class="explorer-name">${escapeHtml(n.name)}/</span>
