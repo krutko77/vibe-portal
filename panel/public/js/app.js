@@ -865,6 +865,71 @@ async function doCreateEmpty() {
   }
 }
 
+// ── «+ Свой проект»: загрузка папки с компа (webkitdirectory) ──
+const UPLOAD_SKIP = (rel) => /(^|\/)(node_modules|\.git)(\/|$)/.test(rel);
+
+function pickedUploadFiles() {
+  const inp = $('#upload-folder');
+  return Array.from(inp.files || []).filter(f => !UPLOAD_SKIP(f.webkitRelativePath || f.name));
+}
+
+function updateUploadInfo() {
+  const files = pickedUploadFiles();
+  const info = $('#upload-info');
+  if (!files.length) {
+    info.textContent = 'node_modules и .git не загружаются — сделай npm install внутри VS Code.';
+    return;
+  }
+  // Автоподстановка имени проекта из имени выбранной папки
+  const nameInp = $('#upload-name');
+  const top = (files[0].webkitRelativePath || '').split('/')[0];
+  if (!nameInp.value && top) {
+    const slug = top.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
+    if (/^[a-z]/.test(slug)) nameInp.value = slug;
+  }
+  const bytes = files.reduce((a, f) => a + f.size, 0);
+  info.textContent = `${files.length} файлов · ${pcFmtSize(bytes)} (без node_modules/.git)`;
+}
+
+async function doUploadProject() {
+  const name = $('#upload-name').value.trim();
+  const err = $('#upload-error');
+  err.classList.add('hidden');
+  const files = pickedUploadFiles();
+  if (!/^[a-z][a-z0-9_-]{1,50}$/i.test(name)) {
+    err.textContent = 'Имя: a-z, 0-9, дефис, подчёркивание (с буквы).';
+    err.classList.remove('hidden'); return;
+  }
+  if (!files.length) {
+    err.textContent = 'Выбери папку с файлами.';
+    err.classList.remove('hidden'); return;
+  }
+  const MAX = 90 * 1024 * 1024;
+  const total = files.reduce((a, f) => a + f.size, 0);
+  if (total > MAX) {
+    err.textContent = `Слишком большой объём (${pcFmtSize(total)}). Лимит 90 MB — убери лишнее.`;
+    err.classList.remove('hidden'); return;
+  }
+  const btn = $('#upload-submit');
+  const oldLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Загрузка…';
+  try {
+    const fd = new FormData();
+    fd.append('name', name);
+    for (const f of files) fd.append('files', f, f.webkitRelativePath || f.name);
+    const r = await fetch('/api/projects/upload', { method: 'POST', credentials: 'same-origin', body: fd });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    closeModal('modal-upload');
+    refreshProjects();
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = oldLabel;
+  }
+}
+
 let createSelectedTemplate = null;
 async function openCreateModal() {
   createSelectedTemplate = null;
@@ -1028,6 +1093,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#newproject-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doCreateProject(); }
   });
+
+  // «+ Свой проект»
+  $('#btn-upload').onclick = () => {
+    $('#upload-name').value = '';
+    $('#upload-folder').value = '';
+    $('#upload-error').classList.add('hidden');
+    updateUploadInfo();
+    openModal('modal-upload');
+    setTimeout(() => $('#upload-name').focus(), 30);
+  };
+  $('#upload-folder').addEventListener('change', updateUploadInfo);
+  $('#upload-submit').onclick = doUploadProject;
 
   // «+ Пустой»
   $('#btn-empty').onclick = () => {

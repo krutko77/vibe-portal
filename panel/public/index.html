@@ -219,6 +219,7 @@
             <span class="section-path"><span id="projectsCount">0</span> шт</span>
           </div>
           <div class="dashboard-actions">
+            <button class="btn btn-primary" id="btn-upload">+ Свой проект</button>
             <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
             <button class="btn btn-primary" id="btn-create">+ Шаблон</button>
           </div>
@@ -812,6 +813,33 @@
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-empty">Отмена</button>
         <button class="btn btn-primary" id="empty-submit">Создать →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: «+ Свой проект» (загрузка папки с компа) ─────── -->
+  <div class="modal-overlay hidden" id="modal-upload" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header">
+        <span class="modal-title">Свой проект</span>
+        <button class="modal-close" data-close="modal-upload" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="upload-name">Имя проекта</label>
+        <input id="upload-name" type="text" class="form-input"
+               placeholder="my-project" autocomplete="off" spellcheck="false"
+               pattern="[a-z][a-z0-9_-]{1,50}" />
+        <span class="form-hint">Только a-z, 0-9, дефис, подчёркивание.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="upload-folder">Папка проекта</label>
+        <input id="upload-folder" type="file" class="form-input" webkitdirectory directory multiple />
+        <span class="form-hint" id="upload-info">node_modules и .git не загружаются — сделай npm install внутри VS Code.</span>
+      </div>
+      <div class="form-error hidden" id="upload-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-upload">Отмена</button>
+        <button class="btn btn-primary" id="upload-submit">Загрузить →</button>
       </div>
     </div>
   </div>

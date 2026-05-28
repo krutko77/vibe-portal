@@ -55,6 +55,61 @@ export function createEmptyProject({ workspaceDir, projectName }) {
   return { name: projectName, path: dst };
 }
 
+// Создать проект из загруженной учеником папки.
+// files: [{ relPath, buffer }] — relPath приходит из webkitRelativePath
+// (forward-slashes, первый сегмент = имя выбранной папки, его срезаем).
+// Все файлы пишутся под dst, затем chown -R 1000:1000 — иначе ученик в
+// контейнере (uid 1000) не сможет открыть проект (чёрный экран code-server).
+export function createUploadedProject({ workspaceDir, projectName, files }) {
+  if (!/^[a-z][a-z0-9_-]{1,50}$/i.test(projectName)) {
+    throw new Error('invalid project name');
+  }
+  if (!Array.isArray(files) || !files.length) {
+    throw new Error('no files');
+  }
+  const dst = path.join(workspaceDir, projectName);
+  if (fs.existsSync(dst)) {
+    throw new Error('project already exists');
+  }
+  const dstReal = path.resolve(dst);
+  fs.mkdirSync(dst, { recursive: true });
+  let written = 0;
+  try {
+    for (const f of files) {
+      const rel = sanitizeRelPath(f.relPath);
+      if (!rel) continue;
+      const target = path.resolve(dst, rel);
+      if (target !== dstReal && !target.startsWith(dstReal + path.sep)) continue; // traversal
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, f.buffer);
+      written++;
+    }
+  } catch (e) {
+    fs.rmSync(dst, { recursive: true, force: true });
+    throw e;
+  }
+  if (!written) {
+    fs.rmSync(dst, { recursive: true, force: true });
+    throw new Error('no valid files');
+  }
+  const r = spawnSync('chown', ['-R', '1000:1000', dst], { stdio: 'pipe' });
+  if (r.status !== 0) {
+    throw new Error('chown failed: ' + r.stderr.toString());
+  }
+  return { name: projectName, path: dst, files: written };
+}
+
+// Срезает верхнюю папку, отбрасывает node_modules/.git и любой `..`.
+function sanitizeRelPath(relPath) {
+  if (!relPath || typeof relPath !== 'string') return null;
+  let parts = relPath.replace(/\\/g, '/').split('/').filter(Boolean);
+  if (parts.length > 1) parts = parts.slice(1); // имя выбранной папки
+  if (!parts.length) return null;
+  if (parts.some(p => p === '..' || p === '.')) return null;
+  if (parts.some(p => p === 'node_modules' || p === '.git')) return null;
+  return parts.join('/');
+}
+
 export function instantiateTemplate({ templateName, workspaceDir, projectName }) {
   if (!/^[a-z][a-z0-9_-]{1,50}$/i.test(projectName)) {
     throw new Error('invalid project name');

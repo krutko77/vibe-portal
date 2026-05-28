@@ -33,7 +33,7 @@ import {
   dockerStart, dockerStop, containerStatus, workspaceDir,
   touchActivity, startReaper,
 } from './lib/students.js';
-import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject } from './lib/templates.js';
+import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 import {
   listSessions as pcListSessions,
@@ -133,6 +133,26 @@ app.post('/api/projects/empty', requireAuth, (req, res) => {
     const ws = workspaceDir(req.session.user);
     fs.mkdirSync(ws, { recursive: true });
     const out = createEmptyProject({ workspaceDir: ws, projectName: name });
+    res.json({ ok: true, project: out });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// Создать проект из загруженной папки (webkitdirectory).
+// Каждый файл приходит с originalname = его относительный путь (см. клиент).
+const projectUpload = multer({
+  limits: { fileSize: 25 * 1024 * 1024, files: 4000 },
+  storage: multer.memoryStorage(),
+});
+
+app.post('/api/projects/upload', requireAuth, projectUpload.array('files'), (req, res) => {
+  const { name } = req.body || {};
+  try {
+    const ws = workspaceDir(req.session.user);
+    fs.mkdirSync(ws, { recursive: true });
+    const files = (req.files || []).map(f => ({ relPath: f.originalname, buffer: f.buffer }));
+    const out = createUploadedProject({ workspaceDir: ws, projectName: name, files });
     res.json({ ok: true, project: out });
   } catch (e) {
     res.status(400).json({ error: e.message });
