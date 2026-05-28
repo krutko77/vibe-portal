@@ -18,7 +18,7 @@
    снапшотит vibe-portal в общий gitflic каждые 4 часа.
 2. **Секреты никогда в git.** `.env*` исключены rsync'ом, но если что —
    проверь руками. OAuth-токен Claude для шима лежит в
-   `/data/config/auth/claude-vibe.credentials.json` (chmod 600), не здесь.
+   `/root/.claude/.credentials.json` (chmod 600, общий с хостовым claude), не здесь.
 3. **Изменение auth/контейнерной изоляции — критично.** Прежде чем трогать
    `scripts/setup-iptables.sh`, `panel/lib/students.js` или `shim/server.js` —
    убедись, что понимаешь модель угроз: ученик не должен видеть чужие файлы
@@ -65,22 +65,35 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
 Reverse-proxy на хосте `:8190`, который:
 1. Принимает HTTP-запросы из контейнеров (whitelisted 172.30.0.0/24 + 127/8).
 2. Стрипает `Authorization`, ставит реальный `Bearer <accessToken>` из
-   `/data/config/auth/claude-vibe.credentials.json`.
+   `CREDENTIALS_PATH=/root/.claude/.credentials.json` — **тот же файл, что
+   использует хостовый `claude`** (единый источник истины, см. ниже).
 3. Добавляет `anthropic-beta: oauth-2025-04-20` если клиент не прислал.
 4. Форвардит в `api.anthropic.com` через `HTTPS_PROXY` (внешний HTTP-прокси
    `151.243.152.6:9894`, креды в `/data/config/env/proxy.env`).
 5. Авто-рефрешит OAuth-токен через `POST https://platform.claude.com/v1/oauth/token`
    за минуту до истечения. Сохраняет обновлённые токены обратно в файл.
+   Перечитывает файл с диска по `mtime` перед каждым refresh и при ошибке
+   refresh (если хостовый claude уже ротировал общий RT — подхватит свежий).
 6. Логирует source IP, метод, URL, статус, ms в journald.
 
 Health: `curl http://127.0.0.1:8190/_shim/health`.
 
+**Единый OAuth-файл (важно).** Раньше шим читал отдельную копию
+`/data/config/auth/claude-vibe.credentials.json`, которую таймер
+`sync-claude-creds` копировал из хостовой. Но OAuth refresh-токен
+**одноразовый**: когда хостовый `claude` (или `keepalive-claude`) обновлялся,
+RT в копии шима «осиротевал» → `invalid_grant`, и до следующего sync (раз в
+5 мин) ученики ловили экран логина. Поэтому шим переведён на **общий файл**
+`/root/.claude/.credentials.json`: одна RT-цепочка, разъезда копий нет.
+Таймер `sync-claude-creds` отключён (`systemctl disable --now`).
+
 **Смена аккаунта Claude (vibe → новый):**
 ```bash
-cp /tmp/new-credentials.json /data/config/auth/claude-vibe.credentials.json
-chmod 600 /data/config/auth/claude-vibe.credentials.json
+cp /tmp/new-credentials.json /root/.claude/.credentials.json
+chmod 600 /root/.claude/.credentials.json
 systemctl restart anthropic-shim
 # Контейнеры учеников НЕ рестартуют — следующий запрос пойдёт с новым токеном.
+# Внимание: это тот же файл, что у хостового claude — меняешь сразу обоим.
 ```
 
 ## vibe-panel (`panel/`, Express :3020)
@@ -163,7 +176,8 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 /data/
 ├── vibe-students/<user>/              workspace ученика (uid 1000)
 └── config/
-    ├── auth/{.htpasswd-vibe,users-vibe.json,claude-vibe.credentials.json}
+    ├── auth/{.htpasswd-vibe,users-vibe.json}
+    │     (claude-vibe.credentials.json — legacy, шим читает /root/.claude/.credentials.json)
     ├── env/vibe-panel.env             SESSION_SECRET
     └── sessions-vibe/                 session-file-store
 ```

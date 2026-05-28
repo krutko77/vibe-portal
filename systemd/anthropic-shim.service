@@ -9,7 +9,9 @@ User=root
 WorkingDirectory=/opt/vibe-portal/shim
 EnvironmentFile=/data/config/env/proxy.env
 Environment=NODE_ENV=production
-Environment=CREDENTIALS_PATH=/data/config/auth/claude-vibe.credentials.json
+# Единый источник истины: тот же файл, что использует хостовый claude.
+# Один OAuth refresh-токен, никакого разъезда копий (см. CLAUDE.md → Anthropic-shim).
+Environment=CREDENTIALS_PATH=/root/.claude/.credentials.json
 Environment=LISTEN_HOST=0.0.0.0
 Environment=LISTEN_PORT=8190
 Environment=ALLOWED_CIDRS=172.30.0.0/24,127.0.0.0/8

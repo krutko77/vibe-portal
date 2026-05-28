@@ -248,7 +248,14 @@ async function handle(req, res) {
     await refreshIfNeeded();
   } catch (e) {
     log(`refresh failed: ${e.message}`);
-    // продолжим со старым токеном — может ещё не истёк
+    // RT мог быть уже ротирован хостовым claude (общий файл) — перечитаем
+    // с диска принудительно: там может лежать свежий токен.
+    try {
+      loadCredentials();
+    } catch (e2) {
+      log(`reload after refresh failure failed: ${e2.message}`);
+    }
+    // продолжим с тем, что есть — токен на диске может быть ещё валиден
   }
 
   const t0 = Date.now();
