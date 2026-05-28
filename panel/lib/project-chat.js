@@ -60,10 +60,17 @@ async function firstUserMessage(jsonlPath) {
     for (const line of raw.split('\n')) {
       if (!line) continue;
       let obj; try { obj = JSON.parse(line); } catch { continue; }
-      if (obj?.type === 'user' && Array.isArray(obj?.message?.content)) {
-        for (const c of obj.message.content) {
-          if (c.type === 'text' && typeof c.text === 'string' && c.text.trim()) {
-            return c.text.trim();
+      if (obj?.type === 'user') {
+        const content = obj?.message?.content;
+        // CLI пишет content либо строкой, либо массивом блоков.
+        if (typeof content === 'string' && content.trim()) {
+          return content.trim();
+        }
+        if (Array.isArray(content)) {
+          for (const c of content) {
+            if (c.type === 'text' && typeof c.text === 'string' && c.text.trim()) {
+              return c.text.trim();
+            }
           }
         }
       }
@@ -123,7 +130,11 @@ export async function listSessions(username, projectSlug) {
       };
       try { await writeMeta(username, projectSlug, sessionId, meta); } catch {}
     } else {
+      // Старые/частичные meta (например, записанные send-флоу без sessionId) —
+      // достраиваем обязательные поля, иначе фронт падает на sessionId.slice().
+      meta.sessionId = sessionId;
       meta.lastWriteAt = meta.lastWriteAt || s.mtime.toISOString();
+      if (!meta.title) meta.title = truncate((await firstUserMessage(filePath)) || 'Без темы', MAX_TITLE_LEN);
     }
     if (meta.lockedBy && !activeProcs.has(sessionId)) {
       meta.lockedBy = null;
@@ -158,6 +169,10 @@ export async function loadSessionHistory(username, projectSlug, sessionId) {
 function mapJsonlEntryToBlocks(obj) {
   if (!obj || typeof obj !== 'object') return null;
   const t = obj.type;
+  if (t === 'user' && typeof obj.message?.content === 'string') {
+    const text = obj.message.content;
+    return text.trim() ? [{ role: 'user', type: 'text', text, ts: obj.timestamp }] : null;
+  }
   if (t === 'user' && Array.isArray(obj.message?.content)) {
     const out = [];
     for (const c of obj.message.content) {

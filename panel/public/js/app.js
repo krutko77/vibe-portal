@@ -1347,15 +1347,16 @@ function pcRenderSessionList(sessions) {
     menu.appendChild(item);
     return;
   }
+  const shortId = (id) => (id || '').slice(0, 8) || '—';
   const cur = sessions.find(s => s.sessionId === pcState.sessionId);
   pcEls.sessionsLabel().textContent = cur
-    ? (cur.title || cur.sessionId.slice(0, 8)) + (cur.lockedBy ? ' 🔒' : '')
+    ? (cur.title || shortId(cur.sessionId)) + (cur.lockedBy ? ' 🔒' : '')
     : '— новая —';
   for (const s of sessions) {
     const item = document.createElement('button');
     item.className = 'pc-dd-item' + (s.sessionId === pcState.sessionId ? ' active' : '');
     item.type = 'button';
-    const title = escapeHtml(s.title || s.sessionId.slice(0, 8));
+    const title = escapeHtml(s.title || shortId(s.sessionId));
     const lockLabel = s.lockedBy ? ' · 🔒 ' + escapeHtml(s.lockedBy) : '';
     item.innerHTML = `<span class="pc-dd-item-title">${title}</span><span class="pc-dd-item-meta">${escapeHtml(s.createdBy || '')}${lockLabel}</span>`;
     item.addEventListener('click', async () => {
