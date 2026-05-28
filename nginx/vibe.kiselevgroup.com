@@ -12,8 +12,7 @@ upstream vibe_panel {
     keepalive 16;
 }
 
-# SSL добавлен certbot --nginx (Let's Encrypt, автообновление). Не править вручную
-# блоки "managed by Certbot" — потеряются при renew.
+# HTTP — пока без SSL (сертификат добавим certbot'ом когда DNS пропагируется)
 server {
     server_name vibe.kiselevgroup.com;
 
@@ -35,6 +34,23 @@ server {
         add_header Cache-Control "public, max-age=300";
     }
 
+    # SSE-стрим claude-чата: буферизацию выключаем ТОЧЕЧНО только здесь.
+    # Глобальный `proxy_buffering off` под HTTP/2 давал интермиттентные 400
+    # на параллельных GET /api/project-chat/sessions во время активного стрима.
+    location = /api/project-chat/send {
+        proxy_pass http://vibe_panel;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Prefix "";
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+    }
+
     location / {
         proxy_pass http://vibe_panel;
         proxy_http_version 1.1;
@@ -53,7 +69,6 @@ server {
         # Большие таймауты для долгих стримов claude
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
-        proxy_buffering off;
     }
 
     listen [::]:443 ssl ipv6only=on; # managed by Certbot

@@ -18,6 +18,32 @@ async function api(path, opts = {}) {
   return data;
 }
 
+// GET с защитой от транзиентных пустых ответов nginx (HTTP/2 + активный SSE
+// иногда даёт 4xx с пустым телом). Настоящая ошибка Express всегда несёт JSON
+// {error}; пустое тело при !ok → ретраим. Возвращает { ok, status, data }.
+async function getJsonWithRetry(url, tries = 3) {
+  let last = { ok: false, status: 0, data: {} };
+  for (let i = 0; i < tries; i++) {
+    let r;
+    try {
+      r = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+    } catch (e) {
+      last = { ok: false, status: 0, data: {} };
+      await new Promise(res => setTimeout(res, 250 * (i + 1)));
+      continue;
+    }
+    const text = await r.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch {}
+    last = { ok: r.ok, status: r.status, data };
+    // успех или настоящая ошибка с телом — не ретраим
+    if (r.ok || (data && data.error)) return last;
+    // !ok и пустое/непарсимое тело — транзиент, пробуем ещё
+    await new Promise(res => setTimeout(res, 250 * (i + 1)));
+  }
+  return last;
+}
+
 const openModal  = (id) => $('#' + id).classList.remove('hidden');
 const closeModal = (id) => $('#' + id).classList.add('hidden');
 
@@ -1345,11 +1371,10 @@ function pcRenderSessionList(sessions) {
 
 async function pcLoadSessions() {
   try {
-    const r = await fetch(`/api/project-chat/sessions?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin', cache: 'no-store' });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || `sessions load failed (${r.status})`);
-    pcRenderSessionList(d.sessions || []);
-    return d.sessions || [];
+    const { ok, status, data } = await getJsonWithRetry(`/api/project-chat/sessions?project=${encodeURIComponent(pcState.slug)}`);
+    if (!ok) throw new Error(data.error || `sessions load failed (${status})`);
+    pcRenderSessionList(data.sessions || []);
+    return data.sessions || [];
   } catch (e) {
     pcShowEmpty('Не удалось загрузить сессии: ' + e.message);
     return [];
@@ -1360,11 +1385,10 @@ async function pcLoadHistory(sessionId) {
   pcClearMessages();
   if (!sessionId) { pcShowEmpty('Напиши первое сообщение — сессия создастся.'); return; }
   try {
-    const r = await fetch(`/api/project-chat/session/${encodeURIComponent(sessionId)}?project=${encodeURIComponent(pcState.slug)}`, { credentials: 'same-origin', cache: 'no-store' });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || `history load failed (${r.status})`);
-    if (!d.blocks?.length) pcShowEmpty('Пустая сессия — напиши сообщение.');
-    else d.blocks.forEach(pcRenderBlock);
+    const { ok, status, data } = await getJsonWithRetry(`/api/project-chat/session/${encodeURIComponent(sessionId)}?project=${encodeURIComponent(pcState.slug)}`);
+    if (!ok) throw new Error(data.error || `history load failed (${status})`);
+    if (!data.blocks?.length) pcShowEmpty('Пустая сессия — напиши сообщение.');
+    else data.blocks.forEach(pcRenderBlock);
   } catch (e) {
     pcShowEmpty('Не удалось загрузить историю: ' + e.message);
   }
