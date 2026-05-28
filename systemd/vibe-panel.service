@@ -8,6 +8,9 @@ Type=simple
 User=root
 WorkingDirectory=/opt/vibe-portal/panel
 EnvironmentFile=/data/config/env/vibe-panel.env
+# Прокси для spawned claude: project-chat и user-chat зовут хостовый claude,
+# которому нужен HTTPS_PROXY чтобы достучаться до api.anthropic.com.
+EnvironmentFile=/data/config/env/proxy.env
 Environment=NODE_ENV=production
 Environment=PORT=3020
 Environment=HOST=127.0.0.1
