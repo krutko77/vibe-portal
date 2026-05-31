@@ -9,6 +9,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "dockerode": "^4.0.12",
     "undici": "^8.0.0"
   }
 }

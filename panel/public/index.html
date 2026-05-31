@@ -769,6 +769,20 @@
     </div>
   </div>
 
+  <!-- ── Modal: Transcripts (admin) — аудит диалогов ────────── -->
+  <div class="modal-overlay hidden" id="modal-transcripts" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:860px;width:92vw">
+      <div class="modal-header">
+        <span class="modal-title" id="tr-title">Диалоги</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="tr-date" class="form-input" style="width:auto;padding:4px 8px"></select>
+          <button class="modal-close" data-close="modal-transcripts" aria-label="Закрыть">✕</button>
+        </div>
+      </div>
+      <div id="tr-body" class="tr-list"></div>
+    </div>
+  </div>
+
   <!-- ── Modal: Create project from template (старая, для секции «Шаблоны»)── -->
   <div class="modal-overlay hidden" id="modal-newproject" role="dialog" aria-modal="true">
     <div class="modal">

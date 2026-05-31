@@ -22,6 +22,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ProxyAgent, Agent, fetch as undiciFetch } from 'undici';
+import * as transcript from './transcript.js';
 
 const CREDENTIALS_PATH = process.env.CREDENTIALS_PATH
   || '/data/config/auth/claude-vibe.credentials.json';
@@ -151,7 +152,18 @@ const STRIP_RESP_HEADERS = new Set([
   'connection', 'transfer-encoding', 'content-encoding',
 ]);
 
-async function forward(req, res) {
+// Запрос подлежит аудиту, если это обращение к Messages API (сам диалог).
+// count_tokens и прочую служебку не пишем.
+function isLoggable(req) {
+  return req.method === 'POST'
+    && req.url.startsWith('/v1/messages')
+    && !req.url.includes('count_tokens');
+}
+
+// Лимит на буферизацию тела запроса для аудита (защита от OOM на аномалии).
+const REQ_BUFFER_CAP = 64 * 1024 * 1024;
+
+async function forward(req, res, ip) {
   const url = `https://${UPSTREAM_HOST}${req.url}`;
 
   // собираем заголовки
@@ -169,12 +181,24 @@ async function forward(req, res) {
   }
   headers['host'] = UPSTREAM_HOST;
 
-  // тело: читаем как буфер для не-стримящих случаев; для streaming POST — IncomingMessage сам стримит,
-  // undici умеет принимать ReadableStream/AsyncIterable. Web-Streams API из Node http не даём напрямую,
-  // поэтому используем async generator.
   const hasBody = !['GET', 'HEAD'].includes(req.method);
+  const loggable = hasBody && isLoggable(req);
+
+  // тело: для аудируемых запросов буферизуем целиком (нужно распарсить + всё
+  // равно это завершённый JSON), иначе стримим как раньше. undici принимает и
+  // Buffer, и async-generator.
   let body;
-  if (hasBody) {
+  let reqBuf = null;
+  if (hasBody && loggable) {
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of req) {
+      size += chunk.length;
+      if (size <= REQ_BUFFER_CAP) chunks.push(chunk);
+    }
+    reqBuf = size <= REQ_BUFFER_CAP ? Buffer.concat(chunks) : null;
+    body = reqBuf || Buffer.alloc(0);
+  } else if (hasBody) {
     body = (async function*() {
       for await (const chunk of req) yield chunk;
     })();
@@ -202,14 +226,45 @@ async function forward(req, res) {
   });
   res.writeHead(upstream.status, outHeaders);
 
+  // Аудит: накапливаем ответ по мере проксирования (без задержки клиенту).
+  const acc = loggable ? new transcript.ResponseAccumulator() : null;
+
   if (upstream.body) {
     for await (const chunk of upstream.body) {
+      if (acc) { try { acc.push(chunk); } catch {} }
       if (!res.write(chunk)) {
         await new Promise(r => res.once('drain', r));
       }
     }
   }
   res.end();
+
+  // Запись транскрипта — после ответа, чтобы не влиять на латентность.
+  if (loggable) {
+    try {
+      const user = await transcript.resolveUser(ip);
+      const reqInfo = reqBuf
+        ? transcript.parseRequest(reqBuf)
+        : { model: null, numMessages: 0, userText: '(request too large to log)', isToolContinuation: false };
+      const out = acc.finalize();
+      transcript.write({
+        ts: new Date().toISOString(),
+        user: user || `unknown-${(ip || 'noip').replace(/[^a-zA-Z0-9]/g, '-')}`,
+        ip,
+        status: upstream.status,
+        model: out.model || reqInfo.model,
+        numMessages: reqInfo.numMessages,
+        userText: reqInfo.userText,
+        isToolContinuation: reqInfo.isToolContinuation,
+        assistantText: out.text,
+        toolCalls: out.tools,
+        stopReason: out.stopReason,
+        usage: out.usage,
+      });
+    } catch (e) {
+      log(`transcript record failed: ${e.message}`);
+    }
+  }
 }
 
 // ---------- сервер ----------
@@ -259,7 +314,7 @@ async function handle(req, res) {
   }
 
   const t0 = Date.now();
-  await forward(req, res);
+  await forward(req, res, ip);
   log(`${ip} ${req.method} ${req.url} → ${res.statusCode} ${Date.now() - t0}ms`);
 }
 

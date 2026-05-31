@@ -34,6 +34,7 @@ import {
   touchActivity, startReaper,
 } from './lib/students.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
+import { listUsers as listTranscriptUsers, readUser as readTranscriptUser } from './lib/transcripts.js';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 import {
   listSessions as pcListSessions,
@@ -412,6 +413,22 @@ app.delete('/api/students/:u', requireAdmin, async (req, res) => {
   try {
     await deleteStudent(req.params.u);
     res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// ---------- transcripts (admin): аудит диалогов ученик↔Claude ----------
+
+app.get('/api/transcripts', requireAdmin, (req, res) => {
+  res.json({ users: listTranscriptUsers() });
+});
+
+app.get('/api/transcripts/:u', requireAdmin, (req, res) => {
+  const u = req.params.u;
+  if (!/^[a-zA-Z0-9._-]+$/.test(u)) return res.status(400).json({ error: 'invalid user' });
+  try {
+    res.json(readTranscriptUser(u, req.query.date));
   } catch (e) {
     res.status(400).json({ error: e.message });
   }

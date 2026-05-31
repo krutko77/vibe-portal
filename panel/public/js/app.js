@@ -772,6 +772,7 @@ async function refreshUsers() {
         </div>
         <div class="user-row-actions">
           <span class="user-role-pill ${s.role === 'admin' ? 'role-admin' : ''}">${escapeHtml(s.role)}</span>
+          <button class="user-row-del" data-logs="${escapeHtml(s.username)}">Логи</button>
           ${s.username !== ME.username
             ? `<button class="user-row-del" data-del="${escapeHtml(s.username)}">Удалить</button>`
             : ''}
@@ -781,7 +782,73 @@ async function refreshUsers() {
     $$('[data-del]', list).forEach(b => {
       b.onclick = () => openDeleteStudentModal(b.dataset.del);
     });
+    $$('[data-logs]', list).forEach(b => {
+      b.onclick = () => openTranscripts(b.dataset.logs);
+    });
   } catch {}
+}
+
+// ── Transcripts (admin): аудит диалогов ученик↔Claude ──────
+
+let TR_USER = null;
+
+async function openTranscripts(user) {
+  TR_USER = user;
+  $('#tr-title').textContent = 'Диалоги · ' + user;
+  $('#tr-date').innerHTML = '';
+  $('#tr-body').innerHTML = '<div class="tr-empty">загрузка…</div>';
+  openModal('modal-transcripts');
+  await loadTranscripts(user, null);
+}
+
+async function loadTranscripts(user, date) {
+  const body = $('#tr-body');
+  body.innerHTML = '<div class="tr-empty">загрузка…</div>';
+  try {
+    const qs = date ? ('?date=' + encodeURIComponent(date)) : '';
+    const data = await api('/api/transcripts/' + encodeURIComponent(user) + qs);
+
+    const sel = $('#tr-date');
+    sel.innerHTML = (data.dates || []).map(d =>
+      `<option value="${escapeHtml(d)}"${d === data.date ? ' selected' : ''}>${escapeHtml(d)}</option>`
+    ).join('');
+    sel.onchange = () => loadTranscripts(user, sel.value);
+
+    const recs = data.records || [];
+    if (!recs.length) {
+      body.innerHTML = '<div class="tr-empty">за этот день диалогов нет</div>';
+      return;
+    }
+    body.innerHTML = recs.map(renderTranscriptRecord).join('');
+  } catch (e) {
+    body.innerHTML = `<div class="tr-empty">ошибка: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderTranscriptRecord(r) {
+  const time = r.ts ? new Date(r.ts).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
+  const model = (r.model || '').replace(/^claude-/, '');
+  const usage = r.usage ? `${r.usage.input || 0}→${r.usage.output || 0} tok` : '';
+  const userBlock = r.isToolContinuation
+    ? '<span class="tr-tag">↻ продолжение (tool result)</span>'
+    : `<div class="tr-text tr-user">${escapeHtml(r.userText) || '<i>—</i>'}</div>`;
+  const tools = (r.toolCalls && r.toolCalls.length)
+    ? `<div class="tr-tools">🔧 ${escapeHtml(r.toolCalls.join(', '))}</div>` : '';
+  const asst = r.assistantText
+    ? `<div class="tr-text tr-asst">${escapeHtml(r.assistantText)}</div>` : '';
+  return `
+    <div class="tr-rec">
+      <div class="tr-meta">
+        <span>${time}</span>
+        ${model ? `<span class="tr-pill">${escapeHtml(model)}</span>` : ''}
+        ${usage ? `<span>${escapeHtml(usage)}</span>` : ''}
+        ${r.status && r.status !== 200 ? `<span class="tr-err">HTTP ${r.status}</span>` : ''}
+      </div>
+      <div class="tr-role">Ученик:</div>
+      ${userBlock}
+      ${tools}
+      ${asst ? '<div class="tr-role">Claude:</div>' + asst : ''}
+    </div>`;
 }
 
 // ── Theme toggle ───────────────────────────────────────────
