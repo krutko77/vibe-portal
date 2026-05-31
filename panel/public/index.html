@@ -76,6 +76,13 @@
       </svg>
     </a>
 
+    <a class="nav-icon hidden-when-no-auth admin-only" href="/logs.html" title="Логи диалогов">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>
+      </svg>
+    </a>
+
     <button class="nav-icon hidden-when-no-auth admin-only" id="settingsBtn" title="Настройки">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -221,12 +228,12 @@
           <div class="dashboard-actions">
             <button class="btn btn-primary" id="btn-upload">+ Свой проект</button>
             <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
-            <button class="btn btn-primary" id="btn-create">+ Шаблон</button>
+            <button class="btn btn-primary hidden" id="btn-create">+ Шаблон</button>
           </div>
         </div>
         <div class="projects-table-wrap" id="projectsList"></div>
       </div>
-      <div class="section-block">
+      <div class="section-block hidden">
         <div class="section-head">
           <div class="section-head-left">
             <span class="section-label">Шаблоны</span>
@@ -264,9 +271,9 @@
           <span class="materials-tab-icon">📋</span>
           <span class="materials-tab-text">Шпаргалка</span>
         </button>
-        <button class="materials-tab" data-sub="claude">
-          <span class="materials-tab-icon">🤖</span>
-          <span class="materials-tab-text">Работа с Клодом</span>
+        <button class="materials-tab" data-sub="templates-dl">
+          <span class="materials-tab-icon">📦</span>
+          <span class="materials-tab-text">Шаблоны</span>
         </button>
         <button class="materials-tab" data-sub="skills">
           <span class="materials-tab-icon">✨</span>
@@ -449,48 +456,39 @@
         </div>
       </div>
 
-      <!-- materials > Работа с Клодом -->
-      <div class="materials-page hidden" data-sub="claude">
-        <div class="page-meta">VIBE PORTAL · CLAUDE CODE</div>
-        <h1 class="page-h1"><em>Claude Code</em> и команды</h1>
-        <p class="page-lead">Список slash-команд, советы по промптам, особенности работы в порталe.</p>
-        <div class="anchor-chips">
-          <a href="#c-commands" class="anchor-chip">Команды</a>
-          <a href="#c-prompts" class="anchor-chip">Промпты</a>
-          <a href="#c-memory" class="anchor-chip">Память</a>
-          <a href="#c-context" class="anchor-chip">Контекст</a>
-        </div>
-        <div class="page-sect" id="c-commands">
-          <div class="page-sect-no">1. КОМАНДЫ</div>
-          <table class="page-table">
-            <thead><tr><th>Команда</th><th>Что делает</th></tr></thead>
-            <tbody>
-              <tr><td><code>/init</code></td><td>Создаёт <code>CLAUDE.md</code> в проекте с автоопределённой архитектурой.</td></tr>
-              <tr><td><code>/compact</code></td><td>Сжимает контекст: удаляет старые сообщения, оставляя суть.</td></tr>
-              <tr><td><code>/clear</code></td><td>Полностью очищает контекст. Используй при смене темы.</td></tr>
-              <tr><td><code>/diff</code></td><td>Показывает что Claude изменил с последней проверки.</td></tr>
-              <tr><td><code>/usage</code></td><td>Сколько токенов и денег потрачено в сессии.</td></tr>
-              <tr><td><code>/explain</code></td><td>Подробное объяснение кода без правки.</td></tr>
-              <tr><td><code>/skill</code></td><td>Вызвать конкретный установленный скилл (superpowers / memory / ui-ux).</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="page-sect" id="c-prompts">
-          <div class="page-sect-no">2. ХОРОШИЕ ПРОМПТЫ</div>
-          <ul class="page-list">
-            <li><strong>Контекст сначала</strong> — что за проект, что уже сделано, что не получилось.</li>
-            <li><strong>Чёткая задача</strong> — что должен сделать Claude и какой результат ждёшь.</li>
-            <li><strong>Ограничения</strong> — какие файлы трогать нельзя, что не использовать.</li>
-            <li>Не пиши «как обычно» — Claude не знает что у тебя обычно. Опиши явно.</li>
-          </ul>
-        </div>
-        <div class="page-sect" id="c-memory">
-          <div class="page-sect-no">3. ПАМЯТЬ</div>
-          <p>Используй скилл <code>claude-memory</code>: один <code>.md</code> файл в <code>.claude/memory/</code> — учится от исправлений, ловит противоречия, чистит дубли. Запускается командой <code>/memory update</code>.</p>
-        </div>
-        <div class="page-sect" id="c-context">
-          <div class="page-sect-no">4. КОНТЕКСТ И СЕССИИ</div>
-          <p>Сессии чата Claude хранятся в <code>/root/.claude/projects/-data-vibe-students-&lt;user&gt;-&lt;project&gt;/</code>. В портале они доступны через dropdown «сессии». Можно создавать новые, удалять, переключаться между ними.</p>
+      <!-- materials > Шаблоны (скачивание) -->
+      <div class="materials-page hidden" data-sub="templates-dl">
+        <div class="page-meta">VIBE PORTAL · ШАБЛОНЫ</div>
+        <h1 class="page-h1">Шаблоны <em>проектов</em></h1>
+        <p class="page-lead">Скачай готовый шаблон-заготовку и распакуй у себя в проекте. Внутри — структура, системные файлы и <code>CLAUDE.md</code> с инструкциями для Claude.</p>
+
+        <div class="dl-grid">
+          <div class="dl-card">
+            <div class="dl-card-head">
+              <span class="dl-card-icon">📦</span>
+              <div>
+                <div class="dl-card-title">Базовый шаблон</div>
+                <div class="dl-card-sub">_base · чистая заготовка проекта</div>
+              </div>
+            </div>
+            <p class="dl-card-desc">Минимальный каркас: структура папок, <code>CLAUDE.md</code>, базовые настройки. Хорош как старт для любого приложения.</p>
+            <a class="btn btn-primary dl-btn" href="/api/template-download/_base">↓ Скачать .zip</a>
+          </div>
+
+          <div class="dl-card">
+            <div class="dl-card-head">
+              <span class="dl-card-icon">🟦</span>
+              <div>
+                <div class="dl-card-title">Битрикс24 vibe</div>
+                <div class="dl-card-sub">_b24-single-php · приложение для Б24</div>
+              </div>
+            </div>
+            <p class="dl-card-desc">Готовый single-PHP шаблон приложения Битрикс24: <code>www/</code>, REST-обвязка, deploy-скрипт, инструкции в <code>CLAUDE.md</code>.</p>
+            <div class="dl-btn-row">
+              <a class="btn btn-primary dl-btn" href="/api/template-download/_b24-single-php">↓ Скачать .zip</a>
+              <a class="btn dl-btn-sec" href="/api/template-claude/b24">↓ Только CLAUDE.md</a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -766,20 +764,6 @@
         <button class="btn btn-ghost" data-close="modal-add-user">Отмена</button>
         <button class="btn btn-primary" id="add-user-submit">Создать ученика</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Transcripts (admin) — аудит диалогов ────────── -->
-  <div class="modal-overlay hidden" id="modal-transcripts" role="dialog" aria-modal="true">
-    <div class="modal" style="max-width:860px;width:92vw">
-      <div class="modal-header">
-        <span class="modal-title" id="tr-title">Диалоги</span>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="tr-date" class="form-input" style="width:auto;padding:4px 8px"></select>
-          <button class="modal-close" data-close="modal-transcripts" aria-label="Закрыть">✕</button>
-        </div>
-      </div>
-      <div id="tr-body" class="tr-list"></div>
     </div>
   </div>
 

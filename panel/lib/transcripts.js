@@ -50,6 +50,11 @@ export function readUser(user, date) {
   if (!day) return { user, date: null, dates, records: [] };
 
   const file = path.join(udir, `${day}.jsonl`);
+  const records = readFile(file);
+  return { user, date: day, dates, records };
+}
+
+function readFile(file) {
   const records = [];
   try {
     const raw = fs.readFileSync(file, 'utf8');
@@ -58,5 +63,49 @@ export function readUser(user, date) {
       try { records.push(JSON.parse(line)); } catch {}
     }
   } catch {}
-  return { user, date: day, dates, records };
+  return records;
+}
+
+// Все записи ученика за все даты (хронологически, новые сверху).
+function readUserAll(user) {
+  if (!USER_RE.test(user)) return [];
+  const udir = path.join(TRANSCRIPTS_DIR, user);
+  if (!fs.existsSync(udir)) return [];
+  let out = [];
+  for (const f of fs.readdirSync(udir)) {
+    if (!f.endsWith('.jsonl')) continue;
+    if (!DATE_RE.test(f.replace(/\.jsonl$/, ''))) continue;
+    out = out.concat(readFile(path.join(udir, f)));
+  }
+  return out;
+}
+
+// Общая лента: все диалоги всех учеников (или одного), новые сверху, с
+// разбивкой-счётчиками по ученикам. Для admin-страницы логов.
+export function feed({ user = null, limit = 1500 } = {}) {
+  const users = (user && USER_RE.test(user))
+    ? [user]
+    : listUsers().map(u => u.user);
+
+  let records = [];
+  for (const u of users) {
+    for (const r of readUserAll(u)) {
+      // в записи уже есть r.user; на всякий случай подстрахуемся
+      if (!r.user) r.user = u;
+      records.push(r);
+    }
+  }
+  records.sort((a, b) => (b.ts || '').localeCompare(a.ts || ''));
+
+  // счётчики по ученикам считаем по всей выборке (до лимита показа)
+  const perUser = {};
+  let totalTokens = 0;
+  for (const r of records) {
+    perUser[r.user] = (perUser[r.user] || 0) + 1;
+    totalTokens += (r.usage?.input || 0) + (r.usage?.output || 0);
+  }
+
+  const total = records.length;
+  if (records.length > limit) records = records.slice(0, limit);
+  return { records, perUser, total, totalTokens, truncated: total > limit };
 }

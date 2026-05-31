@@ -34,7 +34,8 @@ import {
   touchActivity, startReaper,
 } from './lib/students.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
-import { listUsers as listTranscriptUsers, readUser as readTranscriptUser } from './lib/transcripts.js';
+import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
+import { spawn } from 'node:child_process';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 import {
   listSessions as pcListSessions,
@@ -371,6 +372,62 @@ app.post('/api/projects/from-template', requireAuth, (req, res) => {
   }
 });
 
+// ---------- downloads (zip проектов и шаблонов) ----------
+
+// Стримит zip каталога <parentDir>/<entry> в ответ как attachment.
+// Архивируем через системный zip (пишет в stdout), исключая мусор.
+function streamZip(res, parentDir, entry, filename) {
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition',
+    `attachment; filename="${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}"`);
+  const zip = spawn('zip', [
+    '-r', '-q', '-',
+    entry,
+    '-x', '*/node_modules/*', '*/.git/*', '*/.deleted/*',
+  ], { cwd: parentDir });
+  zip.stdout.pipe(res);
+  zip.stderr.on('data', d => console.error('[zip]', d.toString().slice(0, 200)));
+  zip.on('error', (e) => {
+    if (!res.headersSent) res.status(500);
+    res.end();
+    console.error('[zip] spawn failed:', e.message);
+  });
+  res.on('close', () => { try { zip.kill(); } catch {} });
+}
+
+// Скачать свой проект zip'ом.
+app.get('/api/projects/:name/download', requireAuth, (req, res) => {
+  const name = req.params.name;
+  if (!/^[a-zA-Z0-9._-]+$/.test(name)) return res.status(400).json({ error: 'invalid project name' });
+  const ws = workspaceDir(req.session.user);
+  const dir = path.join(ws, name);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+    return res.status(404).json({ error: 'no such project' });
+  }
+  streamZip(res, ws, name, `${name}.zip`);
+});
+
+// Скачать базовый шаблон zip'ом (whitelisted). Доступно любому залогиненному.
+const DOWNLOADABLE_TEMPLATES = new Set(['_base', '_b24-single-php']);
+
+app.get('/api/template-download/:name', requireAuth, (req, res) => {
+  const name = req.params.name;
+  if (!DOWNLOADABLE_TEMPLATES.has(name)) return res.status(404).json({ error: 'no such template' });
+  const dir = path.join(TEMPLATES_DIR, name);
+  if (!fs.existsSync(dir)) return res.status(404).json({ error: 'no such template' });
+  const nice = name.replace(/^_/, '') + '.zip';
+  streamZip(res, TEMPLATES_DIR, name, nice);
+});
+
+// Скачать CLAUDE.md из b24-vibe-шаблона отдельным файлом.
+app.get('/api/template-claude/b24', requireAuth, (req, res) => {
+  const file = path.join(TEMPLATES_DIR, '_b24-single-php', 'CLAUDE.md');
+  if (!fs.existsSync(file)) return res.status(404).json({ error: 'not found' });
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="CLAUDE-b24.md"');
+  fs.createReadStream(file).pipe(res);
+});
+
 // ---------- container lifecycle (user) ----------
 
 app.post('/api/container/start', requireAuth, async (req, res) => {
@@ -422,6 +479,14 @@ app.delete('/api/students/:u', requireAdmin, async (req, res) => {
 
 app.get('/api/transcripts', requireAdmin, (req, res) => {
   res.json({ users: listTranscriptUsers() });
+});
+
+// Вся лента диалогов (опц. ?user=). Зарегистрирована ДО /:u, иначе "_feed"
+// сматчится как username.
+app.get('/api/transcripts/_feed', requireAdmin, (req, res) => {
+  const user = req.query.user && /^[a-zA-Z0-9._-]+$/.test(req.query.user)
+    ? req.query.user : null;
+  res.json(transcriptFeed({ user }));
 });
 
 app.get('/api/transcripts/:u', requireAdmin, (req, res) => {

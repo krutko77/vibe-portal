@@ -75,6 +75,14 @@ Reverse-proxy на хосте `:8190`, который:
    Перечитывает файл с диска по `mtime` перед каждым refresh и при ошибке
    refresh (если хостовый claude уже ротировал общий RT — подхватит свежий).
 6. Логирует source IP, метод, URL, статус, ms в journald.
+7. **Аудит диалогов** (`shim/transcript.js`). На каждый `POST /v1/messages`
+   пишет JSONL-запись в `/data/config/transcripts/<user>/<YYYY-MM-DD>.jsonl`:
+   промпт ученика, ответ Claude, модель, tool-calls, usage, stop_reason.
+   Ученика определяет по source-IP контейнера → docker-лейбл `kg.vibe.student`
+   (IP подменить нельзя: `CAP_DROP=ALL`). Тело запроса буферизуется, ответ
+   tee'ится без влияния на латентность, запись после `res.end()`. undici отдаёт
+   чанки `Uint8Array` — декодим потоковым `TextDecoder`. Просмотр — только admin
+   (см. `/api/transcripts/*` и страницу `/logs.html`).
 
 Health: `curl http://127.0.0.1:8190/_shim/health`.
 
@@ -112,8 +120,23 @@ systemctl restart anthropic-shim
 | POST | `/api/projects/from-template` | user | `cp -a` шаблон + `chown 1000:1000` + замена `{{PROJECT_NAME}}` |
 | POST | `/api/container/{start,stop}` | user | docker start/stop своего контейнера |
 | POST | `/api/touch` | user | heartbeat (idle reaper останавливает через 30 мин) |
+| GET | `/api/projects/:name/download` | user | zip своего проекта (через системный `zip`, стрим) |
+| GET | `/api/template-download/:name` | user | zip базового шаблона (whitelist: `_base`, `_b24-single-php`) |
+| GET | `/api/template-claude/b24` | user | `CLAUDE.md` из `_b24-single-php` отдельным файлом |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
+| GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
+| GET | `/api/transcripts/_feed` | admin | вся лента диалогов (опц. `?user=`), для `/logs.html` |
+| GET | `/api/transcripts/:u` | admin | записи ученика за дату (`?date=`) |
 | ANY | `/code/<user>/*` | session+match | Прокси на 127.0.0.1:<containerPort>, авто-старт |
+
+Страница `/logs.html` (admin-only через API-гейт) — вся хронология диалогов
+учеников с фильтром-чипами по ученику, как на dev-портале. Источник данных —
+транскрипты, которые пишет шим (см. Anthropic-shim § 7).
+
+**Материалы/шаблоны (UI).** Секция «Шаблоны» в проектах и кнопка «+ Шаблон»
+временно скрыты (`hidden`). Вместо них — страница «Шаблоны» во вкладке
+Материалы с кнопками скачивания (`_base`, `_b24-single-php`, отдельно
+`CLAUDE.md` из b24). Вкладка «Работа с Клодом» убрана.
 
 Idle reaper: каждые 5 минут проверяет `lastActivityAt` каждого ученика, если
 больше 30 минут (`IDLE_STOP_MIN`) — `docker stop`.
@@ -150,11 +173,13 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 ├── CLAUDE.md                          этот файл
 ├── .claude/settings.json              permissions для Claude
 ├── workspace-image/Dockerfile         vibe-workspace:dev
-├── shim/server.js                     OAuth swap proxy
+├── shim/
+│   ├── server.js                      OAuth swap proxy
+│   └── transcript.js                  аудит диалогов (IP→ученик, SSE-парсер, JSONL)
 ├── panel/
 │   ├── server.js                      Express :3020
-│   ├── lib/{auth,students,templates}.js
-│   └── public/{index.html,history.html,css/,js/}
+│   ├── lib/{auth,students,templates,transcripts}.js
+│   └── public/{index.html,history.html,logs.html,css/,js/}
 ├── scripts/
 │   ├── setup-iptables.sh              VIBE-FILTER/VIBE-INPUT chains
 │   └── create-admin.sh                бутстрап первого admin'а
@@ -179,7 +204,8 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
     ├── auth/{.htpasswd-vibe,users-vibe.json}
     │     (claude-vibe.credentials.json — legacy, шим читает /root/.claude/.credentials.json)
     ├── env/vibe-panel.env             SESSION_SECRET
-    └── sessions-vibe/                 session-file-store
+    ├── sessions-vibe/                 session-file-store
+    └── transcripts/<user>/<date>.jsonl  аудит диалогов (пишет шим, читает панель)
 ```
 
 ## Откуда обновляются шаблоны

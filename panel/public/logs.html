@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Логи диалогов — Vibe</title>
+  <link rel="icon" type="image/png" href="/KG_fi.png" />
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    (function(){
+      var t = localStorage.getItem('aif-theme');
+      if (t !== 'light') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <style>
+    body { overflow-y: auto; }
+    .lg-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 28px 80px; }
+
+    .lg-top {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 4px;
+    }
+    .lg-title {
+      font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--foreground));
+    }
+    .lg-summary {
+      font-family: var(--font-mono); font-size: 12px;
+      color: hsl(var(--muted-foreground));
+    }
+    .lg-back {
+      font-family: var(--font-mono); font-size: 11px; text-decoration: none;
+      color: hsl(var(--muted-foreground)); letter-spacing: .04em;
+    }
+    .lg-back:hover { color: hsl(var(--foreground)); }
+
+    .lg-chips {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      margin: 20px 0 28px; padding-bottom: 18px;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+    .lg-chips-label {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: hsl(var(--muted-foreground)); margin-right: 4px;
+    }
+    .lg-chip {
+      font-family: var(--font-mono); font-size: 12px;
+      padding: 6px 14px; border-radius: 999px; cursor: pointer;
+      border: 1px solid hsl(var(--border)); background: transparent;
+      color: hsl(var(--muted-foreground)); transition: all .12s;
+    }
+    .lg-chip:hover { color: hsl(var(--foreground)); border-color: hsl(var(--foreground) / .4); }
+    .lg-chip.active {
+      background: hsl(var(--primary) / .15); border-color: hsl(var(--primary) / .5);
+      color: hsl(var(--foreground)); font-weight: 600;
+    }
+
+    .lg-daygroup { margin-bottom: 30px; }
+    .lg-dayhead {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: hsl(var(--muted-foreground));
+      padding-bottom: 10px; margin-bottom: 16px;
+      border-bottom: 1px dashed hsl(var(--border));
+    }
+    .lg-cards { display: flex; flex-direction: column; gap: 14px; }
+
+    .lg-card {
+      border: 1px solid hsl(var(--border)); border-radius: 10px;
+      background: hsl(var(--card)); overflow: hidden;
+    }
+    .lg-meta {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 10px 14px; font-family: var(--font-mono); font-size: 11px;
+      color: hsl(var(--muted-foreground));
+    }
+    .lg-user {
+      color: hsl(var(--primary)); font-weight: 600;
+    }
+    .lg-pill {
+      border: 1px solid hsl(var(--border)); border-radius: 4px;
+      padding: 1px 7px; color: hsl(var(--foreground));
+    }
+    .lg-err { color: hsl(var(--destructive, 0 70% 55%)); }
+    .lg-body { padding: 0 14px 12px; }
+    .lg-role {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: hsl(var(--muted-foreground)); margin: 8px 0 4px;
+    }
+    .lg-text {
+      white-space: pre-wrap; word-break: break-word;
+      font-size: 13.5px; line-height: 1.55; border-radius: 6px; padding: 9px 11px;
+    }
+    .lg-q { background: hsl(var(--primary) / .08); border-left: 2px solid hsl(var(--primary)); }
+    .lg-a { background: hsl(var(--accent) / .5); border-left: 2px solid hsl(var(--border)); }
+    .lg-cont { font-style: italic; color: hsl(var(--muted-foreground)); font-size: 12px; }
+    .lg-tools { font-size: 11px; color: hsl(var(--muted-foreground)); margin: 4px 0; }
+
+    .lg-empty, .lg-loading {
+      text-align: center; color: hsl(var(--muted-foreground));
+      font-size: 13px; padding: 60px 0;
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="lg-wrap">
+    <div class="lg-top">
+      <div>
+        <div class="lg-title">Логи диалогов · ученик ↔ Claude</div>
+        <a class="lg-back" href="/">← назад в портал</a>
+      </div>
+      <div class="lg-summary" id="lg-summary">загрузка…</div>
+    </div>
+
+    <div class="lg-chips" id="lg-chips"></div>
+    <div id="lg-content"><div class="lg-loading">загрузка…</div></div>
+  </div>
+
+  <script>
+    let FEED = null;       // { records, perUser, total, totalTokens }
+    let CURRENT = null;    // выбранный ученик или null = все
+
+    const escapeHtml = (s) => (s || '').replace(/[&<>"]/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',
+    })[c]);
+
+    const MONTHS = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+    const MONTHS_FULL = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+    const DOW = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+
+    function dayKey(ts) { return new Date(ts).toISOString().slice(0,10); }
+
+    async function load() {
+      try {
+        const r = await fetch('/api/transcripts/_feed', { credentials: 'same-origin', cache: 'no-store' });
+        if (r.status === 401 || r.status === 403) {
+          document.getElementById('lg-content').innerHTML =
+            '<div class="lg-empty">Доступно только администратору. <a href="/">Войти</a></div>';
+          document.getElementById('lg-summary').textContent = '';
+          return;
+        }
+        FEED = await r.json();
+        renderChips();
+        render();
+      } catch (e) {
+        document.getElementById('lg-content').innerHTML =
+          '<div class="lg-empty">Ошибка загрузки: ' + escapeHtml(e.message) + '</div>';
+      }
+    }
+
+    function renderChips() {
+      const chips = document.getElementById('lg-chips');
+      const entries = Object.entries(FEED.perUser).sort((a,b) => b[1]-a[1]);
+      let html = '<span class="lg-chips-label">Ученик:</span>';
+      html += `<button class="lg-chip${CURRENT===null?' active':''}" data-user="">Все · ${FEED.total}</button>`;
+      for (const [u,c] of entries) {
+        html += `<button class="lg-chip${CURRENT===u?' active':''}" data-user="${escapeHtml(u)}">${escapeHtml(u)} · ${c}</button>`;
+      }
+      chips.innerHTML = html;
+      chips.querySelectorAll('.lg-chip').forEach(b => {
+        b.onclick = () => { CURRENT = b.dataset.user || null; renderChips(); render(); };
+      });
+    }
+
+    function render() {
+      const recs = CURRENT ? FEED.records.filter(r => r.user === CURRENT) : FEED.records;
+      const tokens = recs.reduce((s,r) => s + ((r.usage?.input||0)+(r.usage?.output||0)), 0);
+      document.getElementById('lg-summary').textContent =
+        `${recs.length} сообщ. · ~${tokens.toLocaleString('ru')} токенов`;
+
+      const content = document.getElementById('lg-content');
+      if (!recs.length) { content.innerHTML = '<div class="lg-empty">диалогов пока нет</div>'; return; }
+
+      // группировка по дню (recs уже отсортированы новые→старые)
+      const groups = [];
+      let cur = null;
+      for (const r of recs) {
+        const k = dayKey(r.ts);
+        if (!cur || cur.key !== k) { cur = { key: k, items: [] }; groups.push(cur); }
+        cur.items.push(r);
+      }
+
+      content.innerHTML = groups.map(g => {
+        const d = new Date(g.key + 'T00:00:00');
+        const head = `${d.getDate()} ${MONTHS_FULL[d.getMonth()]} · ${DOW[d.getDay()]} · ${g.items.length} сообщ.`;
+        return `<div class="lg-daygroup">
+          <div class="lg-dayhead">${head}</div>
+          <div class="lg-cards">${g.items.map(card).join('')}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function card(r) {
+      const t = new Date(r.ts);
+      const time = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+      const model = (r.model || '').replace(/^claude-/, '').replace(/-\d{8}$/, '');
+      const tok = r.usage ? `${r.usage.input||0}/${r.usage.output||0} ток.` : '';
+      const q = r.isToolContinuation
+        ? '<div class="lg-text lg-q lg-cont">↻ продолжение (ответ инструмента)</div>'
+        : `<div class="lg-text lg-q">${escapeHtml(r.userText) || '<i>—</i>'}</div>`;
+      const tools = (r.toolCalls && r.toolCalls.length)
+        ? `<div class="lg-tools">🔧 ${escapeHtml(r.toolCalls.join(', '))}</div>` : '';
+      const a = r.assistantText ? `<div class="lg-role">Claude</div><div class="lg-text lg-a">${escapeHtml(r.assistantText)}</div>` : '';
+      return `<div class="lg-card">
+        <div class="lg-meta">
+          <span class="lg-user">@${escapeHtml(r.user)}</span>
+          <span>${time}</span>
+          ${model ? `<span class="lg-pill">${escapeHtml(model)}</span>` : ''}
+          ${tok ? `<span>${tok}</span>` : ''}
+          ${r.status && r.status !== 200 ? `<span class="lg-err">HTTP ${r.status}</span>` : ''}
+        </div>
+        <div class="lg-body">
+          <div class="lg-role">Ученик</div>
+          ${q}${tools}${a}
+        </div>
+      </div>`;
+    }
+
+    load();
+  </script>
+</body>
+</html>

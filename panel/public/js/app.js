@@ -594,6 +594,9 @@ async function refreshProjects() {
                 </button>
                 <button class="btn btn-sm" data-action="claude" title="Claude">CLAUDE</button>
                 <button class="btn btn-sm" data-action="vscode">VS Code →</button>
+                <button class="btn btn-sm" data-action="download" title="Скачать проект (.zip)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
                 <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
                 </button>
@@ -609,6 +612,9 @@ async function refreshProjects() {
       $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
       $('[data-action="vscode"]', tr).onclick = () =>
         openVsCodeFor(ME.username, '/home/student/workspace/' + name);
+      $('[data-action="download"]', tr).onclick = () => {
+        window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
+      };
       $('[data-action="delete"]', tr).onclick = async () => {
         if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
         try {
@@ -772,7 +778,6 @@ async function refreshUsers() {
         </div>
         <div class="user-row-actions">
           <span class="user-role-pill ${s.role === 'admin' ? 'role-admin' : ''}">${escapeHtml(s.role)}</span>
-          <button class="user-row-del" data-logs="${escapeHtml(s.username)}">Логи</button>
           ${s.username !== ME.username
             ? `<button class="user-row-del" data-del="${escapeHtml(s.username)}">Удалить</button>`
             : ''}
@@ -782,73 +787,7 @@ async function refreshUsers() {
     $$('[data-del]', list).forEach(b => {
       b.onclick = () => openDeleteStudentModal(b.dataset.del);
     });
-    $$('[data-logs]', list).forEach(b => {
-      b.onclick = () => openTranscripts(b.dataset.logs);
-    });
   } catch {}
-}
-
-// ── Transcripts (admin): аудит диалогов ученик↔Claude ──────
-
-let TR_USER = null;
-
-async function openTranscripts(user) {
-  TR_USER = user;
-  $('#tr-title').textContent = 'Диалоги · ' + user;
-  $('#tr-date').innerHTML = '';
-  $('#tr-body').innerHTML = '<div class="tr-empty">загрузка…</div>';
-  openModal('modal-transcripts');
-  await loadTranscripts(user, null);
-}
-
-async function loadTranscripts(user, date) {
-  const body = $('#tr-body');
-  body.innerHTML = '<div class="tr-empty">загрузка…</div>';
-  try {
-    const qs = date ? ('?date=' + encodeURIComponent(date)) : '';
-    const data = await api('/api/transcripts/' + encodeURIComponent(user) + qs);
-
-    const sel = $('#tr-date');
-    sel.innerHTML = (data.dates || []).map(d =>
-      `<option value="${escapeHtml(d)}"${d === data.date ? ' selected' : ''}>${escapeHtml(d)}</option>`
-    ).join('');
-    sel.onchange = () => loadTranscripts(user, sel.value);
-
-    const recs = data.records || [];
-    if (!recs.length) {
-      body.innerHTML = '<div class="tr-empty">за этот день диалогов нет</div>';
-      return;
-    }
-    body.innerHTML = recs.map(renderTranscriptRecord).join('');
-  } catch (e) {
-    body.innerHTML = `<div class="tr-empty">ошибка: ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-function renderTranscriptRecord(r) {
-  const time = r.ts ? new Date(r.ts).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
-  const model = (r.model || '').replace(/^claude-/, '');
-  const usage = r.usage ? `${r.usage.input || 0}→${r.usage.output || 0} tok` : '';
-  const userBlock = r.isToolContinuation
-    ? '<span class="tr-tag">↻ продолжение (tool result)</span>'
-    : `<div class="tr-text tr-user">${escapeHtml(r.userText) || '<i>—</i>'}</div>`;
-  const tools = (r.toolCalls && r.toolCalls.length)
-    ? `<div class="tr-tools">🔧 ${escapeHtml(r.toolCalls.join(', '))}</div>` : '';
-  const asst = r.assistantText
-    ? `<div class="tr-text tr-asst">${escapeHtml(r.assistantText)}</div>` : '';
-  return `
-    <div class="tr-rec">
-      <div class="tr-meta">
-        <span>${time}</span>
-        ${model ? `<span class="tr-pill">${escapeHtml(model)}</span>` : ''}
-        ${usage ? `<span>${escapeHtml(usage)}</span>` : ''}
-        ${r.status && r.status !== 200 ? `<span class="tr-err">HTTP ${r.status}</span>` : ''}
-      </div>
-      <div class="tr-role">Ученик:</div>
-      ${userBlock}
-      ${tools}
-      ${asst ? '<div class="tr-role">Claude:</div>' + asst : ''}
-    </div>`;
 }
 
 // ── Theme toggle ───────────────────────────────────────────

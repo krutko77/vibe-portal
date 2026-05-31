@@ -1867,75 +1867,52 @@ html:not(.dark) .course-placeholder-desc a:hover {
 .course-tree-mod-head.active .course-tree-mod-no,
 .course-tree-mod-head.active .course-tree-mod-title { color: hsl(var(--primary)); }
 
-/* ── Transcripts (admin): аудит диалогов ученик↔Claude ─────── */
-.tr-list {
-  max-height: 70vh;
-  overflow-y: auto;
+/* ── Шаблоны для скачивания (materials > Шаблоны) ─────────── */
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+.dl-card {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  background: hsl(var(--card));
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 4px 2px;
 }
-.tr-empty {
-  color: hsl(var(--muted-foreground));
-  font-size: 13px;
-  text-align: center;
-  padding: 24px 0;
-}
-.tr-rec {
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  background: hsl(var(--card));
-  padding: 10px 12px;
-}
-.tr-meta {
+.dl-card-head {
   display: flex;
-  gap: 10px;
   align-items: center;
-  flex-wrap: wrap;
-  font-size: 11px;
-  color: hsl(var(--muted-foreground));
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
-.tr-pill {
-  border: 1px solid hsl(var(--border));
-  border-radius: 4px;
-  padding: 1px 6px;
+.dl-card-icon { font-size: 26px; line-height: 1; }
+.dl-card-title {
+  font-size: 15px;
+  font-weight: 700;
   color: hsl(var(--foreground));
 }
-.tr-err { color: hsl(var(--destructive, 0 70% 55%)); }
-.tr-role {
+.dl-card-sub {
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
   color: hsl(var(--muted-foreground));
-  margin: 6px 0 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  margin-top: 2px;
 }
-.tr-text {
-  white-space: pre-wrap;
-  word-break: break-word;
+.dl-card-desc {
   font-size: 13px;
-  line-height: 1.5;
-  border-radius: 6px;
-  padding: 8px 10px;
-}
-.tr-user {
-  background: hsl(var(--primary) / 0.08);
-  border-left: 2px solid hsl(var(--primary));
-}
-.tr-asst {
-  background: hsl(var(--accent) / 0.5);
-  border-left: 2px solid hsl(var(--border));
-}
-.tr-tag {
-  display: inline-block;
-  font-size: 11px;
+  line-height: 1.55;
   color: hsl(var(--muted-foreground));
-  font-style: italic;
+  margin-bottom: 16px;
+  flex: 1;
 }
-.tr-tools {
-  font-size: 11px;
+.dl-btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.dl-btn { text-decoration: none; text-align: center; }
+.dl-btn-sec {
+  text-decoration: none;
+  text-align: center;
+  border: 1px solid hsl(var(--border));
   color: hsl(var(--muted-foreground));
-  margin: 4px 0;
 }
+.dl-btn-sec:hover { color: hsl(var(--foreground)); border-color: hsl(var(--foreground) / .4); }
