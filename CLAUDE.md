@@ -122,7 +122,7 @@ systemctl restart anthropic-shim
 | POST | `/api/touch` | user | heartbeat (idle reaper останавливает через 30 мин) |
 | GET | `/api/projects/:name/download` | user | zip своего проекта (через системный `zip`, стрим) |
 | GET | `/api/template-download/:name` | user | zip базового шаблона (whitelist: `_base`, `_b24-single-php`) |
-| GET | `/api/template-claude/b24` | user | `CLAUDE.md` из `_b24-single-php` отдельным файлом |
+| GET | `/api/template-claude/:which` | user | `CLAUDE.md` из шаблона отдельным файлом (`base`→`_base`, `b24`→`_b24-single-php`) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
 | GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
 | GET | `/api/transcripts/_feed` | admin | вся лента диалогов (опц. `?user=`), для `/logs.html` |

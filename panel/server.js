@@ -419,12 +419,16 @@ app.get('/api/template-download/:name', requireAuth, (req, res) => {
   streamZip(res, TEMPLATES_DIR, name, nice);
 });
 
-// Скачать CLAUDE.md из b24-vibe-шаблона отдельным файлом.
-app.get('/api/template-claude/b24', requireAuth, (req, res) => {
-  const file = path.join(TEMPLATES_DIR, '_b24-single-php', 'CLAUDE.md');
+// Скачать CLAUDE.md из шаблона отдельным файлом (base | b24).
+const TEMPLATE_CLAUDE = { base: '_base', b24: '_b24-single-php' };
+
+app.get('/api/template-claude/:which', requireAuth, (req, res) => {
+  const dir = TEMPLATE_CLAUDE[req.params.which];
+  if (!dir) return res.status(404).json({ error: 'no such template' });
+  const file = path.join(TEMPLATES_DIR, dir, 'CLAUDE.md');
   if (!fs.existsSync(file)) return res.status(404).json({ error: 'not found' });
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="CLAUDE-b24.md"');
+  res.setHeader('Content-Disposition', `attachment; filename="CLAUDE-${req.params.which}.md"`);
   fs.createReadStream(file).pipe(res);
 });
 
