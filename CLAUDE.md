@@ -121,6 +121,10 @@ systemctl restart anthropic-shim
 | POST | `/api/container/{start,stop}` | user | docker start/stop своего контейнера |
 | POST | `/api/touch` | user | heartbeat (idle reaper останавливает через 30 мин) |
 | GET | `/api/projects/:name/download` | user | zip своего проекта (через системный `zip`, стрим) |
+| GET | `/api/projects/:name/publish` | user | статус публикации проекта |
+| POST | `/api/projects/:name/publish` | user | вкл/выкл публикацию (visibility, autosleep) |
+| POST | `/api/projects/:name/redeploy` | user | перезапуск приложения |
+| ANY | `/<user>/<project>/*` | session (visibility) | прокси в приложение ученика (self-heal) |
 | GET | `/api/template-download/:name` | user | zip базового шаблона (whitelist: `_base`, `_b24-single-php`) |
 | GET | `/api/template-claude/:which` | user | `CLAUDE.md` из шаблона отдельным файлом (`base`→`_base`, `b24`→`_b24-single-php`) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
@@ -138,6 +142,22 @@ systemctl restart anthropic-shim
 `_base`/`_b24-single-php` через `modal-create`) работает. Во вкладке Материалы
 есть страница «Шаблоны» с кнопками скачивания (`_base`, `_b24-single-php`,
 отдельно `CLAUDE.md` из b24). Вкладка «Работа с Клодом» убрана.
+
+**Публикация приложений.** Ученик публикует проект → приложение крутится в его
+контейнере на порту 3001+ (как `student`), панель проксирует
+`/<user>/<project>/*` → `http://<containerIP>:<port>/` по vibe-net (наружу порты
+не светятся). Доступ по сессии: `visibility=owner` (владелец+админ) или `auth`
+(любой залогиненный). Конфиг — в `.portal-meta.json` проекта (`publish:{enabled,
+visibility,autosleep,port,cmd}`). Self-heal: заход на URL будит контейнер и
+переподнимает процесс (`panel/lib/publish.js`, `ensureRunning`). `autosleep=false`
+→ idle-reaper не усыпляет ученика. Деплой по умолчанию: Node (`node <entry>` с
+`PORT`), PHP (`php -S`), статика (`php -S`). Логи приложения — `.publish/app.log`
+в проекте, pid — `.publish/app.pid`. Образ контейнера включает `php-cli`.
+Ограничение: приложения должны использовать относительные пути к ассетам
+(подпуть `/<user>/<project>/`). Резерв логинов: `api,code,css,js,...` нельзя
+завести как ученика. WS-upgrade к опубликованному приложению (как и у `/code/`)
+не проходит сессионный auth-гейт — приемлемо: HTML гейтится по HTTP, аудитория
+доверенная (5-10 учеников).
 
 Idle reaper: каждые 5 минут проверяет `lastActivityAt` каждого ученика, если
 больше 30 минут (`IDLE_STOP_MIN`) — `docker stop`.
@@ -179,7 +199,7 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 │   └── transcript.js                  аудит диалогов (IP→ученик, SSE-парсер, JSONL)
 ├── panel/
 │   ├── server.js                      Express :3020
-│   ├── lib/{auth,students,templates,transcripts}.js
+│   ├── lib/{auth,students,templates,transcripts,publish}.js
 │   └── public/{index.html,history.html,logs.html,css/,js/}
 ├── scripts/
 │   ├── setup-iptables.sh              VIBE-FILTER/VIBE-INPUT chains
@@ -235,6 +255,7 @@ fieldsmap24, parser1c, pult24, quality24, support24, timepay24.
 | 3020 (127.0.0.1) | vibe-panel |
 | 8190 (0.0.0.0) | anthropic-shim (фильтр через iptables на 172.30.0.0/24 + 127/8) |
 | 8200-8299 (127.0.0.1) | code-server'ы контейнеров учеников |
+| 3001-3099 (в контейнере) | приложения учеников (доступ через панель, наружу не торчат) |
 
 ## Бэкап
 
