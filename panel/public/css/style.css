@@ -542,7 +542,10 @@ body:not(.is-admin) .admin-only { display: none !important; }
 .projects-table tbody tr:last-child td { border-bottom: none; }
 .projects-table tbody tr:hover { background: hsl(var(--background)); }
 .projects-table .td-name { font-weight: 600; }
-.projects-table .td-actions { display: flex; gap: 6px; justify-content: flex-end; }
+/* td остаётся table-cell (иначе ломается высота строки и border-bottom «едет»);
+   flex — на внутренней обёртке .actions */
+.projects-table .td-actions { text-align: right; white-space: nowrap; }
+.projects-table .td-actions .actions { display: inline-flex; gap: 6px; justify-content: flex-end; align-items: center; }
 .projects-table .th-actions { text-align: right; }
 .pill {
   display: inline-block;

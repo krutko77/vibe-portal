@@ -536,9 +536,11 @@ async function refreshRecentProjects() {
               <td class="td-name">${escapeHtml(p.name)}</td>
               <td>${fmtDate(p.modified)}</td>
               <td class="td-actions">
+                <div class="actions">
                 <button class="btn btn-sm" data-action="files">📁</button>
                 <button class="btn btn-sm" data-action="claude">CLAUDE</button>
                 <a class="btn btn-sm" target="_blank" href="${folderInVs(p.name)}">VS Code →</a>
+                </div>
               </td>
             </tr>
           `).join('')}
@@ -589,6 +591,7 @@ async function refreshProjects() {
               <td>${escapeHtml(p.owner)}</td>
               <td>${fmtDate(p.modified)}</td>
               <td class="td-actions">
+                <div class="actions">
                 <button class="btn btn-sm" data-action="files" title="Файлы">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 </button>
@@ -600,6 +603,7 @@ async function refreshProjects() {
                 <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
                 </button>
+                </div>
               </td>
             </tr>
           `).join('')}
