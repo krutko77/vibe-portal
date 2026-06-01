@@ -35,6 +35,10 @@ import {
 } from './lib/students.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
+import {
+  readPublish, writePublish, allocatePort, ensureRunning,
+  deployApp, stopApp, containerIp, appAlive,
+} from './lib/publish.js';
 import { spawn } from 'node:child_process';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 import {
@@ -185,6 +189,9 @@ app.get('/api/projects', requireAuth, (req, res) => {
         owner: req.session.user,
         status: meta.status || 'НОВЫЙ',
         siteUrl: meta.siteUrl || null,
+        published: !!(meta.publish && meta.publish.enabled),
+        publishUrl: (meta.publish && meta.publish.enabled)
+          ? `/${req.session.user}/${d.name}/` : null,
       };
     });
   res.json({ projects });
@@ -430,6 +437,74 @@ app.get('/api/template-claude/:which', requireAuth, (req, res) => {
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="CLAUDE-${req.params.which}.md"`);
   fs.createReadStream(file).pipe(res);
+});
+
+// ---------- публикация приложений ----------
+
+// Хелпер: проверка владения проектом (или админ через ?asUser=).
+function resolvePublishTarget(req) {
+  const name = req.params.name;
+  if (!/^[a-zA-Z0-9._-]+$/.test(name)) return null;
+  const asUser = req.session.isAdmin && req.query.asUser ? req.query.asUser : req.session.user;
+  if (!/^[a-zA-Z0-9._-]+$/.test(asUser)) return null;
+  const dir = path.join(workspaceDir(asUser), name);
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return null;
+  return { user: asUser, project: name };
+}
+
+app.get('/api/projects/:name/publish', requireAuth, async (req, res) => {
+  const t = resolvePublishTarget(req);
+  if (!t) return res.status(404).json({ error: 'no such project' });
+  const pub = readPublish(t.user, t.project) || { enabled: false };
+  let running = false;
+  if (pub.enabled) {
+    try { running = await appAlive(await containerIp(t.user), pub.port); } catch {}
+  }
+  res.json({
+    enabled: !!pub.enabled,
+    visibility: pub.visibility || 'owner',
+    autosleep: pub.autosleep !== false,
+    port: pub.port || null,
+    url: pub.enabled ? `/${t.user}/${t.project}/` : null,
+    running,
+  });
+});
+
+app.post('/api/projects/:name/publish', requireAuth, async (req, res) => {
+  const t = resolvePublishTarget(req);
+  if (!t) return res.status(404).json({ error: 'no such project' });
+  const { enabled, visibility, autosleep } = req.body || {};
+  try {
+    if (enabled) {
+      let pub = readPublish(t.user, t.project) || {};
+      const port = pub.port || allocatePort(t.user, t.project);
+      pub = writePublish(t.user, t.project, {
+        enabled: true,
+        visibility: visibility === 'auth' ? 'auth' : 'owner',
+        autosleep: autosleep !== false,
+        port,
+      });
+      await ensureRunning(t.user, t.project).catch(e => console.error('[publish] deploy:', e.message));
+      return res.json({ ok: true, url: `/${t.user}/${t.project}/`, port });
+    } else {
+      await stopApp(t.user, t.project);
+      writePublish(t.user, t.project, { enabled: false });
+      return res.json({ ok: true });
+    }
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/projects/:name/redeploy', requireAuth, async (req, res) => {
+  const t = resolvePublishTarget(req);
+  if (!t) return res.status(404).json({ error: 'no such project' });
+  const pub = readPublish(t.user, t.project);
+  if (!pub || !pub.enabled) return res.status(400).json({ error: 'not published' });
+  try {
+    await deployApp(t.user, t.project, pub.port);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ---------- container lifecycle (user) ----------
