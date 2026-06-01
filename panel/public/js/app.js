@@ -58,6 +58,62 @@ function fmtDate(iso) {
   return d.toLocaleString('ru', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+// ── Кастомный select (вместо системного, в нашей теме) ─────
+// Прогрессивное улучшение: прячем нативный <select>, строим дропдаун в дизайне
+// портала и синхронизируем через события 'change' (внешний код читает .value
+// как обычно). Программная установка value → dispatchEvent('change') обновит UI.
+function enhanceSelect(sel) {
+  if (!sel || sel.dataset.kg) return;
+  sel.dataset.kg = '1';
+  sel.classList.add('kg-select-native');
+  const wrap = document.createElement('div');
+  wrap.className = 'kg-select';
+  const chevron = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
+  wrap.innerHTML =
+    '<button type="button" class="kg-select-btn"><span class="kg-select-label"></span>' + chevron + '</button>' +
+    '<div class="kg-select-menu"></div>';
+  const btn = wrap.querySelector('.kg-select-btn');
+  const label = wrap.querySelector('.kg-select-label');
+  const menu = wrap.querySelector('.kg-select-menu');
+  const close = () => wrap.classList.remove('open');
+
+  function buildItems() {
+    menu.innerHTML = '';
+    [...sel.options].forEach(opt => {
+      const it = document.createElement('button');
+      it.type = 'button';
+      it.className = 'kg-select-item' + (opt.value === sel.value ? ' active' : '');
+      it.textContent = opt.textContent;
+      it.dataset.value = opt.value;
+      it.onclick = () => {
+        sel.value = opt.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        close();
+      };
+      menu.appendChild(it);
+    });
+  }
+  function syncLabel() {
+    const opt = sel.options[sel.selectedIndex];
+    label.textContent = opt ? opt.textContent : '';
+    [...menu.children].forEach(it => it.classList.toggle('active', it.dataset.value === sel.value));
+  }
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    if (wrap.classList.contains('open')) { close(); return; }
+    buildItems(); syncLabel(); wrap.classList.add('open');
+  };
+  sel.addEventListener('change', syncLabel);
+  document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+
+  sel.parentNode.insertBefore(wrap, sel.nextSibling);
+  buildItems();
+  syncLabel();
+}
+function enhanceAllSelects(root = document) {
+  [...root.querySelectorAll('select.form-input')].forEach(enhanceSelect);
+}
+
 // ── Auth rendering ─────────────────────────────────────────
 
 function renderAuth() {
@@ -654,6 +710,7 @@ async function openPublishModal(name) {
     const s = await api('/api/projects/' + encodeURIComponent(name) + '/publish');
     $('#pub-enabled').checked = s.enabled;
     $('#pub-visibility').value = s.visibility || 'owner';
+    $('#pub-visibility').dispatchEvent(new Event('change')); // обновить кастомный дропдаун
     $('#pub-autosleep').checked = s.autosleep !== false;
     renderPubUrl(s);
   } catch (e) { showPubError(e.message); }
@@ -1207,6 +1264,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#pub-copy').onclick = () => {
     navigator.clipboard?.writeText($('#pub-url').textContent).catch(() => {});
   };
+  // Кастомные дропдауны вместо системных <select> (вся всплывающая часть UI)
+  enhanceAllSelects();
   $('#create-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doCreateFromBase(); }
   });

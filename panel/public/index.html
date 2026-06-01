@@ -275,6 +275,10 @@
           <span class="materials-tab-icon">📦</span>
           <span class="materials-tab-text">Шаблоны</span>
         </button>
+        <button class="materials-tab" data-sub="publish">
+          <span class="materials-tab-icon">🚀</span>
+          <span class="materials-tab-text">Публикация</span>
+        </button>
         <button class="materials-tab" data-sub="skills">
           <span class="materials-tab-icon">✨</span>
           <span class="materials-tab-text">Скиллы</span>
@@ -492,6 +496,41 @@
               <a class="btn dl-btn-sec" href="/api/template-claude/b24">↓ Только CLAUDE.md</a>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- materials > Публикация -->
+      <div class="materials-page hidden" data-sub="publish">
+        <div class="page-meta">VIBE PORTAL · ПУБЛИКАЦИЯ</div>
+        <h1 class="page-h1">Как <em>опубликовать</em> приложение</h1>
+        <p class="page-lead">Публикация делает твой проект доступным по ссылке внутри портала. Открыть его смогут только авторизованные — ты, админ и (по желанию) другие ученики.</p>
+
+        <div class="page-sect">
+          <div class="page-sect-no">1. ОТКРОЙ ПУБЛИКАЦИЮ</div>
+          <p>На вкладке <strong>Проекты</strong> в строке проекта нажми иконку <strong>«Публикация»</strong> (стрелка вверх ↥). Откроется окно настроек.</p>
+        </div>
+        <div class="page-sect">
+          <div class="page-sect-no">2. ВКЛЮЧИ И НАСТРОЙ</div>
+          <ul class="page-list">
+            <li><strong>Опубликовать приложение</strong> — поставь галочку, чтобы включить.</li>
+            <li><strong>Кто может смотреть</strong> — «Только я и админ» или «Все залогиненные ученики».</li>
+            <li><strong>Авто-засыпание</strong> — если включено, приложение засыпает вместе с контейнером через 30 минут простоя и само поднимается при следующем заходе. Выключи, если приложение должно работать постоянно.</li>
+          </ul>
+          <p>Нажми <strong>Сохранить</strong>. Появится ссылка вида
+          <code>vibe.kiselevgroup.com/&lt;твой-логин&gt;/&lt;проект&gt;/</code> — её можно скопировать и открыть.</p>
+        </div>
+        <div class="page-sect">
+          <div class="page-sect-no">3. КНОПКА «ДЕПЛОЙ»</div>
+          <p>Если ты изменил код приложения — открой окно публикации и нажми <strong>«Деплой»</strong>. Это перезапустит приложение с новой версией кода. Заодно деплой поднимет приложение, если оно «спит».</p>
+        </div>
+        <div class="page-sect">
+          <div class="page-sect-no">4. ЧТО ВАЖНО ЗНАТЬ</div>
+          <ul class="page-list">
+            <li>Приложение запускается прямо в твоём контейнере (как и VS Code) — отдельный сервер не нужен.</li>
+            <li>Node-проекты (есть <code>package.json</code>) и PHP-проекты (папка <code>www/</code>) поднимаются автоматически — настраивать ничего не надо.</li>
+            <li>Подключай стили и скрипты <strong>относительным</strong> путём (<code>css/style.css</code>, а не <code>/css/style.css</code>) — приложение живёт под адресом <code>/&lt;логин&gt;/&lt;проект&gt;/</code>.</li>
+            <li>Ссылка работает только для тех, кто вошёл в портал. Снаружи без логина приложение не открыть.</li>
+          </ul>
         </div>
       </div>
 
@@ -800,7 +839,7 @@
       <div class="pub-status" id="pub-status"></div>
       <div class="form-error hidden" id="pub-error"></div>
       <div class="modal-footer">
-        <button class="btn btn-sm" id="pub-redeploy">Передеплоить</button>
+        <button class="btn" id="pub-redeploy">Деплой</button>
         <span style="flex:1"></span>
         <button class="btn btn-ghost" data-close="modal-publish">Закрыть</button>
         <button class="btn btn-primary" id="pub-save">Сохранить</button>
