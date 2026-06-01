@@ -7,6 +7,7 @@ import {
   loadUsers, saveUsers,
   htpasswdSet, htpasswdDelete,
 } from './auth.js';
+import { hasKeepAlive } from './publish.js';
 
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
@@ -41,6 +42,10 @@ function allocatePort(state) {
 
 export async function createStudent({ username, password, role = 'user' }) {
   const state = loadUsers();
+  const RESERVED = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', 'well-known', 'logs', 'history', 'help', 'security']);
+  if (RESERVED.has(username)) {
+    throw new Error(`reserved username: ${username}`);
+  }
   if (state.users[username]) {
     throw new Error(`student already exists: ${username}`);
   }
@@ -256,6 +261,7 @@ export async function reapIdleContainers() {
   for (const [username, u] of Object.entries(state.users)) {
     const last = u.lastActivityAt ? Date.parse(u.lastActivityAt) : 0;
     if (now - last < IDLE_STOP_MIN * 60 * 1000) continue;
+    if (hasKeepAlive(username)) continue; // опубликовано с autosleep=off — не усыпляем
     const status = await containerStatus(username);
     if (status.running) {
       await dockerStop(username).catch(() => {});

@@ -636,6 +636,72 @@ app.use((req, res, next) => {
   next();
 });
 
+// ---------- публичный прокси приложений /<user>/<project>/ ----------
+
+const RESERVED_SEG = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', '.well-known']);
+
+function parsePublishPath(url) {
+  const m = url.match(/^\/([a-zA-Z0-9][a-zA-Z0-9_-]*)\/([a-zA-Z0-9._-]+)(\/.*|)$/);
+  if (!m) return null;
+  if (RESERVED_SEG.has(m[1])) return null;
+  return { user: m[1], project: m[2] };
+}
+
+// можно ли смотреть: visibility owner → владелец+админ; auth → любой залогиненный
+function canView(req, user, pub) {
+  if (!req.session?.user) return false;
+  if (req.session.isAdmin) return true;
+  if (pub.visibility === 'auth') return true;
+  return req.session.user === user; // owner
+}
+
+const appProxy = createProxyMiddleware({
+  router: (req) => req._appTarget,
+  changeOrigin: true,
+  ws: true,
+  pathRewrite: (p, req) => {
+    const rewritten = p.replace(req._appPrefix, '');
+    return rewritten || '/';
+  },
+  on: {
+    error: (err, req, res) => {
+      if (res && !res.headersSent) { try { res.writeHead(502); res.end('app not ready'); } catch {} }
+    },
+  },
+});
+
+async function publishMiddleware(req, res, next) {
+  const parsed = parsePublishPath(req.url);
+  if (!parsed) return next();
+  const state = loadUsers();
+  if (!state.users[parsed.user]) return next(); // не ученик — отдаём дальше (статика/404)
+  const pub = readPublish(parsed.user, parsed.project);
+  if (!pub || !pub.enabled) return next();
+
+  // auth-гейт
+  if (!req.session?.user) {
+    return res.redirect(302, '/');
+  }
+  if (!canView(req, parsed.user, pub)) {
+    return res.status(403).send('forbidden');
+  }
+
+  try {
+    const { ip, port } = await ensureRunning(parsed.user, parsed.project);
+    touchActivity(parsed.user);
+    req._appTarget = `http://${ip}:${port}`;
+    req._appPrefix = `/${parsed.user}/${parsed.project}`;
+    return appProxy(req, res, next);
+  } catch (e) {
+    if (!res.headersSent) res.status(502).send('app not ready: ' + e.message);
+  }
+}
+
+app.use((req, res, next) => {
+  if (parsePublishPath(req.url)) return publishMiddleware(req, res, next);
+  next();
+});
+
 // ---------- статика ----------
 
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -650,6 +716,20 @@ const server = app.listen(PORT, HOST, () => {
 // WebSocket upgrade для /code/<user>/* (code-server поднимает ws).
 // http-proxy-middleware v3 экспортирует .upgrade на инстансе прокси.
 server.on('upgrade', (req, socket, head) => {
+  const parsed = parsePublishPath(req.url || '');
+  if (parsed) {
+    const state = loadUsers();
+    const pub = state.users[parsed.user] ? readPublish(parsed.user, parsed.project) : null;
+    if (pub && pub.enabled) {
+      containerIp(parsed.user).then(ip => {
+        if (!ip) { try { socket.destroy(); } catch {} return; }
+        req._appTarget = `http://${ip}:${pub.port}`;
+        req._appPrefix = `/${parsed.user}/${parsed.project}`;
+        appProxy.upgrade(req, socket, head);
+      }).catch(() => { try { socket.destroy(); } catch {} });
+      return;
+    }
+  }
   if (req.url && req.url.startsWith('/code/')) {
     codeProxy.upgrade(req, socket, head);
   }
