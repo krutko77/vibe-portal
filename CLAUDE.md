@@ -146,8 +146,9 @@ systemctl restart anthropic-shim
 **Публикация приложений.** Ученик публикует проект → приложение крутится в его
 контейнере на порту 3001+ (как `student`), панель проксирует
 `/<user>/<project>/*` → `http://<containerIP>:<port>/` по vibe-net (наружу порты
-не светятся). Доступ по сессии: `visibility=owner` (владелец+админ) или `auth`
-(любой залогиненный). Конфиг — в `.portal-meta.json` проекта (`publish:{enabled,
+не светятся). Доступ: `visibility=owner` (владелец+админ), `auth` (любой
+залогиненный) или `public` (без входа — внешние пользователи; `public` минует
+auth-гейт и в HTTP, и в WS). Конфиг — в `.portal-meta.json` проекта (`publish:{enabled,
 visibility,autosleep,port,cmd}`). Self-heal: заход на URL будит контейнер и
 переподнимает процесс (`panel/lib/publish.js`, `ensureRunning`). `autosleep=false`
 → idle-reaper не усыпляет ученика. Деплой по умолчанию: Node (`node <entry>` с

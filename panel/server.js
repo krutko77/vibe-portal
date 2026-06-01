@@ -482,7 +482,7 @@ app.post('/api/projects/:name/publish', requireAuth, async (req, res) => {
       const port = pub.port || allocatePort(t.user, t.project);
       pub = writePublish(t.user, t.project, {
         enabled: true,
-        visibility: visibility === 'auth' ? 'auth' : 'owner',
+        visibility: ['auth', 'public'].includes(visibility) ? visibility : 'owner',
         autosleep: autosleep !== false,
         port,
       });
@@ -649,8 +649,9 @@ function parsePublishPath(url) {
   return { user: m[1], project: m[2] };
 }
 
-// можно ли смотреть: visibility owner → владелец+админ; auth → любой залогиненный
+// можно ли смотреть: public → кто угодно; owner → владелец+админ; auth → любой залогиненный
 function canView(req, user, pub) {
+  if (pub.visibility === 'public') return true;
   if (!req.session?.user) return false;
   if (req.session.isAdmin) return true;
   if (pub.visibility === 'auth') return true;
@@ -680,12 +681,14 @@ async function publishMiddleware(req, res, next) {
   const pub = readPublish(parsed.user, parsed.project);
   if (!pub || !pub.enabled) return next();
 
-  // auth-гейт
-  if (!req.session?.user) {
-    return res.redirect(302, '/');
-  }
-  if (!canView(req, parsed.user, pub)) {
-    return res.status(403).send('forbidden');
+  // auth-гейт (public — без логина; иначе нужна сессия + право)
+  if (pub.visibility !== 'public') {
+    if (!req.session?.user) {
+      return res.redirect(302, '/');
+    }
+    if (!canView(req, parsed.user, pub)) {
+      return res.status(403).send('forbidden');
+    }
   }
 
   try {
@@ -724,7 +727,8 @@ server.on('upgrade', (req, socket, head) => {
     const pub = state.users[parsed.user] ? readPublish(parsed.user, parsed.project) : null;
     if (pub && pub.enabled) {
       sessionParser(req, {}, () => {
-        if (!req.session?.user || !canView(req, parsed.user, pub)) {
+        // public → без сессии; иначе нужна сессия + право
+        if (pub.visibility !== 'public' && (!req.session?.user || !canView(req, parsed.user, pub))) {
           try { socket.destroy(); } catch {}
           return;
         }

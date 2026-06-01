@@ -411,14 +411,18 @@ function renderCourseContent() {
     const lsn = mod.lessons[idx];
     const prev = idx > 0 ? mod.lessons[idx - 1] : null;
     const next = idx < mod.lessons.length - 1 ? mod.lessons[idx + 1] : null;
-    root.innerHTML = `
-      <div class="page-meta">${mod.id.toUpperCase()} · УРОК ${idx + 1}</div>
-      <h1 class="page-h1">${escapeHtml(lsn.title)}</h1>
-      <div class="course-placeholder">
+    const note = (window.LESSON_NOTES || {})[courseSelected];
+    const body = note
+      ? `<div class="lesson-note">${note}</div>`
+      : `<div class="course-placeholder">
         <div class="course-placeholder-icon">📝</div>
         <div class="course-placeholder-title">Конспект готовится</div>
         <div class="course-placeholder-desc">Текстовый конспект и видео появятся здесь после записи мастер-класса. Полная программа — на <a href="https://analitik.kiselevgroup.com/vibecoding" target="_blank">analitik.kiselevgroup.com/vibecoding</a>.</div>
-      </div>
+      </div>`;
+    root.innerHTML = `
+      <div class="page-meta">${mod.id.toUpperCase()} · УРОК ${idx + 1}</div>
+      <h1 class="page-h1">${escapeHtml(lsn.title)}</h1>
+      ${body}
       <div class="course-nav">
         ${prev ? `<button class="course-nav-prev" data-sel="${mod.id}.${prev.id}">← ${escapeHtml(prev.title.slice(0, 50))}${prev.title.length > 50 ? '…' : ''}</button>` : '<span></span>'}
         ${next ? `<button class="course-nav-next" data-sel="${mod.id}.${next.id}">${escapeHtml(next.title.slice(0, 50))}${next.title.length > 50 ? '…' : ''} →</button>` : '<span></span>'}
@@ -750,11 +754,30 @@ async function savePublish() {
 async function redeployPublish() {
   if (!PUB_PROJECT) return;
   $('#pub-error').classList.add('hidden');
+  if (!$('#pub-enabled').checked) {
+    showPubError('Сначала включи «Опубликовать приложение», потом жми «Деплой».');
+    return;
+  }
+  const btn = $('#pub-redeploy');
+  const prev = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Деплой…';
   try {
+    // 1) сохранить текущие настройки (включит публикацию и поднимет приложение)
+    await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish', {
+      method: 'POST',
+      body: {
+        enabled: true,
+        visibility: $('#pub-visibility').value,
+        autosleep: $('#pub-autosleep').checked,
+      },
+    });
+    // 2) форс-рестарт под свежий код
     await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/redeploy', { method: 'POST' });
     const s = await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish');
     renderPubUrl(s);
+    refreshProjects();
   } catch (e) { showPubError(e.message); }
+  finally { btn.disabled = false; btn.textContent = prev; }
 }
 
 // ── File explorer ──────────────────────────────────────────
