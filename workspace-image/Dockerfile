@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl gnupg git \
         build-essential python3 python3-pip \
         sqlite3 \
+        php-cli \
+        psmisc \
         locales \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
