@@ -71,14 +71,15 @@ app.use('/api', (req, res, next) => {
   next();
 });
 app.use(express.json({ limit: '1mb' }));
-app.use(session({
+const sessionParser = session({
   store: new FileStore({ path: SESSIONS_DIR, ttl: 30 * 24 * 3600, retries: 1 }),
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { httpOnly: true, secure: false, maxAge: 30 * 24 * 3600 * 1000, sameSite: 'lax' },
   name: 'vibe.sid',
-}));
+});
+app.use(sessionParser);
 
 // ---------- auth ----------
 
@@ -445,6 +446,7 @@ app.get('/api/template-claude/:which', requireAuth, (req, res) => {
 function resolvePublishTarget(req) {
   const name = req.params.name;
   if (!/^[a-zA-Z0-9._-]+$/.test(name)) return null;
+  if (name.startsWith('.') || name === '.' || name === '..') return null;
   const asUser = req.session.isAdmin && req.query.asUser ? req.query.asUser : req.session.user;
   if (!/^[a-zA-Z0-9._-]+$/.test(asUser)) return null;
   const dir = path.join(workspaceDir(asUser), name);
@@ -641,7 +643,7 @@ app.use((req, res, next) => {
 const RESERVED_SEG = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', '.well-known']);
 
 function parsePublishPath(url) {
-  const m = url.match(/^\/([a-zA-Z0-9][a-zA-Z0-9_-]*)\/([a-zA-Z0-9._-]+)(\/.*|)$/);
+  const m = url.match(/^\/([a-zA-Z0-9][a-zA-Z0-9_-]*)\/([a-zA-Z0-9][a-zA-Z0-9._-]*)(\/.*|)$/);
   if (!m) return null;
   if (RESERVED_SEG.has(m[1])) return null;
   return { user: m[1], project: m[2] };
@@ -721,12 +723,18 @@ server.on('upgrade', (req, socket, head) => {
     const state = loadUsers();
     const pub = state.users[parsed.user] ? readPublish(parsed.user, parsed.project) : null;
     if (pub && pub.enabled) {
-      containerIp(parsed.user).then(ip => {
-        if (!ip) { try { socket.destroy(); } catch {} return; }
-        req._appTarget = `http://${ip}:${pub.port}`;
-        req._appPrefix = `/${parsed.user}/${parsed.project}`;
-        appProxy.upgrade(req, socket, head);
-      }).catch(() => { try { socket.destroy(); } catch {} });
+      sessionParser(req, {}, () => {
+        if (!req.session?.user || !canView(req, parsed.user, pub)) {
+          try { socket.destroy(); } catch {}
+          return;
+        }
+        containerIp(parsed.user).then(ip => {
+          if (!ip) { try { socket.destroy(); } catch {} return; }
+          req._appTarget = `http://${ip}:${pub.port}`;
+          req._appPrefix = `/${parsed.user}/${parsed.project}`;
+          appProxy.upgrade(req, socket, head);
+        }).catch(() => { try { socket.destroy(); } catch {} });
+      });
       return;
     }
   }

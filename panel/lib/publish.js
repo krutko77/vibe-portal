@@ -160,7 +160,7 @@ export async function ensureRunning(user, project) {
   let ip = await containerIp(user);
   if (await appAlive(ip, pub.port)) return { ip, port: pub.port };
   await deployApp(user, project, pub.port);
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 40; i++) {
     await new Promise(r => setTimeout(r, 500));
     ip = await containerIp(user);
     if (await appAlive(ip, pub.port)) return { ip, port: pub.port };
