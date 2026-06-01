@@ -369,6 +369,9 @@ body:not(.is-admin) .admin-only { display: none !important; }
 .modal > .modal-footer { padding: 0 18px; }
 .modal > .form-group { padding-top: 14px; }
 .modal > .form-row   { padding-top: 14px; }
+.modal > .pub-row,
+.modal > .pub-url-box,
+.modal > .pub-status { padding-left: 18px; padding-right: 18px; }
 
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-row { display: flex; align-items: flex-end; gap: 8px; }
@@ -1919,3 +1922,15 @@ html:not(.dark) .course-placeholder-desc a:hover {
   color: hsl(var(--muted-foreground));
 }
 .dl-btn-sec:hover { color: hsl(var(--foreground)); border-color: hsl(var(--foreground) / .4); }
+
+/* ── Публикация приложений ─────────────────────────────────── */
+.pub-row { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; font-size: 13px; cursor: pointer; }
+.pub-row input { margin-top: 2px; }
+.pub-url-box {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: hsl(var(--accent) / .4); border: 1px solid hsl(var(--border));
+  border-radius: 6px; padding: 8px 10px; margin: 10px 0;
+}
+.pub-url { font-family: var(--font-mono); font-size: 12px; color: hsl(var(--foreground)); word-break: break-all; flex: 1; }
+.pub-status { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); margin: 6px 0; }
+

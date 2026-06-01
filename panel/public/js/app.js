@@ -584,7 +584,7 @@ async function refreshProjects() {
         </thead>
         <tbody>
           ${projects.map(p => `
-            <tr data-project="${escapeHtml(p.name)}">
+            <tr data-project="${escapeHtml(p.name)}" data-published="${p.published ? '1' : ''}" data-pub-url="${escapeHtml(p.publishUrl || '')}">
               <td><span class="pill pill-type">ПРОЕКТ</span></td>
               <td><span class="pill ${statusClass(p.status)}">${escapeHtml(p.status)}</span></td>
               <td class="td-name">${escapeHtml(p.name)}</td>
@@ -599,6 +599,12 @@ async function refreshProjects() {
                 <button class="btn btn-sm" data-action="vscode">VS Code →</button>
                 <button class="btn btn-sm" data-action="download" title="Скачать проект (.zip)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="btn btn-sm" data-action="link" title="Открыть приложение">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </button>
+                <button class="btn btn-sm" data-action="publish" title="Публикация">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13"/><path d="M5 9l7-7 7 7"/><path d="M5 22h14"/></svg>
                 </button>
                 <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
@@ -619,6 +625,11 @@ async function refreshProjects() {
       $('[data-action="download"]', tr).onclick = () => {
         window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
       };
+      $('[data-action="link"]', tr).onclick = () => {
+        if (tr.dataset.published && tr.dataset.pubUrl) window.open(tr.dataset.pubUrl, '_blank');
+        else openPublishModal(name);
+      };
+      $('[data-action="publish"]', tr).onclick = () => openPublishModal(name);
       $('[data-action="delete"]', tr).onclick = async () => {
         if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
         try {
@@ -628,6 +639,65 @@ async function refreshProjects() {
       };
     });
   } catch {}
+}
+
+// ── Publish modal ──────────────────────────────────────────
+
+let PUB_PROJECT = null;
+
+async function openPublishModal(name) {
+  PUB_PROJECT = name;
+  $('#pub-project').textContent = name;
+  $('#pub-error').classList.add('hidden');
+  openModal('modal-publish');
+  try {
+    const s = await api('/api/projects/' + encodeURIComponent(name) + '/publish');
+    $('#pub-enabled').checked = s.enabled;
+    $('#pub-visibility').value = s.visibility || 'owner';
+    $('#pub-autosleep').checked = s.autosleep !== false;
+    renderPubUrl(s);
+  } catch (e) { showPubError(e.message); }
+}
+
+function renderPubUrl(s) {
+  const box = $('#pub-url-box');
+  if (s.enabled && s.url) {
+    box.classList.remove('hidden');
+    $('#pub-url').textContent = location.origin + s.url;
+    $('#pub-open').href = s.url;
+    $('#pub-status').textContent = s.running ? '● запущено · порт ' + s.port : '○ спит (поднимется при заходе)';
+  } else {
+    box.classList.add('hidden');
+    $('#pub-status').textContent = '';
+  }
+}
+
+function showPubError(m) { const e = $('#pub-error'); e.textContent = m; e.classList.remove('hidden'); }
+
+async function savePublish() {
+  if (!PUB_PROJECT) return;
+  $('#pub-error').classList.add('hidden');
+  try {
+    const body = {
+      enabled: $('#pub-enabled').checked,
+      visibility: $('#pub-visibility').value,
+      autosleep: $('#pub-autosleep').checked,
+    };
+    await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish', { method: 'POST', body });
+    const s = await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish');
+    renderPubUrl(s);
+    refreshProjects();
+  } catch (e) { showPubError(e.message); }
+}
+
+async function redeployPublish() {
+  if (!PUB_PROJECT) return;
+  $('#pub-error').classList.add('hidden');
+  try {
+    await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/redeploy', { method: 'POST' });
+    const s = await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish');
+    renderPubUrl(s);
+  } catch (e) { showPubError(e.message); }
 }
 
 // ── File explorer ──────────────────────────────────────────
@@ -1131,6 +1201,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // «+ Шаблон»
   $('#btn-create').onclick = openCreateModal;
   $('#create-submit').onclick = doCreateFromBase;
+  // Publish modal
+  $('#pub-save').onclick = savePublish;
+  $('#pub-redeploy').onclick = redeployPublish;
+  $('#pub-copy').onclick = () => {
+    navigator.clipboard?.writeText($('#pub-url').textContent).catch(() => {});
+  };
   $('#create-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doCreateFromBase(); }
   });

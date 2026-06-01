@@ -770,6 +770,44 @@
     </div>
   </div>
 
+  <!-- ── Modal: Публикация приложения ─────────────────────── -->
+  <div class="modal-overlay hidden" id="modal-publish" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <span class="modal-title">Публикация · <span id="pub-project"></span></span>
+        <button class="modal-close" data-close="modal-publish" aria-label="Закрыть">✕</button>
+      </div>
+      <label class="pub-row">
+        <input type="checkbox" id="pub-enabled" />
+        <span>Опубликовать приложение</span>
+      </label>
+      <div class="form-group">
+        <label class="form-label">Кто может смотреть</label>
+        <select id="pub-visibility" class="form-input">
+          <option value="owner">Только я и админ</option>
+          <option value="auth">Все залогиненные ученики</option>
+        </select>
+      </div>
+      <label class="pub-row">
+        <input type="checkbox" id="pub-autosleep" checked />
+        <span>Авто-засыпание (засыпает с контейнером через 30 мин простоя)</span>
+      </label>
+      <div class="pub-url-box hidden" id="pub-url-box">
+        <span class="pub-url" id="pub-url"></span>
+        <button class="btn btn-sm" id="pub-copy">Копировать</button>
+        <a class="btn btn-sm" id="pub-open" target="_blank">Открыть →</a>
+      </div>
+      <div class="pub-status" id="pub-status"></div>
+      <div class="form-error hidden" id="pub-error"></div>
+      <div class="modal-footer">
+        <button class="btn btn-sm" id="pub-redeploy">Передеплоить</button>
+        <span style="flex:1"></span>
+        <button class="btn btn-ghost" data-close="modal-publish">Закрыть</button>
+        <button class="btn btn-primary" id="pub-save">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Create project from template (старая, для секции «Шаблоны»)── -->
   <div class="modal-overlay hidden" id="modal-newproject" role="dialog" aria-modal="true">
     <div class="modal">
