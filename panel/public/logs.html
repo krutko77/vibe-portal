@@ -83,6 +83,7 @@
       border: 1px solid hsl(var(--border)); border-radius: 4px;
       padding: 1px 7px; color: hsl(var(--foreground));
     }
+    .lg-src { border-color: hsl(var(--primary) / .4); color: hsl(var(--primary)); }
     .lg-err { color: hsl(var(--destructive, 0 70% 55%)); }
     .lg-body { padding: 0 14px 12px; }
     .lg-role {
@@ -198,6 +199,9 @@
       const time = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
       const model = (r.model || '').replace(/^claude-/, '').replace(/-\d{8}$/, '');
       const tok = r.usage ? `${r.usage.input||0}/${r.usage.output||0} ток.` : '';
+      const srcMap = { 'project-chat': 'чат проекта', 'user-chat': 'чат-помощник' };
+      const src = srcMap[r.source] || 'VS Code';
+      const project = r.project ? ` · ${escapeHtml(r.project)}` : '';
       const q = r.isToolContinuation
         ? '<div class="lg-text lg-q lg-cont">↻ продолжение (ответ инструмента)</div>'
         : `<div class="lg-text lg-q">${escapeHtml(r.userText) || '<i>—</i>'}</div>`;
@@ -208,6 +212,7 @@
         <div class="lg-meta">
           <span class="lg-user">@${escapeHtml(r.user)}</span>
           <span>${time}</span>
+          <span class="lg-pill lg-src">${src}${project}</span>
           ${model ? `<span class="lg-pill">${escapeHtml(model)}</span>` : ''}
           ${tok ? `<span>${tok}</span>` : ''}
           ${r.status && r.status !== 200 ? `<span class="lg-err">HTTP ${r.status}</span>` : ''}

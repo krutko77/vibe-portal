@@ -3,6 +3,7 @@
 // помещаем в сам prompt. spawn `claude -p ... --output-format text` (блок. ответ).
 
 import { spawn } from 'node:child_process';
+import * as transcripts from './transcripts.js';
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || '/usr/bin/claude';
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
@@ -75,6 +76,16 @@ export function send(req, res) {
     hist.push({ role: 'user', content: message });
     hist.push({ role: 'assistant', content: response });
     if (hist.length > 20) hist.splice(0, 2);
+    transcripts.write({
+      ts: new Date().toISOString(),
+      user: username,
+      source: 'user-chat',
+      model: 'sonnet',
+      userText: message,
+      assistantText: response,
+      toolCalls: [],
+      usage: {},
+    });
     const m = response.match(/CREATE_PROJECT\s+template=([a-zA-Z0-9._-]+)\s+name=([a-zA-Z0-9._-]+)/);
     res.json({
       response,

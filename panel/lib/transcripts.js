@@ -1,7 +1,9 @@
-// transcripts.js — чтение аудит-логов диалогов ученик↔Claude (admin-only).
+// transcripts.js — аудит-логи диалогов ученик↔Claude (admin-only).
 //
-// Пишет их шим в TRANSCRIPTS_DIR/<user>/<YYYY-MM-DD>.jsonl (см. shim/transcript.js).
-// Здесь — только чтение для admin-просмотра в панели.
+// Источники записей:
+//   - шим (claude-cli в контейнере / VS Code) — пишет напрямую (shim/transcript.js);
+//   - панельные чаты (project-chat / user-chat) — пишут через write() ниже.
+// Все пишут в TRANSCRIPTS_DIR/<user>/<YYYY-MM-DD>.jsonl, читаются единой лентой.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,6 +11,22 @@ import path from 'node:path';
 const TRANSCRIPTS_DIR = process.env.TRANSCRIPTS_DIR || '/data/config/transcripts';
 const USER_RE = /^[a-zA-Z0-9._-]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Дописать одну JSONL-запись (используют панельные чаты). Никогда не бросает —
+// аудит не должен ронять чат. Схема совместима с записями шима (+ поле source).
+export function write(rec) {
+  try {
+    const user = rec && rec.user;
+    if (!user || !USER_RE.test(user)) return;
+    const dir = path.join(TRANSCRIPTS_DIR, user);
+    fs.mkdirSync(dir, { recursive: true });
+    const ts = rec.ts || new Date().toISOString();
+    const day = new Date(ts).toISOString().slice(0, 10);
+    fs.appendFileSync(path.join(dir, `${day}.jsonl`), JSON.stringify({ ...rec, ts }) + '\n');
+  } catch (e) {
+    console.error('[transcripts.write]', e.message);
+  }
+}
 
 // Список учеников, у которых есть транскрипты, с доступными датами.
 export function listUsers() {

@@ -10,6 +10,7 @@ import { spawn, execFile } from 'node:child_process';
 import { readdir, readFile, writeFile, rename as renameFile, unlink, mkdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import * as transcripts from './transcripts.js';
 const execFileP = promisify(execFile);
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN || '/usr/bin/claude';
@@ -220,6 +221,14 @@ export async function sendMessage(res, opts) {
   let { sessionId } = opts;
   const cwd = projectCwd(username, projectSlug);
 
+  // Аккумулятор для аудит-лога (тот же стор, что у шима; source=project-chat).
+  let recAsst = '';
+  const recTools = [];
+  let recModel = (model && model !== 'auto') ? model : 'sonnet';
+  let recUsage = { input: 0, output: 0 };
+  let recStop = null;
+  let recorded = false;
+
   const send = (event, data) => {
     try { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch {}
   };
@@ -309,6 +318,22 @@ export async function sendMessage(res, opts) {
         lastWriteAt: new Date().toISOString(),
       }).catch(() => {});
     }
+    if (!recorded) {
+      recorded = true;
+      transcripts.write({
+        ts: new Date().toISOString(),
+        user: username,
+        source: 'project-chat',
+        project: projectSlug,
+        sessionId: sessionId || null,
+        model: recModel,
+        userText: text,
+        assistantText: recAsst,
+        toolCalls: recTools,
+        stopReason: recStop,
+        usage: recUsage,
+      });
+    }
     try { res.end(); } catch {}
   }
 
@@ -317,6 +342,7 @@ export async function sendMessage(res, opts) {
     try { obj = JSON.parse(line); }
     catch { send('log', { stream: 'parse-error', text: line.slice(0, 200) }); return; }
     if (obj.type === 'system' && obj.subtype === 'init' && obj.session_id) {
+      if (obj.model) recModel = obj.model;
       if (!sessionId) {
         sessionId = obj.session_id;
         send('session', { sessionId, model: obj.model });
@@ -344,6 +370,8 @@ export async function sendMessage(res, opts) {
     }
     if (obj.type === 'result') {
       const usage = obj.usage || {};
+      recUsage = { input: usage.input_tokens || 0, output: usage.output_tokens || 0 };
+      recStop = obj.stop_reason || obj.subtype || recStop;
       send('summary', {
         tokenInput: usage.input_tokens,
         tokenOutput: usage.output_tokens,
@@ -354,7 +382,11 @@ export async function sendMessage(res, opts) {
       return;
     }
     const blocks = mapJsonlEntryToBlocks(obj);
-    if (blocks) for (const b of blocks) send('block', b);
+    if (blocks) for (const b of blocks) {
+      send('block', b);
+      if (b.role === 'assistant' && b.type === 'text') recAsst += b.text;
+      if (b.type === 'tool_use' && b.tool) recTools.push(b.tool);
+    }
   }
 }
 
