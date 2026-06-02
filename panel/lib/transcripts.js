@@ -84,6 +84,34 @@ function readFile(file) {
   return records;
 }
 
+// Кол-во сообщений ученика по датам: { 'YYYY-MM-DD': n, ... }.
+// Считаем только реальные сообщения ученика — записи-продолжения от инструментов
+// (isToolContinuation) не в счёт, иначе tool-heavy сессии искусственно раздувают
+// счётчик. Для дашборда/рейтинга (агрегаты, без текста). Не бросает.
+export function dailyCounts(user) {
+  if (!USER_RE.test(user)) return {};
+  const udir = path.join(TRANSCRIPTS_DIR, user);
+  if (!fs.existsSync(udir)) return {};
+  const out = {};
+  let files = [];
+  try { files = fs.readdirSync(udir); } catch { return {}; }
+  for (const f of files) {
+    const day = f.replace(/\.jsonl$/, '');
+    if (!f.endsWith('.jsonl') || !DATE_RE.test(day)) continue;
+    let n = 0;
+    try {
+      const raw = fs.readFileSync(path.join(udir, f), 'utf8');
+      for (const line of raw.split('\n')) {
+        if (!line.trim()) continue;
+        try { if (JSON.parse(line).isToolContinuation) continue; } catch { continue; }
+        n++;
+      }
+    } catch {}
+    out[day] = n;
+  }
+  return out;
+}
+
 // Все записи ученика за все даты (хронологически, новые сверху).
 function readUserAll(user) {
   if (!USER_RE.test(user)) return [];

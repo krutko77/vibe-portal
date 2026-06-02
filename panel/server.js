@@ -31,8 +31,9 @@ import {
 import {
   createStudent, deleteStudent, listStudents,
   dockerStart, dockerStop, containerStatus, workspaceDir,
-  touchActivity, startReaper,
+  touchActivity, recordLogin, startReaper,
 } from './lib/students.js';
+import { leaderboard } from './lib/leaderboard.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
 import {
@@ -93,6 +94,7 @@ app.post('/api/login', (req, res) => {
   if (!user) return res.status(401).json({ error: 'user not registered' });
   req.session.user = username;
   req.session.isAdmin = user.role === 'admin';
+  recordLogin(username); // учёт заходов для дашборда/рейтинга
   res.json({ ok: true, username, isAdmin: req.session.isAdmin });
 });
 
@@ -120,6 +122,19 @@ app.get('/api/me', (req, res) => {
     role: info.role || 'user',
     container: { error: e.message },
   }));
+});
+
+// ---------- дашборд: рейтинг учеников (любой залогиненный) ----------
+// Отдаёт ТОЛЬКО агрегаты-числа + имена (см. lib/leaderboard.js). Без текста
+// сообщений и без названий чужих проектов — ничего конфиденциального между
+// учениками не утекает.
+
+app.get('/api/leaderboard', requireAuth, (req, res) => {
+  try {
+    res.json(leaderboard());
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ---------- templates & projects (user) ----------

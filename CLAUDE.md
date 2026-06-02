@@ -115,6 +115,7 @@ systemctl restart anthropic-shim
 | POST | `/api/login` | — | htpasswd-vibe + users-vibe.json → сессия |
 | POST | `/api/logout` | — | |
 | GET | `/api/me` | — | username, isAdmin, статус контейнера |
+| GET | `/api/leaderboard` | user | Рейтинг учеников: только агрегаты-числа (без текста сообщений и названий проектов), для `/dashboard.html` |
 | GET | `/api/templates` | user | Список из `/opt/vibe-portal/templates/` |
 | GET | `/api/projects` | user | Папки в его workspace |
 | POST | `/api/projects/from-template` | user | `cp -a` шаблон + `chown 1000:1000` + замена `{{PROJECT_NAME}}` |
@@ -142,6 +143,20 @@ systemctl restart anthropic-shim
   шима, поэтому пишут сами через `transcripts.write()` (поле `source`:
   `project-chat`/`user-chat`; без поля = VS Code). В логах источник виден бейджем.
 Бэкфилла нет — пишется с момента внедрения, вперёд.
+
+**Дашборд/рейтинг учеников (`/dashboard.html`, кнопка-трофей в навбаре).**
+Доступен ЛЮБОМУ залогиненному ученику (не admin-only) — каждый видит общий
+рейтинг и отслеживает своё место. `GET /api/leaderboard` (`lib/leaderboard.js`)
+отдаёт **только агрегаты-числа** и имена: сообщений за день / за неделю
+(последние 7 дней) / всего, заходы, созданные проекты, опубликованные.
+**Приватность критична:** наружу не уходит ни текст сообщений, ни названия
+чужих проектов — ничего конфиденциального между учениками не перетекает.
+Очки: `заход = 20`, `созданное приложение = 100` (веса — константа `WEIGHTS`
+в `leaderboard.js`; сообщения сейчас вес 0, легко поднять). Сообщения считает
+`transcripts.dailyCounts()` (только строки JSONL, без `isToolContinuation`),
+заходы — поле `loginCount` в `users-vibe.json` (инкремент в `students.recordLogin()`
+на каждый успешный `/api/login`; бэкфилла нет, растёт с момента внедрения).
+Admin в рейтинг не входит.
 
 **Материалы/шаблоны (UI).** Секция-грид «Шаблоны» (showcase app-*) в проектах
 временно скрыта (`hidden`), но кнопка «+ Из шаблона» (создание из базовых
@@ -207,8 +222,8 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 │   └── transcript.js                  аудит диалогов (IP→ученик, SSE-парсер, JSONL)
 ├── panel/
 │   ├── server.js                      Express :3020
-│   ├── lib/{auth,students,templates,transcripts,publish}.js
-│   └── public/{index.html,history.html,logs.html,css/,js/}
+│   ├── lib/{auth,students,templates,transcripts,publish,leaderboard}.js
+│   └── public/{index.html,history.html,logs.html,dashboard.html,css/,js/}
 ├── scripts/
 │   ├── setup-iptables.sh              VIBE-FILTER/VIBE-INPUT chains
 │   └── create-admin.sh                бутстрап первого admin'а

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Рейтинг учеников — Vibe</title>
+  <link rel="icon" type="image/png" href="/KG_fi.png" />
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    (function(){
+      var t = localStorage.getItem('aif-theme');
+      if (t !== 'light') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <style>
+    body { overflow-y: auto; }
+    .db-wrap { max-width: 1040px; margin: 0 auto; padding: 32px 28px 80px; }
+
+    .db-top {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 6px;
+    }
+    .db-title {
+      font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--foreground));
+    }
+    .db-back {
+      font-family: var(--font-mono); font-size: 11px; text-decoration: none;
+      color: hsl(var(--muted-foreground)); letter-spacing: .04em;
+    }
+    .db-back:hover { color: hsl(var(--foreground)); }
+    .db-sub {
+      font-size: 13px; line-height: 1.5; color: hsl(var(--muted-foreground));
+      margin: 6px 0 26px; padding-bottom: 20px;
+      border-bottom: 1px solid hsl(var(--border));
+    }
+    .db-sub b { color: hsl(var(--primary)); font-weight: 600; }
+    .db-sub code {
+      font-family: var(--font-mono); font-size: 11.5px;
+      padding: 1px 6px; border-radius: 4px;
+      background: hsl(var(--secondary)); border: 1px solid hsl(var(--border));
+      color: hsl(var(--foreground));
+    }
+
+    /* ── Подиум топ-3 ────────────────────────────────────── */
+    .db-podium {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 14px; margin-bottom: 34px;
+    }
+    .db-pod {
+      border: 1px solid hsl(var(--border)); border-radius: 12px;
+      background: hsl(var(--card)); padding: 18px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      position: relative; overflow: hidden;
+    }
+    .db-pod-1 { border-color: hsl(45 90% 55% / .55); box-shadow: 0 0 0 1px hsl(45 90% 55% / .25) inset; }
+    .db-pod-2 { border-color: hsl(220 9% 60% / .5); }
+    .db-pod-3 { border-color: hsl(28 60% 50% / .5); }
+    .db-pod-medal { font-size: 26px; line-height: 1; }
+    .db-pod-name {
+      font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+      color: hsl(var(--foreground)); word-break: break-all; text-align: center;
+    }
+    .db-pod-score {
+      font-family: var(--font-mono); font-size: 22px; font-weight: 700;
+      color: hsl(var(--primary)); letter-spacing: .02em;
+    }
+    .db-pod-score small {
+      font-size: 10px; font-weight: 600; color: hsl(var(--muted-foreground));
+      letter-spacing: .1em; text-transform: uppercase; display: block; margin-top: 2px;
+    }
+    .db-pod-line {
+      font-family: var(--font-mono); font-size: 10.5px;
+      color: hsl(var(--muted-foreground)); text-align: center;
+    }
+    .db-pod.is-me { outline: 2px solid hsl(var(--primary) / .6); outline-offset: 2px; }
+    .db-me-tag {
+      font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: hsl(var(--primary)); border: 1px solid hsl(var(--primary) / .5);
+      border-radius: 999px; padding: 1px 7px;
+    }
+
+    /* ── Таблица рейтинга ────────────────────────────────── */
+    .db-tablewrap { overflow-x: auto; border: 1px solid hsl(var(--border)); border-radius: 12px; }
+    table.db-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    .db-table th {
+      font-family: var(--font-mono); font-size: 9.5px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: hsl(var(--muted-foreground)); text-align: right;
+      padding: 12px 14px; background: hsl(var(--secondary) / .5);
+      border-bottom: 1px solid hsl(var(--border)); white-space: nowrap;
+    }
+    .db-table th.col-rank, .db-table th.col-user { text-align: left; }
+    .db-table td {
+      font-family: var(--font-mono); font-size: 13px; text-align: right;
+      padding: 11px 14px; color: hsl(var(--foreground));
+      border-bottom: 1px solid hsl(var(--border)); white-space: nowrap;
+    }
+    .db-table tr:last-child td { border-bottom: none; }
+    .db-table tr:hover td { background: hsl(var(--accent) / .35); }
+    .db-table td.col-rank, .db-table td.col-user { text-align: left; }
+    .col-rank { width: 54px; color: hsl(var(--muted-foreground)); }
+    .col-user { font-weight: 600; }
+    .db-score { color: hsl(var(--primary)); font-weight: 700; }
+    .db-dim { color: hsl(var(--muted-foreground)); }
+    tr.is-me td { background: hsl(var(--primary) / .1) !important; }
+    tr.is-me .col-user { color: hsl(var(--primary)); }
+    .db-medal { font-size: 14px; }
+
+    .db-empty, .db-loading {
+      text-align: center; color: hsl(var(--muted-foreground));
+      font-size: 13px; padding: 60px 0;
+    }
+    .db-foot {
+      margin-top: 22px; font-family: var(--font-mono); font-size: 10.5px;
+      color: hsl(var(--muted-foreground)); text-align: center; line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .db-podium { grid-template-columns: 1fr; }
+      .db-wrap { padding: 24px 16px 60px; }
+    }
+  </style>
+</head>
+<body class="app-bg is-auth">
+
+  <nav class="navbar">
+    <a href="/" class="navbar-kg">KG</a>
+    <span class="navbar-spacer"></span>
+    <a class="nav-icon" href="/" title="На главную">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12L12 3l9 9"/><path d="M5 10v10h14V10"/>
+      </svg>
+    </a>
+  </nav>
+
+  <div class="db-wrap">
+    <div class="db-top">
+      <div>
+        <div class="db-title">🏆 Рейтинг учеников · дашборд активности</div>
+        <a class="db-back" href="/">← назад в портал</a>
+      </div>
+    </div>
+    <div class="db-sub" id="db-sub">загрузка…</div>
+
+    <div id="db-podium"></div>
+    <div id="db-content"><div class="db-loading">загрузка…</div></div>
+    <div class="db-foot" id="db-foot"></div>
+  </div>
+
+  <script>
+    let DATA = null;   // ответ /api/leaderboard
+    let ME = null;     // username текущего ученика
+
+    const esc = (s) => (s || '').replace(/[&<>"]/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',
+    })[c]);
+    const fmt = (n) => (n || 0).toLocaleString('ru');
+    const MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
+    async function load() {
+      try {
+        const [lbR, meR] = await Promise.all([
+          fetch('/api/leaderboard', { credentials: 'same-origin', cache: 'no-store' }),
+          fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }),
+        ]);
+        if (lbR.status === 401 || lbR.status === 403) {
+          document.getElementById('db-content').innerHTML =
+            '<div class="db-empty">Нужно войти, чтобы видеть рейтинг. <a href="/">Войти</a></div>';
+          document.getElementById('db-sub').textContent = '';
+          return;
+        }
+        DATA = await lbR.json();
+        try { ME = (await meR.json()).username; } catch {}
+        render();
+      } catch (e) {
+        document.getElementById('db-content').innerHTML =
+          '<div class="db-empty">Ошибка загрузки: ' + esc(e.message) + '</div>';
+      }
+    }
+
+    function render() {
+      const rows = DATA.rows || [];
+      const w = DATA.weights || { login: 20, app: 100 };
+
+      document.getElementById('db-sub').innerHTML =
+        `Очки: <b>заход = ${w.login}</b> · <b>создано приложение = ${w.app}</b>. ` +
+        `Сообщения показаны за день и за неделю (последние ${DATA.weekDays || 7} дн.), ` +
+        `в общий балл не входят. Всего учеников: <b>${rows.length}</b>.`;
+
+      // подиум — топ-3 с очками > 0 (или просто первые 3, если все по нулям)
+      const top = rows.slice(0, 3);
+      const podium = document.getElementById('db-podium');
+      if (top.length) {
+        podium.innerHTML = '<div class="db-podium">' + top.map(r => {
+          const me = r.username === ME;
+          return `<div class="db-pod db-pod-${r.rank}${me ? ' is-me' : ''}">
+            <div class="db-pod-medal">${MEDALS[r.rank] || ''}</div>
+            <div class="db-pod-name">${esc(r.username)}</div>
+            ${me ? '<span class="db-me-tag">это ты</span>' : ''}
+            <div class="db-pod-score">${fmt(r.score)}<small>очков</small></div>
+            <div class="db-pod-line">${r.created} прил. · ${r.logins} заходов · ${r.msgWeek} сообщ./нед.</div>
+          </div>`;
+        }).join('') + '</div>';
+      } else { podium.innerHTML = ''; }
+
+      const content = document.getElementById('db-content');
+      if (!rows.length) {
+        content.innerHTML = '<div class="db-empty">Учеников пока нет.</div>';
+        return;
+      }
+
+      content.innerHTML = `<div class="db-tablewrap"><table class="db-table">
+        <thead><tr>
+          <th class="col-rank">#</th>
+          <th class="col-user">Ученик</th>
+          <th>Очки</th>
+          <th>Заходы</th>
+          <th>Приложения</th>
+          <th>Опубликовано</th>
+          <th>Сообщ. сегодня</th>
+          <th>Сообщ. за неделю</th>
+        </tr></thead>
+        <tbody>${rows.map(rowHtml).join('')}</tbody>
+      </table></div>`;
+    }
+
+    function rowHtml(r) {
+      const me = r.username === ME;
+      const medal = MEDALS[r.rank] ? `<span class="db-medal">${MEDALS[r.rank]}</span> ` : '';
+      return `<tr class="${me ? 'is-me' : ''}">
+        <td class="col-rank">${medal}${r.rank}</td>
+        <td class="col-user">${esc(r.username)}${me ? ' <span class="db-me-tag">ты</span>' : ''}</td>
+        <td class="db-score">${fmt(r.score)}</td>
+        <td>${fmt(r.logins)}</td>
+        <td>${fmt(r.created)}</td>
+        <td class="${r.published ? '' : 'db-dim'}">${fmt(r.published)}</td>
+        <td class="${r.msgToday ? '' : 'db-dim'}">${fmt(r.msgToday)}</td>
+        <td class="${r.msgWeek ? '' : 'db-dim'}">${fmt(r.msgWeek)}</td>
+      </tr>`;
+    }
+
+    document.getElementById('db-foot').textContent =
+      'Данные обновляются при каждом открытии страницы. Заходы считаются с момента запуска дашборда.';
+
+    load();
+  </script>
+</body>
+</html>

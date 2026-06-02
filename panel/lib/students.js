@@ -42,7 +42,7 @@ function allocatePort(state) {
 
 export async function createStudent({ username, password, role = 'user' }) {
   const state = loadUsers();
-  const RESERVED = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', 'well-known', 'logs', 'history', 'help', 'security']);
+  const RESERVED = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', 'well-known', 'logs', 'history', 'help', 'security', 'dashboard', 'leaderboard', 'rating']);
   if (RESERVED.has(username)) {
     throw new Error(`reserved username: ${username}`);
   }
@@ -252,6 +252,17 @@ export function touchActivity(username) {
   const state = loadUsers();
   if (!state.users[username]) return;
   state.users[username].lastActivityAt = new Date().toISOString();
+  saveUsers(state);
+}
+
+// Учёт заходов (для дашборда/рейтинга). Инкремент при каждом успешном логине.
+// Бэкфилла нет — счётчик растёт с момента внедрения, как и аудит диалогов.
+export function recordLogin(username) {
+  const state = loadUsers();
+  if (!state.users[username]) return;
+  const u = state.users[username];
+  u.loginCount = (u.loginCount || 0) + 1;
+  u.lastLoginAt = new Date().toISOString();
   saveUsers(state);
 }
 
