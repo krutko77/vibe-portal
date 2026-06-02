@@ -616,6 +616,40 @@
           </a>
         </div>
 
+        <h2 class="page-h2">Голосовой ввод · диктовка</h2>
+        <p class="page-lead"><strong>Handy</strong> — бесплатная программа распознавания речи. Зажал горячую клавишу, проговорил мысль — текст сам вставляется в активное поле (чат с Claude, редактор, браузер). Работает офлайн, аудио никуда не уходит. Лучшая модель для русского — <strong>GigaAM v3</strong> (как её включить — в шагах ниже).</p>
+
+        <div class="link-tiles link-tiles-primary">
+          <a class="link-tile" href="https://github.com/cjpais/Handy/releases/download/v0.8.3/Handy_0.8.3_x64-setup.exe" target="_blank">
+            <div class="link-tile-label">Windows</div>
+            <div class="link-tile-title">Handy для Windows</div>
+            <div class="link-tile-desc">Установщик .exe (x64) — скачай и запусти. Или в PowerShell: <code>winget install cjpais.Handy</code></div>
+          </a>
+          <a class="link-tile" href="https://github.com/cjpais/Handy/releases/download/v0.8.3/Handy_0.8.3_aarch64.dmg" target="_blank">
+            <div class="link-tile-label">macOS · Apple Silicon</div>
+            <div class="link-tile-title">Handy для Mac (M1–M4)</div>
+            <div class="link-tile-desc">Образ .dmg для Mac на чипе Apple — почти все современные Mac.</div>
+          </a>
+          <a class="link-tile" href="https://github.com/cjpais/Handy/releases/download/v0.8.3/Handy_0.8.3_x64.dmg" target="_blank">
+            <div class="link-tile-label">macOS · Intel</div>
+            <div class="link-tile-title">Handy для Mac (Intel)</div>
+            <div class="link-tile-desc">Образ .dmg для старых Mac на процессоре Intel.</div>
+          </a>
+        </div>
+        <p class="page-lead">Не знаешь, какой у тебя Mac? <strong>Меню Apple → «Об этом Mac»</strong> → строка «Чип». Всегда свежая версия и другие платформы (Linux, ARM-Windows) — на <a href="https://handy.computer/download" target="_blank">handy.computer/download</a>.</p>
+
+        <div class="page-sect">
+          <div class="page-sect-no">МОДЕЛЬ GIGAAM V3 · РУССКИЙ</div>
+          <p>GigaAM v3 от Сбера — лучшая на сегодня модель распознавания русской речи: знаки препинания, цифры, латиница. ~225 МБ, работает на CPU. Ставится прямо из Handy:</p>
+          <ul class="page-list">
+            <li>Открой Handy → <strong>Settings</strong> (иконка шестерёнки).</li>
+            <li>В разделе <strong>Models</strong> найди в списке <strong>GigaAM v3</strong> и выбери его.</li>
+            <li>Модель скачается автоматически при первом запуске (~225 МБ, интернет нужен один раз) — дальше работает офлайн.</li>
+            <li>Проверь, что у карточки модели горит статус <strong>«Активный»</strong> — значит распознавание идёт через неё.</li>
+          </ul>
+        </div>
+        <p class="page-lead">Документация по моделям — <a href="https://handy.computer/docs/models" target="_blank">handy.computer/docs/models</a>; исходники модели — <a href="https://github.com/salute-developers/GigaAM" target="_blank">github.com/salute-developers/GigaAM</a>.</p>
+
         <h2 class="page-h2">Документация и справочники</h2>
         <div class="anchor-chips">
           <a href="#l-b24" class="anchor-chip">Битрикс24</a>
