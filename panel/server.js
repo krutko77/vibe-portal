@@ -614,7 +614,12 @@ app.get('/api/transcripts/:u', requireAdmin, (req, res) => {
 const codeProxy = createProxyMiddleware({
   router: (req) => req._codeTarget || null,
   changeOrigin: true,
-  ws: true,
+  // НЕ ws:true. Иначе http-proxy-middleware сам подпишется на server 'upgrade'
+  // (catchUpgradeRequest) и его внутренний обработчик отработает СИНХРОННО — до
+  // того как наш server.on('upgrade') в .then() (containerIp) выставит
+  // req._codeTarget. Гонка → router отдаёт target=null → WS рвётся, окно белое.
+  // Гоним апгрейд только вручную из server.on('upgrade'), когда target готов.
+  ws: false,
   pathRewrite: (p) => p.replace(/^\/code\/[^/]+/, ''),
   on: {
     error: (err, req, res) => {
@@ -673,7 +678,7 @@ const ADMIN_CODE_TARGET = process.env.ADMIN_CODE_URL || 'http://127.0.0.1:8300';
 const adminCodeProxy = createProxyMiddleware({
   target: ADMIN_CODE_TARGET,
   changeOrigin: true,
-  ws: true,
+  ws: false, // апгрейд гоним вручную из server.on('upgrade') — см. codeProxy
   pathRewrite: (p) => p.replace(/^\/admin-code/, '') || '/',
   on: {
     error: (err, req, res) => {
@@ -715,7 +720,7 @@ function canView(req, user, pub) {
 const appProxy = createProxyMiddleware({
   router: (req) => req._appTarget,
   changeOrigin: true,
-  ws: true,
+  ws: false, // апгрейд гоним вручную из server.on('upgrade') — см. codeProxy
   pathRewrite: (p, req) => {
     const rewritten = p.replace(req._appPrefix, '');
     return rewritten || '/';
