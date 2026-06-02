@@ -40,6 +40,9 @@ import {
   readPublish, writePublish, allocatePort, ensureRunning,
   deployApp, stopApp, containerIp, appAlive,
 } from './lib/publish.js';
+import {
+  allocateSlot, touchSlot, releaseSlot, ensureCodeInstance, portForSlot,
+} from './lib/code-slots.js';
 import { spawn } from 'node:child_process';
 import { buildTree, readFileSafe, resolveSafe } from './lib/explorer.js';
 import {
@@ -99,6 +102,9 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
+  // освобождаем слот окна VS Code этой сессии (иначе подождёт TTL)
+  const u = req.session?.user, slot = req.session?.codeSlot;
+  if (u && Number.isInteger(slot)) releaseSlot(u, slot);
   req.session.destroy(() => res.json({ ok: true }));
 });
 
@@ -600,20 +606,13 @@ app.get('/api/transcripts/:u', requireAdmin, (req, res) => {
 // nginx за нами делает auth_request на /api/me, и проксирует /code/ сюда.
 // Здесь мы доп. сверяем что user из URL совпадает с сессией, и шлём в нужный контейнер.
 
-// Прокси /code/<user>/* → 127.0.0.1:<port>.
-// router вычисляется по URL, чтобы работало в т.ч. для WebSocket upgrade
-// (он обходит Express-цепочку и до auth-middleware ниже не доходит).
-// HTTP-цепочка делает сессионную проверку и авто-старт контейнера; WS-апгрейд
-// идёт уже после первого HTTP-запроса (code-server грузит HTML по GET до WS).
+// Прокси /code/<user>/* → http://<containerIP>:<8080+slot> по vibe-net.
+// target вычисляется в HTTP-гейте/WS-апгрейде (req._codeTarget) с учётом слота
+// окна: первая сессия юзера → slot 0, конкурентные → 1,2,… (свои code-server в
+// том же контейнере). router только возвращает уже посчитанный target — так
+// одинаково работает и HTTP, и WebSocket upgrade.
 const codeProxy = createProxyMiddleware({
-  router: (req) => {
-    const m = req.url.match(/^\/code\/([^/]+)/);
-    if (!m) return null;
-    const state = loadUsers();
-    const u = state.users[m[1]];
-    if (!u || !u.containerPort) return null;
-    return `http://127.0.0.1:${u.containerPort}`;
-  },
+  router: (req) => req._codeTarget || null,
   changeOrigin: true,
   ws: true,
   pathRewrite: (p) => p.replace(/^\/code\/[^/]+/, ''),
@@ -626,8 +625,9 @@ const codeProxy = createProxyMiddleware({
   },
 });
 
-// HTTP: проверка сессии + авто-старт контейнера. После next() — прокси.
-app.use('/code/:user', (req, res, next) => {
+// HTTP: проверка сессии + слот окна + подъём инстанса code-server. После
+// next() — прокси на req._codeTarget.
+app.use('/code/:user', async (req, res, next) => {
   const wantUser = req.params.user;
   if (!req.session?.user) return res.status(401).send('login required');
   if (req.session.user !== wantUser && !req.session.isAdmin) {
@@ -636,13 +636,23 @@ app.use('/code/:user', (req, res, next) => {
   const state = loadUsers();
   const u = state.users[wantUser];
   if (!u) return res.status(404).send('no such student');
-  if (!u.containerPort) return res.status(500).send('no port assigned');
 
-  dockerStart(wantUser)
-    .then(() => touchActivity(wantUser))
-    .catch(e => console.error('autostart failed:', e.message));
+  // Слот окна липнет к сессии: первая сессия юзера → slot 0 (PID-1 code-server),
+  // конкурентные сессии того же логина → 1,2,… (свои процессы в том же контейнере).
+  if (!Number.isInteger(req.session.codeSlot)) {
+    req.session.codeSlot = allocateSlot(wantUser);
+  }
+  const slot = req.session.codeSlot;
+  touchSlot(wantUser, slot);
 
-  next();
+  try {
+    req._codeTarget = await ensureCodeInstance(wantUser, slot);
+    touchActivity(wantUser);
+    next();
+  } catch (e) {
+    console.error('[code] ensure slot failed:', e.message);
+    if (!res.headersSent) res.status(502).send('editor not ready: ' + e.message);
+  }
 });
 
 // Прокси без mount-префикса — иначе Express режет `/code` из req.url
@@ -795,7 +805,25 @@ server.on('upgrade', (req, socket, head) => {
     }
   }
   if (req.url && req.url.startsWith('/code/')) {
-    codeProxy.upgrade(req, socket, head);
+    const m = req.url.match(/^\/code\/([^/]+)/);
+    const wantUser = m && m[1];
+    if (!wantUser) { try { socket.destroy(); } catch {} return; }
+    // Слот берём из сессии (HTTP-гейт уже его выставил и сохранил) → тот же
+    // инстанс code-server, что отдал HTML. Заодно гейтим WS по сессии.
+    sessionParser(req, {}, () => {
+      if (!req.session?.user) { try { socket.destroy(); } catch {} return; }
+      if (req.session.user !== wantUser && !req.session.isAdmin) {
+        try { socket.destroy(); } catch {} return;
+      }
+      const slot = Number.isInteger(req.session.codeSlot) ? req.session.codeSlot : 0;
+      touchSlot(wantUser, slot);
+      containerIp(wantUser).then(ip => {
+        if (!ip) { try { socket.destroy(); } catch {} return; }
+        req._codeTarget = `http://${ip}:${portForSlot(slot)}`;
+        codeProxy.upgrade(req, socket, head);
+      }).catch(() => { try { socket.destroy(); } catch {} });
+    });
+    return;
   }
 });
 

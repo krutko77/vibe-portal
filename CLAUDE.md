@@ -133,7 +133,7 @@ systemctl restart anthropic-shim
 | GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
 | GET | `/api/transcripts/_feed` | admin | вся лента диалогов (опц. `?user=`), для `/logs.html` |
 | GET | `/api/transcripts/:u` | admin | записи ученика за дату (`?date=`) |
-| ANY | `/code/<user>/*` | session+match | Прокси на 127.0.0.1:<containerPort>, авто-старт |
+| ANY | `/code/<user>/*` | session+match | Прокси в `code-server` слота сессии (vibe-net), авто-старт |
 
 Страница `/logs.html` (admin-only через API-гейт) — вся хронология диалогов
 учеников с фильтром-чипами по ученику, как на dev-портале. Источников записей
@@ -188,6 +188,28 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 `users-vibe.json`. nginx → vibe-panel → `127.0.0.1:820X`, без выставки портов
 наружу.
 
+**Несколько окон под одной учёткой (`panel/lib/code-slots.js`).** Под одним
+логином могут одновременно работать 2-3 человека, и каждому нужно своё окно
+VS Code (свои терминалы/вкладки), иначе один code-server = одно общее окно и
+люди мешают друг другу. Решение: «слот» окна липнет к сессии
+(`req.session.codeSlot`). Первая сессия юзера → slot 0 (PID-1 `code-server` из
+CMD контейнера, порт 8080). Каждая конкурентная сессия того же логина →
+slot 1, 2, … — **отдельный процесс `code-server` в том же контейнере** на порту
+`8080+slot`, поднимается лениво через `docker exec -d` (как в `publish.js`),
+со своим `--user-data-dir` (`~/.cs-data/<slot>` → независимые окна/терминалы),
+но общий `/home/student/workspace` и общий `--extensions-dir`. Панель проксирует
+`/code/<user>/` в нужный инстанс по vibe-net (`http://<containerIP>:<8080+slot>`),
+и HTTP, и WS — в один слот (`req._codeTarget`). Образ пересобирать не нужно —
+`code-server` уже в нём, доп.инстансы запускаются командой, bind на порт сам
+сериализует гонку (второй процесс на занятом порту тихо умирает). Файлы общие
+→ при правке одного файла двумя людьми code-server покажет конфликт «файл изменён
+на диске» (нормальное поведение, не баг). Лимиты: `MAX_SLOTS=3`,
+`CODE_SLOT_TTL_MIN=40` (слот свободен, если сессия не «тыкала» дольше TTL). RAM
+контейнера поднята до 3072 МБ / 1.5 CPU (потолок, не резерв; см.
+`STUDENT_MEM_LIMIT_MB`/`STUDENT_CPU_LIMIT` в `students.js`) — у живых контейнеров
+применить `docker update --memory 3072m --memory-swap 3072m --cpus 1.5 vibe-<u>`,
+новые получат при пересоздании.
+
 ## Бутстрап первого admin'а
 
 ```bash
@@ -222,7 +244,7 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 │   └── transcript.js                  аудит диалогов (IP→ученик, SSE-парсер, JSONL)
 ├── panel/
 │   ├── server.js                      Express :3020
-│   ├── lib/{auth,students,templates,transcripts,publish,leaderboard}.js
+│   ├── lib/{auth,students,templates,transcripts,publish,leaderboard,code-slots}.js
 │   └── public/{index.html,history.html,logs.html,dashboard.html,css/,js/}
 ├── scripts/
 │   ├── setup-iptables.sh              VIBE-FILTER/VIBE-INPUT chains
@@ -277,7 +299,8 @@ fieldsmap24, parser1c, pult24, quality24, support24, timepay24.
 |------|--------|
 | 3020 (127.0.0.1) | vibe-panel |
 | 8190 (0.0.0.0) | anthropic-shim (фильтр через iptables на 172.30.0.0/24 + 127/8) |
-| 8200-8299 (127.0.0.1) | code-server'ы контейнеров учеников |
+| 8200-8299 (127.0.0.1) | code-server'ы контейнеров учеников (host-binding слота 0) |
+| 8080+slot (в контейнере) | code-server'ы слотов (multi-window под одной учёткой, vibe-net) |
 | 8300 (127.0.0.1) | admin code-server (root проекта), прокси `/admin-code/` (только admin) |
 | 3001-3099 (в контейнере) | приложения учеников (доступ через панель, наружу не торчат) |
 

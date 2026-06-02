@@ -16,8 +16,11 @@ const NETWORK = process.env.VIBE_NETWORK || 'vibe-net';
 const EXTENSIONS_VOLUME = process.env.VIBE_EXTENSIONS_VOLUME || 'vibe-extensions';
 const SKILLS_VOLUME = process.env.VIBE_SKILLS_VOLUME || 'vibe-claude-skills';
 const SHIM_BASE_URL = process.env.SHIM_BASE_URL || 'http://172.30.0.1:8190';
-const MEM_LIMIT_MB = parseInt(process.env.STUDENT_MEM_LIMIT_MB || '1536', 10);
-const CPU_LIMIT = parseFloat(process.env.STUDENT_CPU_LIMIT || '1.0');
+// Лимит — потолок, а не резерв: соло-ученик столько не съест. Поднят с 1536/1.0,
+// т.к. под одной учёткой может работать 2-3 человека (каждый — свой code-server
+// + свой claude в том же контейнере, см. lib/code-slots.js).
+const MEM_LIMIT_MB = parseInt(process.env.STUDENT_MEM_LIMIT_MB || '3072', 10);
+const CPU_LIMIT = parseFloat(process.env.STUDENT_CPU_LIMIT || '1.5');
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
