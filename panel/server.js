@@ -638,9 +638,38 @@ app.use((req, res, next) => {
   next();
 });
 
+// ---------- /admin-code/ — code-server проекта для админа (root /opt/vibe-portal) ----------
+//
+// Отдельный code-server (systemd vibe-admin-code, 127.0.0.1:8300, --auth none,
+// рут /opt/vibe-portal) — админ работает с claude как в CLI, но в браузере.
+// Доступ закрывает ТОЛЬКО admin-гейт здесь (HTTP) + в upgrade-обработчике (WS):
+// code-server без своей авторизации, поэтому гейт обязателен на обоих путях.
+const ADMIN_CODE_TARGET = process.env.ADMIN_CODE_URL || 'http://127.0.0.1:8300';
+const adminCodeProxy = createProxyMiddleware({
+  target: ADMIN_CODE_TARGET,
+  changeOrigin: true,
+  ws: true,
+  pathRewrite: (p) => p.replace(/^\/admin-code/, '') || '/',
+  on: {
+    error: (err, req, res) => {
+      if (res && !res.headersSent) {
+        try { res.writeHead(502); res.end('admin code-server not ready'); } catch {}
+      }
+    },
+  },
+});
+
+app.use((req, res, next) => {
+  if (!req.url.startsWith('/admin-code')) return next();
+  if (!req.session?.user) return res.redirect(302, '/');
+  if (!req.session.isAdmin) return res.status(403).send('forbidden');
+  if (req.url === '/admin-code') return res.redirect(302, '/admin-code/');
+  return adminCodeProxy(req, res, next);
+});
+
 // ---------- публичный прокси приложений /<user>/<project>/ ----------
 
-const RESERVED_SEG = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', '.well-known']);
+const RESERVED_SEG = new Set(['api', 'code', 'admin-code', 'assets', 'css', 'js', 'img', 'public', '.well-known']);
 
 function parsePublishPath(url) {
   const m = url.match(/^\/([a-zA-Z0-9][a-zA-Z0-9_-]*)\/([a-zA-Z0-9][a-zA-Z0-9._-]*)(\/.*|)$/);
@@ -721,6 +750,14 @@ const server = app.listen(PORT, HOST, () => {
 // WebSocket upgrade для /code/<user>/* (code-server поднимает ws).
 // http-proxy-middleware v3 экспортирует .upgrade на инстансе прокси.
 server.on('upgrade', (req, socket, head) => {
+  // admin code-server (root проекта) — строгий admin-гейт и на WS
+  if (req.url && req.url.startsWith('/admin-code')) {
+    sessionParser(req, {}, () => {
+      if (!req.session?.isAdmin) { try { socket.destroy(); } catch {} return; }
+      adminCodeProxy.upgrade(req, socket, head);
+    });
+    return;
+  }
   const parsed = parsePublishPath(req.url || '');
   if (parsed) {
     const state = loadUsers();

@@ -1,0 +1,23 @@
+[Unit]
+Description=Admin code-server for vibe-portal (root project, admin-only via vibe-panel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+# HOME=/root → тот же claude/.credentials.json и настройки, что у хостового claude
+# (админ продолжает работу с claude как в CLI, но в браузере).
+Environment=HOME=/root
+# Проектный claude-cli в терминале: outbound через прокси + без авто-1M-контекста.
+EnvironmentFile=/data/config/env/proxy.env
+Environment=CLAUDE_CODE_DISABLE_1M_CONTEXT=1
+# auth none — доступ закрывает vibe-panel (admin-гейт на /admin-code/), слушаем только loopback.
+ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry /opt/vibe-portal
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

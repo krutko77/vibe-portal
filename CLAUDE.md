@@ -125,6 +125,7 @@ systemctl restart anthropic-shim
 | POST | `/api/projects/:name/publish` | user | вкл/выкл публикацию (visibility, autosleep) |
 | POST | `/api/projects/:name/redeploy` | user | перезапуск приложения |
 | ANY | `/<user>/<project>/*` | session (visibility) | прокси в приложение ученика (self-heal) |
+| ANY | `/admin-code/*` | admin | прокси в code-server проекта (127.0.0.1:8300), HTTP+WS гейт по isAdmin |
 | GET | `/api/template-download/:name` | user | zip базового шаблона (whitelist: `_base`, `_b24-single-php`) |
 | GET | `/api/template-claude/:which` | user | `CLAUDE.md` из шаблона отдельным файлом (`base`→`_base`, `b24`→`_b24-single-php`) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
@@ -189,6 +190,7 @@ Idle reaper: каждые 5 минут проверяет `lastActivityAt` ка�
 | `anthropic-shim.service` | Reverse-proxy с OAuth swap (:8190), WD `/opt/vibe-portal/shim` |
 | `vibe-panel.service` | Express :3020, WD `/opt/vibe-portal/panel`, EnvFile=`/data/config/env/vibe-panel.env` |
 | `vibe-iptables.service` | oneshot, применяет VIBE-FILTER/VIBE-INPUT при boot |
+| `vibe-admin-code.service` | code-server для админа, рут `/opt/vibe-portal` (127.0.0.1:8300, `--auth none`), доступ только через admin-гейт панели на `/admin-code/` |
 
 Юниты живут в `systemd/` репозитория. При изменении — копировать в
 `/etc/systemd/system/`, `daemon-reload`, рестарт сервиса.
@@ -261,6 +263,7 @@ fieldsmap24, parser1c, pult24, quality24, support24, timepay24.
 | 3020 (127.0.0.1) | vibe-panel |
 | 8190 (0.0.0.0) | anthropic-shim (фильтр через iptables на 172.30.0.0/24 + 127/8) |
 | 8200-8299 (127.0.0.1) | code-server'ы контейнеров учеников |
+| 8300 (127.0.0.1) | admin code-server (root проекта), прокси `/admin-code/` (только admin) |
 | 3001-3099 (в контейнере) | приложения учеников (доступ через панель, наружу не торчат) |
 
 ## Бэкап
