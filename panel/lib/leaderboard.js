@@ -21,6 +21,9 @@ import { readPublish } from './publish.js';
 const WEIGHTS = { message: 0, login: 20, app: 100 };
 const WEEK_DAYS = 7; // «за неделю» = последние 7 дней (включая сегодня)
 
+// Технические/тестовые аккаунты — в рейтинг не показываем (помимо admin по роли).
+const EXCLUDE = new Set(['test']);
+
 // Дата в UTC YYYY-MM-DD — согласована с тем, как шим/транскрипты пишут day
 // (new Date(ts).toISOString().slice(0,10)).
 function utcDay(d) {
@@ -59,6 +62,7 @@ export function leaderboard() {
   const rows = [];
   for (const [username, u] of Object.entries(state.users)) {
     if (u.role === 'admin') continue; // персонал в рейтинг не входит
+    if (EXCLUDE.has(username)) continue; // тех./тестовые аккаунты
 
     const counts = dailyCounts(username);
     let msgToday = 0, msgWeek = 0, msgTotal = 0;
