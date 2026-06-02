@@ -33,6 +33,11 @@ const BASE_TEMPLATES = [
     description: 'Node.js + Express + vanilla JS. Деплой на vibecode.bitrix24.tech. Для большинства приложений Б24.',
   },
   {
+    name: '_base_universal',
+    title: 'Б24 + VibeCode с журналом истории',
+    description: 'Тот же стек, что и базовый, плюс память проекта (docs/ + автокоммиты): что делали, где сейчас, куда идём. Для передачи проекта другому исполнителю без потери контекста.',
+  },
+  {
     name: '_b24-single-php',
     title: 'PHP / REST / API Битрикс24',
     description: 'Single-tenant B24 local-app: PHP-бэк, vanilla JS, файловый store без БД. Для интеграций с REST API Битрикс24.',

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Новый проект</title>
+  <!-- Свои стили клади в css/ и подключай ОТНОСИТЕЛЬНЫМ путём:
+       <link rel="stylesheet" href="css/style.css">  (без ведущего «/»),
+       т.к. приложение публикуется под адресом /<логин>/<проект>/. -->
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f1115; color: #e6e6e6;
+           display: grid; place-items: center; min-height: 100vh; margin: 0; }
+    .card { text-align: center; max-width: 540px; padding: 32px; line-height: 1.6; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    p { color: #9aa0a6; margin: 8px 0; }
+    code { background: #1b1f27; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Проект запущен 🪄</h1>
+    <p>Это стартовая страница. Редактируй <code>src/public/index.html</code>,
+       добавляй скрипты в <code>src/public/js/</code> и стили в <code>src/public/css/</code>.</p>
+    <p>Подключай ассеты <b>относительным</b> путём
+       (<code>js/app.js</code>, а не <code>/js/app.js</code>) —
+       приложение открывается под адресом <code>/&lt;логин&gt;/&lt;проект&gt;/</code>.</p>
+  </div>
+</body>
+</html>
