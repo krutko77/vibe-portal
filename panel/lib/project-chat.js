@@ -260,7 +260,11 @@ export async function sendMessage(res, opts) {
 
   const child = spawn(CLAUDE_BIN, args, {
     cwd,
-    env: { ...process.env, HOME: '/root' },
+    // DISABLE_1M_CONTEXT: на больших сессиях CLI иначе просит 1M-контекст,
+    // который на OAuth-подписке требует usage credits → "API Error: Usage
+    // credits required for 1M context". С флагом контекст компактится в рамках
+    // стандартных 200K.
+    env: { ...process.env, HOME: '/root', CLAUDE_CODE_DISABLE_1M_CONTEXT: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 

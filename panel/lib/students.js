@@ -163,6 +163,9 @@ async function dockerCreate(username, port) {
       `ANTHROPIC_BASE_URL=${SHIM_BASE_URL}`,
       'ANTHROPIC_AUTH_TOKEN=sk-vibe-shim-placeholder',
       `STUDENT_USERNAME=${username}`,
+      // Отключаем авто-1M-контекст: на OAuth-подписке он требует usage credits
+      // → ошибка у ученика. CLI вместо этого компактит в рамках 200K.
+      'CLAUDE_CODE_DISABLE_1M_CONTEXT=1',
     ],
     Cmd: ['code-server', '/home/student/workspace'],
     Labels: {

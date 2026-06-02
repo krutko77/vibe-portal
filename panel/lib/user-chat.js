@@ -51,7 +51,9 @@ export function send(req, res) {
     '--output-format', 'text',
   ], {
     cwd: homeFor(username),
-    env: { ...process.env, HOME: '/root' },
+    // см. project-chat: отключаем авто-1M-контекст (иначе на длинном диалоге
+    // CLI просит платные usage credits → ошибка у ученика).
+    env: { ...process.env, HOME: '/root', CLAUDE_CODE_DISABLE_1M_CONTEXT: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
