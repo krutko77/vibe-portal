@@ -82,6 +82,10 @@ export function leaderboard() {
       username, score, logins,
       created, published,
       msgToday, msgWeek, msgTotal,
+      // Посуточные раскладки для дневного рейтинга (дашборд считает на клиенте).
+      // Только числа-счётчики — приватность не страдает (как msgToday/msgWeek).
+      dailyMsg: counts,
+      dailyLogins: u.dailyLogins || {},
     });
   }
 
@@ -91,5 +95,12 @@ export function leaderboard() {
     || a.username.localeCompare(b.username));
   rows.forEach((r, i) => { r.rank = i + 1; });
 
-  return { rows, weights: WEIGHTS, weekDays: WEEK_DAYS, today, count: rows.length };
+  // Самая ранняя дата с активностью — нижняя граница выбора дня в UI.
+  let firstDate = today;
+  for (const r of rows) {
+    for (const d of Object.keys(r.dailyMsg)) if (d < firstDate) firstDate = d;
+    for (const d of Object.keys(r.dailyLogins)) if (d < firstDate) firstDate = d;
+  }
+
+  return { rows, weights: WEIGHTS, weekDays: WEEK_DAYS, today, firstDate, count: rows.length };
 }

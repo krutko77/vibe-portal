@@ -118,6 +118,41 @@
       color: hsl(var(--muted-foreground)); text-align: center; line-height: 1.6;
     }
 
+    /* ── Переключатель «за всё время / за день» ──────────── */
+    .db-controls {
+      display: flex; align-items: center; gap: 14px;
+      flex-wrap: wrap; margin: -6px 0 24px;
+    }
+    .db-tabs {
+      display: inline-flex; border: 1px solid hsl(var(--border));
+      border-radius: 8px; overflow: hidden;
+    }
+    .db-tab {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      letter-spacing: .04em; padding: 7px 14px; cursor: pointer;
+      background: transparent; color: hsl(var(--muted-foreground)); border: none;
+      transition: background .15s, color .15s;
+    }
+    .db-tab + .db-tab { border-left: 1px solid hsl(var(--border)); }
+    .db-tab:hover { color: hsl(var(--foreground)); background: hsl(var(--accent) / .4); }
+    .db-tab.is-active { background: hsl(var(--primary) / .12); color: hsl(var(--primary)); }
+    .db-daypick { display: inline-flex; align-items: center; gap: 6px; }
+    .db-daypick.hidden { display: none; }
+    .db-arrow {
+      font-family: var(--font-mono); font-size: 15px; line-height: 1;
+      width: 28px; height: 28px; cursor: pointer;
+      border: 1px solid hsl(var(--border)); border-radius: 6px;
+      background: transparent; color: hsl(var(--foreground));
+    }
+    .db-arrow:hover:not(:disabled) { background: hsl(var(--accent) / .5); border-color: hsl(var(--primary)); }
+    .db-arrow:disabled { opacity: .35; cursor: default; }
+    .db-dateinput {
+      font-family: var(--font-mono); font-size: 12px; height: 28px; padding: 0 8px;
+      border: 1px solid hsl(var(--input)); border-radius: 6px;
+      background: hsl(var(--secondary)); color: hsl(var(--foreground));
+    }
+    html.dark .db-dateinput { color-scheme: dark; }
+
     @media (max-width: 640px) {
       .db-podium { grid-template-columns: 1fr; }
       .db-wrap { padding: 24px 16px 60px; }
@@ -144,6 +179,18 @@
       </div>
     </div>
     <div class="db-sub" id="db-sub">загрузка…</div>
+
+    <div class="db-controls" id="db-controls" style="display:none">
+      <div class="db-tabs">
+        <button class="db-tab is-active" data-view="all">За всё время</button>
+        <button class="db-tab" data-view="day">За день</button>
+      </div>
+      <div class="db-daypick hidden" id="db-daypick">
+        <button class="db-arrow" id="day-prev" title="Предыдущий день">‹</button>
+        <input type="date" id="day-input" class="db-dateinput" />
+        <button class="db-arrow" id="day-next" title="Следующий день">›</button>
+      </div>
+    </div>
 
     <div id="db-podium"></div>
     <div id="db-content"><div class="db-loading">загрузка…</div></div>
@@ -174,21 +221,124 @@
         }
         DATA = await lbR.json();
         try { ME = (await meR.json()).username; } catch {}
-        render();
+        init();
       } catch (e) {
         document.getElementById('db-content').innerHTML =
           '<div class="db-empty">Ошибка загрузки: ' + esc(e.message) + '</div>';
       }
     }
 
+    const STATE = { view: 'all', day: null };
+
+    function shiftDay(day, delta) {
+      const [y, m, d] = day.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d) + delta * 86400000).toISOString().slice(0, 10);
+    }
+    function clampDay(day) {
+      if (DATA.firstDate && day < DATA.firstDate) return DATA.firstDate;
+      if (DATA.today && day > DATA.today) return DATA.today;
+      return day;
+    }
+    function updateArrows() {
+      document.getElementById('day-prev').disabled = STATE.day <= (DATA.firstDate || DATA.today);
+      document.getElementById('day-next').disabled = STATE.day >= DATA.today;
+    }
+
+    // Инициализация контролов (после загрузки данных): дата по умолчанию = сегодня.
+    function init() {
+      STATE.day = DATA.today;
+      document.getElementById('db-controls').style.display = '';
+      const di = document.getElementById('day-input');
+      di.min = DATA.firstDate || DATA.today;
+      di.max = DATA.today;
+      di.value = STATE.day;
+      const setDay = (d) => { STATE.day = clampDay(d); di.value = STATE.day; updateArrows(); render(); };
+      di.onchange = () => setDay(di.value || DATA.today);
+      document.getElementById('day-prev').onclick = () => setDay(shiftDay(STATE.day, -1));
+      document.getElementById('day-next').onclick = () => setDay(shiftDay(STATE.day, 1));
+      document.querySelectorAll('.db-tab').forEach(b => {
+        b.onclick = () => {
+          STATE.view = b.dataset.view;
+          document.querySelectorAll('.db-tab').forEach(x => x.classList.toggle('is-active', x === b));
+          render();
+        };
+      });
+      updateArrows();
+      render();
+    }
+
+    // Диспетчер: подпись + видимость выбора даты, затем нужный вид.
     function render() {
       const rows = DATA.rows || [];
-      const w = DATA.weights || { login: 20, app: 100 };
+      const dp = document.getElementById('db-daypick');
+      if (STATE.view === 'day') {
+        dp.classList.remove('hidden');
+        document.getElementById('db-sub').innerHTML =
+          `Рейтинг за <b>${esc(STATE.day)}</b> по числу сообщений с Клодом. ` +
+          `Заходы за день считаются с момента запуска счётчика. Всего учеников: <b>${rows.length}</b>.`;
+        renderDay();
+      } else {
+        dp.classList.add('hidden');
+        const w = DATA.weights || { login: 20, app: 100 };
+        document.getElementById('db-sub').innerHTML =
+          `Очки: <b>заход = ${w.login}</b> · <b>создано приложение = ${w.app}</b>. ` +
+          `Сообщения показаны за день и за неделю (последние ${DATA.weekDays || 7} дн.), ` +
+          `в общий балл не входят. Всего учеников: <b>${rows.length}</b>.`;
+        renderAll();
+      }
+    }
 
-      document.getElementById('db-sub').innerHTML =
-        `Очки: <b>заход = ${w.login}</b> · <b>создано приложение = ${w.app}</b>. ` +
-        `Сообщения показаны за день и за неделю (последние ${DATA.weekDays || 7} дн.), ` +
-        `в общий балл не входят. Всего учеников: <b>${rows.length}</b>.`;
+    // Дневной вид: ранжируем по числу сообщений за выбранный день (заходы за день —
+    // как доп. колонка, считаются с момента внедрения счётчика).
+    function renderDay() {
+      const day = STATE.day;
+      const list = (DATA.rows || []).map(r => ({
+        username: r.username,
+        msg: (r.dailyMsg && r.dailyMsg[day]) || 0,
+        logins: (r.dailyLogins && r.dailyLogins[day]) || 0,
+      }));
+      list.sort((a, b) => b.msg - a.msg || b.logins - a.logins || a.username.localeCompare(b.username));
+      list.forEach((r, i) => { r.rank = i + 1; });
+
+      const podium = document.getElementById('db-podium');
+      const top = list.slice(0, 3);
+      if (top.length && top[0].msg > 0) {
+        podium.innerHTML = '<div class="db-podium">' + top.map(r => {
+          const me = r.username === ME;
+          return `<div class="db-pod db-pod-${r.rank}${me ? ' is-me' : ''}">
+            <div class="db-pod-medal">${MEDALS[r.rank] || ''}</div>
+            <div class="db-pod-name">${esc(r.username)}</div>
+            ${me ? '<span class="db-me-tag">это ты</span>' : ''}
+            <div class="db-pod-score">${fmt(r.msg)}<small>сообщений</small></div>
+            <div class="db-pod-line">${fmt(r.logins)} заходов за день</div>
+          </div>`;
+        }).join('') + '</div>';
+      } else { podium.innerHTML = ''; }
+
+      const content = document.getElementById('db-content');
+      if (!list.length) { content.innerHTML = '<div class="db-empty">Учеников пока нет.</div>'; return; }
+      content.innerHTML = `<div class="db-tablewrap"><table class="db-table">
+        <thead><tr>
+          <th class="col-rank">#</th>
+          <th class="col-user">Ученик</th>
+          <th>Сообщений</th>
+          <th>Заходов</th>
+        </tr></thead>
+        <tbody>${list.map(r => {
+          const me = r.username === ME;
+          const medal = MEDALS[r.rank] ? `<span class="db-medal">${MEDALS[r.rank]}</span> ` : '';
+          return `<tr class="${me ? 'is-me' : ''}">
+            <td class="col-rank">${medal}${r.rank}</td>
+            <td class="col-user">${esc(r.username)}${me ? ' <span class="db-me-tag">ты</span>' : ''}</td>
+            <td class="${r.msg ? 'db-score' : 'db-dim'}">${fmt(r.msg)}</td>
+            <td class="${r.logins ? '' : 'db-dim'}">${fmt(r.logins)}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`;
+    }
+
+    function renderAll() {
+      const rows = DATA.rows || [];
 
       // подиум — топ-3 с очками > 0 (или просто первые 3, если все по нулям)
       const top = rows.slice(0, 3);

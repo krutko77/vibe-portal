@@ -275,6 +275,11 @@ export function recordLogin(username) {
   const u = state.users[username];
   u.loginCount = (u.loginCount || 0) + 1;
   u.lastLoginAt = new Date().toISOString();
+  // Посуточный счётчик заходов — для дневного рейтинга на дашборде. Бэкфилла нет,
+  // растёт с момента внедрения. День в UTC — как у транскриптов/leaderboard.
+  const day = new Date().toISOString().slice(0, 10);
+  u.dailyLogins = u.dailyLogins || {};
+  u.dailyLogins[day] = (u.dailyLogins[day] || 0) + 1;
   saveUsers(state);
 }
 
