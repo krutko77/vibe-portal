@@ -184,6 +184,7 @@ body:not(.is-admin) .admin-only { display: none !important; }
 .section-head {
   display: flex; align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; gap: 8px 16px;
   margin: 0 0 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid hsl(var(--border));
@@ -203,7 +204,20 @@ body:not(.is-admin) .admin-only { display: none !important; }
   letter-spacing: .03em;
 }
 
-.dashboard-actions { display: flex; gap: 6px; align-items: center; }
+.dashboard-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+/* При открытом боковом чате рабочая область сужается: убираем авто-центрирование
+   колонок (левый отступ уходит) и тянем контент на всю доступную ширину. */
+body.has-left-chat .section-block,
+body.has-right-chat .section-block,
+body.has-left-chat .vscode-hero,
+body.has-right-chat .vscode-hero,
+body.has-left-chat .vscode-recent,
+body.has-right-chat .vscode-recent {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
 
 /* ── Container banner ─────────────────────────────────────── */
 .container-banner {
