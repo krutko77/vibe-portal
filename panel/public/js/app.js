@@ -1847,6 +1847,14 @@ function handlePcSseEvent(raw, removeTyping) {
     el.textContent = `${obj.tokenInput ?? 0} in / ${obj.tokenOutput ?? 0} out${cost}${dur}`;
     pcEls.messages().appendChild(el);
     pcScrollToBottom();
+  } else if (event === 'status') {
+    // Транзиентный индикатор (напр. «Сжимаю историю диалога…»). Не убирает
+    // «Claude думает» — после сжатия ход продолжится в той же сессии.
+    const el = document.createElement('div');
+    el.className = 'pc-block-summary';
+    el.textContent = obj.message || '';
+    pcEls.messages().appendChild(el);
+    pcScrollToBottom();
   } else if (event === 'error') {
     removeTyping();
     pcRenderBlock({ type: 'error', message: obj.message || 'stream error' });

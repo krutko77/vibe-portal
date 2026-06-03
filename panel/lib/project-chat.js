@@ -19,6 +19,42 @@ const CLAUDE_PROJECTS_DIR = '/root/.claude/projects';
 const STREAM_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_TITLE_LEN = 80;
 
+// Автокомпакт чата. `--resume` тащит всю историю диалога; когда она перерастает
+// стандартное окно 200K, CLI вынужден слать запрос с 1M-контекстом — а на
+// OAuth-подписке 1M-овердрафт выключен → API отдаёт 429 "Usage credits required
+// for 1M context". В headless-режиме автокомпакт реактивный и не успевает спасти
+// уже-распухшую сессию. Поэтому: при приближении к лимиту сжимаем историю заранее
+// (`/compact` ещё проходит, пока контекст < 200K), а заведомо переросшие сессии
+// не воскрешаем (их `/compact` тоже не прочитает — замкнутый круг) и показываем
+// понятное сообщение вместо сырой ошибки.
+const COMPACT_AT_TOKENS = parseInt(process.env.CHAT_COMPACT_AT_TOKENS || '150000', 10);
+const CONTEXT_CEILING_TOKENS = parseInt(process.env.CHAT_CONTEXT_CEILING_TOKENS || '185000', 10);
+const COMPACT_TIMEOUT_MS = 4 * 60 * 1000;
+// Старые сессии (созданные до автокомпакта) не имеют записанного contextTokens —
+// для них грубая отсечка по размеру файла, чтобы не жечь деньги на заведомо
+// гигантских (каждая неудачная попытка resume ~$1+).
+const LEGACY_REFUSE_BYTES = parseInt(process.env.CHAT_LEGACY_REFUSE_BYTES || '1500000', 10);
+const OVERAGE_MSG = 'Этот диалог стал слишком длинным — он больше не помещается в контекст модели, и продолжить его нельзя. Начни новый чат (этот останется в истории). Подсказка: в VS Code контекст расходуется экономнее и сжимается автоматически.';
+
+// Оценка размера контекста по usage из события result. Берём последнюю итерацию —
+// она ближе всего к реальному размеру диалога (суммирование по всем итерациям
+// сильно завышает на ходах с инструментами).
+function contextTokensFromUsage(usage) {
+  if (!usage || typeof usage !== 'object') return 0;
+  const it = Array.isArray(usage.iterations) && usage.iterations.length
+    ? usage.iterations[usage.iterations.length - 1] : usage;
+  return (it.input_tokens || 0) + (it.cache_read_input_tokens || 0)
+    + (it.cache_creation_input_tokens || 0);
+}
+
+// Та самая ошибка 1M-контекста (см. шапку). Ловим и по статусу, и по тексту.
+function isOverage1M(obj) {
+  if (!obj || typeof obj !== 'object') return false;
+  if (obj.is_error && obj.api_error_status === 429) return true;
+  const txt = typeof obj.result === 'string' ? obj.result : '';
+  return /Usage credits required for 1M|1M context|long context/i.test(txt);
+}
+
 // sessionId → { pid, user, child }
 const activeProcs = new Map();
 
@@ -216,6 +252,40 @@ const FULL_TOOLS = [
   'Bash', 'Task', 'WebFetch', 'WebSearch', 'Skill',
 ];
 
+// Прогон `/compact` на сессии (headless, в том же cwd). Резолвится {ok, overage}.
+// Лочит сессию в activeProcs, чтобы конкурентные сообщения не влезли во время сжатия.
+function runCompaction(sessionId, cwd, username) {
+  return new Promise((resolve) => {
+    const args = ['-p', '/compact', '--output-format', 'stream-json', '--verbose',
+                  '--model', 'sonnet', '--resume', sessionId];
+    const child = spawn(CLAUDE_BIN, args, {
+      cwd,
+      env: { ...process.env, HOME: '/root', CLAUDE_CODE_DISABLE_1M_CONTEXT: '1' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    activeProcs.set(sessionId, { pid: child.pid, user: username, startedAt: Date.now(), child });
+    let ok = false, overage = false, buf = '';
+    const to = setTimeout(() => { try { child.kill('SIGTERM'); } catch {} }, COMPACT_TIMEOUT_MS);
+    child.stdout.on('data', chunk => {
+      buf += chunk.toString('utf8');
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, i); buf = buf.slice(i + 1);
+        if (!line.trim()) continue;
+        let o; try { o = JSON.parse(line); } catch { continue; }
+        if (o.type === 'result') {
+          if (isOverage1M(o)) overage = true;
+          else if (!o.is_error) ok = true;
+        }
+      }
+    });
+    child.stderr.on('data', () => {});
+    const finish = () => { clearTimeout(to); activeProcs.delete(sessionId); resolve({ ok, overage }); };
+    child.on('error', finish);
+    child.on('close', finish);
+  });
+}
+
 export async function sendMessage(res, opts) {
   const { username, projectSlug, text, model } = opts;
   let { sessionId } = opts;
@@ -226,11 +296,20 @@ export async function sendMessage(res, opts) {
   const recTools = [];
   let recModel = (model && model !== 'auto') ? model : 'sonnet';
   let recUsage = { input: 0, output: 0 };
+  let recCtx = 0;            // оценка размера контекста после хода → пишем в meta
   let recStop = null;
   let recorded = false;
+  let overageSent = false;
 
   const send = (event, data) => {
     try { res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`); } catch {}
+  };
+  // Part B: понятное сообщение вместо сырой ошибки 1M-контекста (один раз).
+  const sendOverage = () => {
+    if (overageSent) return;
+    overageSent = true;
+    recStop = 'overage_1m';
+    send('error', { message: OVERAGE_MSG });
   };
 
   if (sessionId && activeProcs.has(sessionId)) {
@@ -242,6 +321,31 @@ export async function sendMessage(res, opts) {
     if (ext) {
       send('error', { message: `Сессия занята: ${ext.source} (pid ${ext.pid}). Закрой там и попробуй снова.` });
       return res.end();
+    }
+  }
+
+  // --- Part A: автокомпакт / отсечка переросших сессий (только при resume) ---
+  if (sessionId) {
+    const meta = await readMeta(username, projectSlug, sessionId);
+    let ctx = (meta && typeof meta.contextTokens === 'number') ? meta.contextTokens : null;
+    if (ctx === null) {
+      // легаси-сессия без счётчика — грубая оценка по размеру файла на диске
+      try {
+        const st = await stat(sessionFile(username, projectSlug, sessionId));
+        if (st.size > LEGACY_REFUSE_BYTES) ctx = CONTEXT_CEILING_TOKENS + 1;
+      } catch {}
+    }
+    if (ctx !== null && ctx >= CONTEXT_CEILING_TOKENS) {
+      // уже не сжать (компакт сам не прочитает) → не воскрешаем, не жжём деньги
+      sendOverage();
+      return res.end();
+    }
+    if (ctx !== null && ctx >= COMPACT_AT_TOKENS) {
+      send('status', { message: '⏳ Сжимаю историю диалога, чтобы освободить контекст…' });
+      const r = await runCompaction(sessionId, cwd, username);
+      if (r.overage) { sendOverage(); return res.end(); }
+      // после компакта реальный размер измерит следующий ход — обнуляем счётчик
+      await updateMeta(username, projectSlug, sessionId, { contextTokens: 0 }).catch(() => {});
     }
   }
 
@@ -316,11 +420,15 @@ export async function sendMessage(res, opts) {
   function finalize() {
     if (sessionId) {
       activeProcs.delete(sessionId);
-      updateMeta(username, projectSlug, sessionId, {
+      const patch = {
         lockedBy: null,
         lastWriterBy: username,
         lastWriteAt: new Date().toISOString(),
-      }).catch(() => {});
+      };
+      // Запоминаем размер контекста для автокомпакта (только при реальном замере
+      // и не на ошибке-переполнении — иначе записали бы раздутую цифру).
+      if (!overageSent && recCtx > 0) patch.contextTokens = recCtx;
+      updateMeta(username, projectSlug, sessionId, patch).catch(() => {});
     }
     if (!recorded) {
       recorded = true;
@@ -373,8 +481,10 @@ export async function sendMessage(res, opts) {
       return;
     }
     if (obj.type === 'result') {
+      if (isOverage1M(obj)) { sendOverage(); return; }   // Part B
       const usage = obj.usage || {};
       recUsage = { input: usage.input_tokens || 0, output: usage.output_tokens || 0 };
+      recCtx = contextTokensFromUsage(usage);
       recStop = obj.stop_reason || obj.subtype || recStop;
       send('summary', {
         tokenInput: usage.input_tokens,
@@ -383,6 +493,14 @@ export async function sendMessage(res, opts) {
         durationMs: obj.duration_ms,
         stopReason: obj.stop_reason || obj.subtype,
       });
+      return;
+    }
+    // Part B: синтетический assistant-блок с текстом ошибки 1M — гасим сырой текст,
+    // дальше result-событие покажет понятное сообщение через sendOverage().
+    if (obj.type === 'assistant' && Array.isArray(obj.message?.content)
+        && obj.message.content.some(c => c.type === 'text'
+           && /Usage credits required for 1M/i.test(c.text || ''))) {
+      sendOverage();
       return;
     }
     const blocks = mapJsonlEntryToBlocks(obj);
