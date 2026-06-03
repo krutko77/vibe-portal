@@ -932,6 +932,7 @@ async function refreshUsers() {
         </div>
         <div class="user-row-actions">
           <span class="user-role-pill ${s.role === 'admin' ? 'role-admin' : ''}">${escapeHtml(s.role)}</span>
+          <button class="user-row-pwd" data-pwd="${escapeHtml(s.username)}">Пароль</button>
           ${s.username !== ME.username
             ? `<button class="user-row-del" data-del="${escapeHtml(s.username)}">Удалить</button>`
             : ''}
@@ -940,6 +941,9 @@ async function refreshUsers() {
     `).join('');
     $$('[data-del]', list).forEach(b => {
       b.onclick = () => openDeleteStudentModal(b.dataset.del);
+    });
+    $$('[data-pwd]', list).forEach(b => {
+      b.onclick = () => openResetPasswordModal(b.dataset.pwd);
     });
   } catch {}
 }
@@ -989,6 +993,35 @@ async function doDeleteStudent() {
     refreshUsers();
   } catch (e) {
     err.textContent = e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+function openResetPasswordModal(username) {
+  $('#rp-student-name').textContent = username;
+  $('#modal-reset-password').dataset.target = username;
+  $('#rp-password').value = generatePassword();
+  $('#rp-error').classList.add('hidden');
+  $('#rp-success-group').classList.add('hidden');
+  openModal('modal-reset-password');
+  setTimeout(() => $('#rp-password').focus(), 30);
+}
+
+async function doResetPassword() {
+  const username = $('#modal-reset-password').dataset.target;
+  const password = $('#rp-password').value;
+  const err = $('#rp-error');
+  err.classList.add('hidden');
+  $('#rp-success-group').classList.add('hidden');
+  if (!username) return;
+  try {
+    await api('/api/students/' + encodeURIComponent(username) + '/password',
+      { method: 'POST', body: { password } });
+    // Модалку не закрываем — пароль виден в поле, чтобы admin его передал.
+    $('#rp-success-group').classList.remove('hidden');
+  } catch (e) {
+    err.textContent = e.message === 'password too short'
+      ? 'Пароль слишком короткий (минимум 6 символов)' : e.message;
     err.classList.remove('hidden');
   }
 }
@@ -1242,6 +1275,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   $('#add-user-submit').onclick = doAddUser;
   $('#del-student-confirm').onclick = doDeleteStudent;
+  $('#rp-submit').onclick = doResetPassword;
+  $('#rp-password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); doResetPassword(); }
+  });
   ['new-username', 'new-password'].forEach(id => {
     $('#' + id).addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); doAddUser(); }

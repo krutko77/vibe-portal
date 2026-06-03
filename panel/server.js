@@ -13,6 +13,7 @@
 //   POST   /api/touch                      heartbeat (вызывается из /code/ страницы)
 //   GET    /api/students        (admin)
 //   POST   /api/students        (admin) { username, password, role }
+//   POST   /api/students/:u/password (admin) { password } — смена пароля ученика
 //   DELETE /api/students/:u     (admin)
 //   /code/<user>/*              прокси в контейнер ученика (auth-gate на сессию)
 
@@ -29,7 +30,7 @@ import {
   loadUsers, htpasswdCheck, requireAuth, requireAdmin,
 } from './lib/auth.js';
 import {
-  createStudent, deleteStudent, listStudents,
+  createStudent, deleteStudent, setStudentPassword, listStudents,
   dockerStart, dockerStop, containerStatus, workspaceDir,
   touchActivity, recordLogin, startReaper,
 } from './lib/students.js';
@@ -563,6 +564,16 @@ app.post('/api/students', requireAdmin, async (req, res) => {
   try {
     const s = await createStudent({ username, password, role });
     res.json({ ok: true, student: { username, ...s } });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.post('/api/students/:u/password', requireAdmin, (req, res) => {
+  const { password } = req.body || {};
+  try {
+    setStudentPassword(req.params.u, password);
+    res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }

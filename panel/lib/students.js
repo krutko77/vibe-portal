@@ -97,6 +97,15 @@ export async function deleteStudent(username) {
   saveUsers(state);
 }
 
+// Смена пароля существующего ученика. htpasswd -bB перезаписывает запись,
+// контейнер/сессии не трогаем — следующий вход пойдёт с новым паролем.
+// htpasswdSet валидирует логин и длину пароля (>= 6).
+export function setStudentPassword(username, password) {
+  const state = loadUsers();
+  if (!state.users[username]) throw new Error('no such student');
+  htpasswdSet(username, password);
+}
+
 // Workspace-level CLAUDE.md — раскатывается при создании ученика
 // и при первом dockerCreate. Идемпотентно — если файл уже есть, не трогаем.
 export function writeWorkspaceClaudeMd(ws, username) {

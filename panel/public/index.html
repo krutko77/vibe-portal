@@ -1018,6 +1018,34 @@
     </div>
   </div>
 
+  <!-- ── Modal: Сменить пароль ученика (admin) ─────────────── -->
+  <div class="modal-overlay hidden" id="modal-reset-password" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <span class="modal-title">Сменить пароль</span>
+        <button class="modal-close" data-close="modal-reset-password" aria-label="Закрыть">✕</button>
+      </div>
+      <p style="font-size:12px;line-height:1.55;color:hsl(var(--muted-foreground));padding:14px 18px 0">
+        Новый пароль для ученика <strong id="rp-student-name" style="color:hsl(var(--foreground))">—</strong>.
+        Активные сессии не сбрасываются — передай новый пароль ученику сам.
+      </p>
+      <div class="form-group">
+        <label class="form-label" for="rp-password">Новый пароль</label>
+        <input id="rp-password" type="text" class="form-input"
+               autocomplete="off" minlength="6" spellcheck="false" />
+        <span class="form-hint">Минимум 6 символов. Можно вписать свой или оставить сгенерированный.</span>
+      </div>
+      <div class="form-error hidden" id="rp-error"></div>
+      <div class="form-group hidden" id="rp-success-group">
+        <span class="form-hint" style="color:hsl(142 71% 45%)">✓ Пароль изменён. Скопируй его из поля выше и передай ученику.</span>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" data-close="modal-reset-password">Закрыть</button>
+        <button class="btn btn-primary" id="rp-submit">Сменить пароль</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Modal: Container starting ────────────────────────────-->
   <div class="modal-overlay hidden" id="modal-container-starting" role="dialog" aria-modal="true">
     <div class="modal" style="max-width:360px;text-align:center">

@@ -481,8 +481,8 @@ body:not(.is-admin) .admin-only { display: none !important; }
 }
 .user-row-actions { display: flex; gap: 6px; align-items: center; }
 
-/* role-pill и delete-кнопка — одинаковая высота 22px, mono 10px. */
-.user-role-pill, .user-row-del {
+/* role-pill, кнопки «Пароль»/«Удалить» — одинаковая высота 22px, mono 10px. */
+.user-role-pill, .user-row-del, .user-row-pwd {
   display: inline-flex; align-items: center;
   height: 22px; padding: 0 9px;
   font-family: var(--font-mono); font-size: 10px; font-weight: 600;
@@ -506,6 +506,16 @@ body:not(.is-admin) .admin-only { display: none !important; }
 .user-row-del:hover {
   background: hsl(var(--destructive) / 0.12);
   border-color: hsl(var(--destructive));
+}
+.user-row-pwd {
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.user-row-pwd:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--foreground));
 }
 .user-row-empty {
   padding: 20px;
