@@ -9,6 +9,7 @@ import {
 } from './auth.js';
 import { hasKeepAlive } from './publish.js';
 import { ensureKeys, removeKeys, sshMountDir } from './ssh-access.js';
+import { spawnSync } from 'node:child_process';
 
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
@@ -337,19 +338,37 @@ export function recordLogin(username) {
 // Бэкграунд-задача: останавливаем idle > IDLE_STOP_MIN минут
 const IDLE_STOP_MIN = parseInt(process.env.IDLE_STOP_MIN || '30', 10);
 
+// Есть ли живая SSH-сессия к контейнеру ученика — established-соединение на
+// его published sshPort (десктопный VS Code держит соединение открытым).
+function hasActiveSsh(sshPort) {
+  if (!sshPort) return false;
+  const r = spawnSync('ss', ['-tnH', 'state', 'established', `sport = :${sshPort}`],
+    { encoding: 'utf8' });
+  if (r.status !== 0) return false;
+  return r.stdout.trim().length > 0;
+}
+
 export async function reapIdleContainers() {
   const state = loadUsers();
   const now = Date.now();
+  let dirty = false;
   for (const [username, u] of Object.entries(state.users)) {
     const last = u.lastActivityAt ? Date.parse(u.lastActivityAt) : 0;
     if (now - last < IDLE_STOP_MIN * 60 * 1000) continue;
     if (hasKeepAlive(username)) continue; // опубликовано с autosleep=off — не усыпляем
+    // Живая SSH-сессия (десктопный VS Code) = активность: не усыпляем, обновляем метку.
+    if (hasActiveSsh(u.sshPort)) {
+      u.lastActivityAt = new Date().toISOString();
+      dirty = true;
+      continue;
+    }
     const status = await containerStatus(username);
     if (status.running) {
       await dockerStop(username).catch(() => {});
       console.log(`[reaper] stopped ${username} (idle)`);
     }
   }
+  if (dirty) saveUsers(state);
 }
 
 export function startReaper() {
