@@ -219,6 +219,18 @@ body.has-right-chat .vscode-recent {
   margin-right: 0;
 }
 
+/* Узкий экран: не центрируем рабочие блоки на 972px (иначе большой «отступ слева») —
+   тянем на всю ширину рабочей области (остаются только паддинги .dashboard). */
+@media (max-width: 1300px) {
+  .section-block,
+  .vscode-hero,
+  .vscode-recent {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
 /* ── Container banner ─────────────────────────────────────── */
 .container-banner {
   background: hsl(var(--card));

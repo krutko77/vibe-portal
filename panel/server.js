@@ -438,7 +438,7 @@ app.get('/api/projects/:name/download', requireAuth, (req, res) => {
 });
 
 // Скачать базовый шаблон zip'ом (whitelisted). Доступно любому залогиненному.
-const DOWNLOADABLE_TEMPLATES = new Set(['_base', '_b24-single-php']);
+const DOWNLOADABLE_TEMPLATES = new Set(['_base', '_b24-single-php', '_base_universal']);
 
 app.get('/api/template-download/:name', requireAuth, (req, res) => {
   const name = req.params.name;
@@ -450,7 +450,7 @@ app.get('/api/template-download/:name', requireAuth, (req, res) => {
 });
 
 // Скачать CLAUDE.md из шаблона отдельным файлом (base | b24).
-const TEMPLATE_CLAUDE = { base: '_base', b24: '_b24-single-php' };
+const TEMPLATE_CLAUDE = { base: '_base', b24: '_b24-single-php', universal: '_base_universal' };
 
 app.get('/api/template-claude/:which', requireAuth, (req, res) => {
   const dir = TEMPLATE_CLAUDE[req.params.which];

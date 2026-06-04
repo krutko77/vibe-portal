@@ -17,5 +17,6 @@ window.KB_REFERENCE = [
   { id:'skills',        group:'reference', kind:'skill',      icon:'✨', sub:'skills',        title:'Установленные скиллы',        desc:'superpowers, ui-ux-pro-max, claude-memory.' },
   { id:'software',      group:'reference', kind:'software',   icon:'💿', sub:'software',      title:'Полезный софт',               desc:'Редактор, AI-альтернативы, голосовой ввод, скриншоты, буфер обмена.' },
   { id:'links',         group:'reference', kind:'link',       icon:'🔗', sub:'links',         title:'Полезные ссылки',             desc:'claude.ai, Vibecode и документация.' },
+  { id:'vibe-portal',   group:'reference', kind:'guide',      icon:'🏗', sub:'vibe-portal',   title:'VIBE. Портал',                desc:'Материалы по созданию портала (скоро).' },
   { id:'faq',           group:'reference', kind:'faq',        icon:'⚠',  sub:'faq',           title:'FAQ — частые проблемы',       desc:'«Вылетает / не пускает» и другое.' },
 ];
