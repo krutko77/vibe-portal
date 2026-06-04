@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         php-cli \
         psmisc \
         procps \
+        openssh-server \
         locales \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
@@ -41,7 +42,13 @@ RUN mkdir -p /home/student/.config/code-server && \
         > /home/student/.config/code-server/config.yaml
 
 EXPOSE 8080
+EXPOSE 2222
+
+# Entrypoint: поднимает sshd (десктопный VS Code по SSH) + exec code-server.
+# Контейнер запускается с docker --init (tini) для reaping зомби — см. students.js.
+COPY --chmod=0755 vibe-entrypoint.sh /usr/local/bin/vibe-entrypoint.sh
 
 # claude-cli заберёт ANTHROPIC_BASE_URL / ANTHROPIC_AUTH_TOKEN из окружения
-# (выставляются при docker run, см. vibe-panel lifecycle).
-CMD ["code-server", "/home/student/workspace"]
+# (выставляются при docker run, см. vibe-panel lifecycle); sshd доносит их в
+# SSH-сессии через SetEnv (см. vibe-entrypoint.sh).
+CMD ["/usr/local/bin/vibe-entrypoint.sh"]
