@@ -228,19 +228,19 @@
     let h = '<div class="hub-group-h">База знаний</div>';
     h += item('start', '🚀', 'С чего начать', cnt('start'));
 
+    h += '<div class="hub-group-h">Справочник</div>';
+    REF_KINDS.forEach(k => h += item('ref:'+k, KIND[k].icon, KIND[k].label, cnt(k)));
+
+    h += '<div class="hub-group-h">Материалы уроков</div>';
+    h += item('all:material',    '📚', 'Все материалы',      cnt('material'));
+    h += item('all:homework',    '📝', 'Все домашние задания', cnt('homework'));
+    h += item('all:masterclass', '🎥', 'Все мастер-классы',  cnt('masterclass'));
+
     h += '<div class="hub-group-h">По модулям</div>';
     MODULES.forEach(mo => {
       const total = MOD_KINDS.reduce((s,k)=>s+cnt(k,mo.n),0);
       h += item('mod:'+mo.n, '📦', 'Модуль '+mo.n, total, true);
     });
-
-    h += '<div class="hub-group-h">Всё сразу</div>';
-    h += item('all:material',    '📚', 'Все материалы',      cnt('material'));
-    h += item('all:homework',    '📝', 'Все домашние задания', cnt('homework'));
-    h += item('all:masterclass', '🎥', 'Все мастер-классы',  cnt('masterclass'));
-
-    h += '<div class="hub-group-h">Справочник</div>';
-    REF_KINDS.forEach(k => h += item('ref:'+k, KIND[k].icon, KIND[k].label, cnt(k)));
 
     document.getElementById('side').innerHTML = h;
     document.querySelectorAll('#side .hub-item').forEach(el => el.onclick = () => { active = el.dataset.id; document.getElementById('search').value=''; render(); });
