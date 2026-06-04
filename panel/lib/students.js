@@ -8,6 +8,7 @@ import {
   htpasswdSet, htpasswdDelete,
 } from './auth.js';
 import { hasKeepAlive } from './publish.js';
+import { ensureKeys, removeKeys, sshMountDir } from './ssh-access.js';
 
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
@@ -43,6 +44,31 @@ function allocatePort(state) {
   return p;
 }
 
+// SSH-порт контейнерного sshd (8400+), публикуется наружу (десктопный VS Code).
+function allocateSshPort(state) {
+  const used = new Set();
+  for (const u of Object.values(state.users)) {
+    if (u.sshPort) used.add(u.sshPort);
+  }
+  let p = state.ports.nextFreeSsh || 8400;
+  while (used.has(p)) p++;
+  state.ports.nextFreeSsh = p + 1;
+  return p;
+}
+
+// Гарантирует SSH-провижн ученика: sshPort в state (если нет — аллоцирует),
+// ключи (panel-generated) и папку .vscode-server. state НЕ сохраняет — вызывающий
+// делает saveUsers сам. Возвращает sshPort. Идемпотентно (для lazy-миграции).
+function ensureSshProvision(username, state) {
+  const u = state.users[username];
+  if (!u.sshPort) u.sshPort = allocateSshPort(state);
+  ensureKeys(username);
+  const vsdir = `/data/config/vscode-server/${username}`;
+  fs.mkdirSync(vsdir, { recursive: true });
+  fs.chownSync(vsdir, 1000, 1000);
+  return u.sshPort;
+}
+
 export async function createStudent({ username, password, role = 'user' }) {
   const state = loadUsers();
   const RESERVED = new Set(['api', 'code', 'assets', 'css', 'js', 'img', 'public', 'well-known', 'logs', 'history', 'help', 'security', 'dashboard', 'leaderboard', 'rating']);
@@ -71,9 +97,10 @@ export async function createStudent({ username, password, role = 'user' }) {
     containerPort: port,
     lastActivityAt: null,
   };
+  const sshPort = ensureSshProvision(username, state); // sshPort + ключи + .vscode-server
   saveUsers(state);
 
-  await dockerCreate(username, port);
+  await dockerCreate(username, port, sshPort);
   return state.users[username];
 }
 
@@ -83,6 +110,8 @@ export async function deleteStudent(username) {
 
   await dockerRemove(username).catch(() => {});
   htpasswdDelete(username);
+  removeKeys(username);
+  fs.rmSync(`/data/config/vscode-server/${username}`, { recursive: true, force: true });
 
   // workspace в архив, не удаляем
   const ws = workspaceDir(username);
@@ -157,7 +186,7 @@ export function listStudents() {
 
 // ---------- docker lifecycle ----------
 
-async function dockerCreate(username, port) {
+async function dockerCreate(username, port, sshPort) {
   const name = containerName(username);
 
   // если уже есть — удаляем
@@ -179,7 +208,8 @@ async function dockerCreate(username, port) {
       // → ошибка у ученика. CLI вместо этого компактит в рамках 200K.
       'CLAUDE_CODE_DISABLE_1M_CONTEXT=1',
     ],
-    Cmd: ['code-server', '/home/student/workspace'],
+    // entrypoint поднимает sshd (десктопный VS Code) + exec code-server.
+    Cmd: ['/usr/local/bin/vibe-entrypoint.sh'],
     Labels: {
       'kg.vibe.student': username,
       'kg.vibe.role': 'workspace',
@@ -195,10 +225,19 @@ async function dockerCreate(username, port) {
         // Общие Claude-скиллы (superpowers / ui-ux-pro-max / claude-memory)
         // — read-only, чтобы клод-внутри-контейнера их видел в ~/.claude/skills.
         `${SKILLS_VOLUME}:/home/student/.claude/skills:ro`,
+        // SSH (десктопный VS Code): host-key + authorized_keys (только публичный
+        // ключ ученика; приватник в контейнер НЕ монтируется — см. ssh-access.js).
+        `${sshMountDir(username)}:/home/student/.sshd:rw`,
+        // Персист VS Code server между пересозданиями контейнера.
+        `/data/config/vscode-server/${username}:/home/student/.vscode-server:rw`,
       ],
       PortBindings: {
         '8080/tcp': [{ HostIp: '127.0.0.1', HostPort: String(port) }],
+        // sshd контейнера наружу (ноут ученика дотягивается); только pubkey.
+        '2222/tcp': [{ HostIp: '0.0.0.0', HostPort: String(sshPort) }],
       },
+      // tini как PID 1 — reaping зомби (sshd форкает per-connection дети).
+      Init: true,
       Memory: MEM_LIMIT_MB * 1024 * 1024,
       MemorySwap: MEM_LIMIT_MB * 1024 * 1024,
       NanoCpus: Math.round(CPU_LIMIT * 1e9),
@@ -206,7 +245,7 @@ async function dockerCreate(username, port) {
       SecurityOpt: ['no-new-privileges'],
       RestartPolicy: { Name: 'unless-stopped' },
     },
-    ExposedPorts: { '8080/tcp': {} },
+    ExposedPorts: { '8080/tcp': {}, '2222/tcp': {} },
   });
   return c.id;
 }
@@ -228,7 +267,9 @@ export async function dockerStart(username) {
   } catch (e) {
     if (e.statusCode !== 404) throw e;
     if (!u.containerPort) throw new Error(`no port assigned for ${username}`);
-    await dockerCreate(username, u.containerPort);
+    const sshPort = ensureSshProvision(username, state); // lazy-миграция: sshPort+ключи существующим
+    saveUsers(state);
+    await dockerCreate(username, u.containerPort, sshPort);
     c = docker.getContainer(containerName(username));
     info = await c.inspect();
   }
