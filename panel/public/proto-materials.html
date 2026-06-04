@@ -223,7 +223,7 @@
   const grid = (items) => items.length ? `<div class="ms-grid">${items.map(card).join('')}</div>` : '<div class="empty">Пока пусто — здесь появится материал, как только добавим.</div>';
 
   /* ── сайдбар ── */
-  let active = 'mod:1';
+  let active = 'start';
   function renderSide() {
     let h = '<div class="hub-group-h">База знаний</div>';
     h += item('start', '🚀', 'С чего начать', cnt('start'));
