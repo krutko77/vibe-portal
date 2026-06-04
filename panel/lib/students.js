@@ -135,6 +135,16 @@ export function setStudentPassword(username, password) {
   htpasswdSet(username, password);
 }
 
+// Гарантирует SSH-провижн (порт+ключи) и сохраняет state. Возвращает sshPort.
+// Зовётся из API, если ученик открыл раздел SSH до старта контейнера.
+export function provisionSsh(username) {
+  const state = loadUsers();
+  if (!state.users[username]) throw new Error('no such student');
+  const sshPort = ensureSshProvision(username, state);
+  saveUsers(state);
+  return sshPort;
+}
+
 // Workspace-level CLAUDE.md — раскатывается при создании ученика
 // и при первом dockerCreate. Идемпотентно — если файл уже есть, не трогаем.
 export function writeWorkspaceClaudeMd(ws, username) {

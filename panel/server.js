@@ -32,8 +32,9 @@ import {
 import {
   createStudent, deleteStudent, setStudentPassword, listStudents,
   dockerStart, dockerStop, containerStatus, workspaceDir,
-  touchActivity, recordLogin, startReaper,
+  touchActivity, recordLogin, startReaper, provisionSsh,
 } from './lib/students.js';
+import { sshConfig, privateKey, regenerateKeys } from './lib/ssh-access.js';
 import { leaderboard } from './lib/leaderboard.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
@@ -139,6 +140,44 @@ app.get('/api/me', (req, res) => {
 app.get('/api/leaderboard', requireAuth, (req, res) => {
   try {
     res.json(leaderboard());
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ---------- SSH-доступ: десктопный VS Code (user) ----------
+// Ключи/порт провижатся лениво при первом обращении (provisionSsh идемпотентен),
+// чтобы ученик мог скачать доступ даже до первого старта контейнера.
+app.get('/api/ssh-config', requireAuth, (req, res) => {
+  const u = req.session.user;
+  try {
+    const sshPort = provisionSsh(u);
+    res.json(sshConfig(u, sshPort));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Скачать личный приватный ключ ученика (файл для ~/.ssh/).
+app.get('/api/ssh-key', requireAuth, (req, res) => {
+  const u = req.session.user;
+  try {
+    provisionSsh(u);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="vibe-${u}"`);
+    res.send(privateKey(u));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Перевыпуск ключа (старый перестаёт пускать; host-key/отпечаток не меняется).
+app.post('/api/ssh-key/regenerate', requireAuth, (req, res) => {
+  const u = req.session.user;
+  try {
+    const sshPort = provisionSsh(u);
+    regenerateKeys(u);
+    res.json(sshConfig(u, sshPort));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
