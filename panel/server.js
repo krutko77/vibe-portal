@@ -779,6 +779,11 @@ app.use((req, res, next) => {
 
 // ---------- статика ----------
 
+// Реестр и контент «Базы знаний» (content/reference.js и пр.).
+app.use('/content', express.static(path.join(__dirname, '..', 'content'), {
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
+
 app.use(express.static(path.join(__dirname, 'public'), {
   extensions: ['html'],
   setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
