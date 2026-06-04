@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Прототип: материалы — Vibe Portal</title>
+  <title>Прототип: База знаний — Vibe Portal</title>
   <link rel="icon" type="image/png" href="/KG_fi.png" />
   <link rel="stylesheet" href="/css/tokens.css" />
   <link rel="stylesheet" href="/css/style.css" />
@@ -14,14 +14,13 @@
     })();
   </script>
   <style>
-    /* ── только прототип-специфичное; всё остальное — из style.css ── */
     .proto-bar {
       position: sticky; top: 0; z-index: 50;
       background: hsl(var(--smui-surface-1));
       border-bottom: 1px solid hsl(var(--border));
       padding: 10px 18px;
     }
-    .proto-bar-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .proto-bar-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .proto-bar-tag {
       font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
       color: hsl(var(--smui-yellow)); border: 1px solid hsl(var(--smui-yellow) / .4);
@@ -29,486 +28,289 @@
     }
     .proto-bar-title { font-size: 12.5px; color: hsl(var(--muted-foreground)); }
     .proto-bar-title strong { color: hsl(var(--foreground)); }
-    .proto-switch { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
-    .proto-tab {
-      font-family: var(--font-mono); font-size: 12px; cursor: pointer;
-      background: hsl(var(--smui-surface-2)); color: hsl(var(--muted-foreground));
-      border: 1px solid hsl(var(--border)); padding: 6px 12px;
-      display: flex; flex-direction: column; gap: 2px; min-width: 132px;
+    .proto-bar-title .pill {
+      display:inline-block; padding:1px 7px; margin-left:6px; font-size:11px;
+      border:1px solid hsl(var(--primary)); color:hsl(var(--accent-foreground)); background:hsl(var(--accent));
     }
-    .proto-tab b { color: hsl(var(--foreground)); font-weight: 600; }
-    .proto-tab span { font-size: 10px; opacity: .7; }
-    .proto-tab.active {
-      border-color: hsl(var(--primary)); background: hsl(var(--accent));
-      color: hsl(var(--accent-foreground));
-    }
-    .proto-tab.active b { color: hsl(var(--accent-foreground)); }
-    .proto-note {
-      max-width: 980px; margin: 16px auto 0; padding: 0 22px;
-      font-size: 12.5px; color: hsl(var(--muted-foreground)); line-height: 1.6;
-    }
-    .proto-note .menu-pill {
-      display: inline-block; padding: 1px 7px; margin: 0 2px;
-      border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-2));
-      color: hsl(var(--foreground)); font-size: 11px;
-    }
-    .proto-stage { max-width: 1080px; margin: 14px auto 60px; padding: 0 22px; }
-    .proto-variant { display: none; }
-    .proto-variant.active { display: block; }
+    .proto-stage { max-width: 1120px; margin: 16px auto 60px; padding: 0 22px; }
 
-    /* фейковый навбар внутри сцены — показать, как меняется меню */
+    /* фейковый навбар */
     .mini-nav {
       display: flex; align-items: center; gap: 8px;
       border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1));
       padding: 8px 12px; margin-bottom: 18px;
     }
-    .mini-nav .kg {
-      font-weight: 700; letter-spacing: .08em; color: hsl(var(--primary));
-      border: 1px solid hsl(var(--border)); padding: 3px 7px; font-size: 12px;
-    }
+    .mini-nav .kg { font-weight: 700; letter-spacing: .08em; color: hsl(var(--primary)); border: 1px solid hsl(var(--border)); padding: 3px 7px; font-size: 12px; }
     .mini-nav .sp { flex: 1; }
-    .mini-tab {
-      font-size: 12px; padding: 5px 11px; border: 1px solid transparent;
-      color: hsl(var(--muted-foreground)); display: flex; gap: 6px; align-items: center;
-    }
-    .mini-tab.is-new {
-      color: hsl(var(--foreground)); border-color: hsl(var(--primary));
-      background: hsl(var(--accent));
-    }
+    .mini-tab { font-size: 12px; padding: 5px 11px; border: 1px solid transparent; color: hsl(var(--muted-foreground)); display: flex; gap: 6px; align-items: center; }
+    .mini-tab.is-new { color: hsl(var(--foreground)); border-color: hsl(var(--primary)); background: hsl(var(--accent)); }
     .mini-tab.is-new .dot { color: hsl(var(--smui-green)); }
-    .mini-tab.muted { opacity: .5; }
     .mini-nav .ico { width: 22px; height: 22px; border: 1px solid hsl(var(--border)); display: inline-block; }
 
     /* поиск */
-    .ms-search {
-      display: flex; align-items: center; gap: 10px;
-      border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1));
-      padding: 9px 13px; margin-bottom: 16px;
-    }
-    .ms-search input {
-      flex: 1; background: transparent; border: none; outline: none;
-      color: hsl(var(--foreground)); font-family: var(--font-mono); font-size: 13px;
-    }
+    .ms-search { display: flex; align-items: center; gap: 10px; border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1)); padding: 9px 13px; margin-bottom: 16px; }
+    .ms-search input { flex: 1; background: transparent; border: none; outline: none; color: hsl(var(--foreground)); font-family: var(--font-mono); font-size: 13px; }
     .ms-search .k { font-size: 11px; color: hsl(var(--muted-foreground)); border: 1px solid hsl(var(--border)); padding: 1px 6px; }
 
-    /* фильтр-чипы */
-    .ms-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
-    .ms-chip {
-      font-size: 11.5px; cursor: pointer; padding: 5px 11px;
-      border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1));
-      color: hsl(var(--muted-foreground));
+    /* хаб: сайдбар + контент */
+    .hub { display: grid; grid-template-columns: 234px 1fr; gap: 20px; align-items: start; }
+    .hub-side { border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1)); position: sticky; top: 70px; }
+    .hub-group-h {
+      padding: 11px 13px 6px; font-size: 10px; letter-spacing: .13em; text-transform: uppercase;
+      color: hsl(var(--muted-foreground)); opacity: .8;
     }
-    .ms-chip.active { border-color: hsl(var(--primary)); background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
-    .ms-chip .n { opacity: .55; }
+    .hub-group-h:not(:first-child) { border-top: 1px solid hsl(var(--border)); margin-top: 4px; }
+    .hub-item {
+      display: flex; align-items: center; gap: 9px; padding: 8px 13px; cursor: pointer;
+      font-size: 13px; color: hsl(var(--muted-foreground)); border-left: 2px solid transparent;
+    }
+    .hub-item:hover { background: hsl(var(--smui-surface-2)); }
+    .hub-item.active { color: hsl(var(--foreground)); border-left-color: hsl(var(--primary)); background: hsl(var(--accent)); }
+    .hub-item .n { margin-left: auto; font-size: 11px; opacity: .55; }
+    .hub-item.sub { padding-left: 26px; font-size: 12.5px; }
+    .hub-item.strong { color: hsl(var(--foreground)); }
 
-    /* карточная сетка каталога */
-    .ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(255px, 1fr)); gap: 14px; }
-    .ms-card {
-      border: 1px solid hsl(var(--border)); background: hsl(var(--card));
-      padding: 14px 15px; display: flex; flex-direction: column; gap: 8px;
-      cursor: pointer; transition: border-color .12s, transform .12s;
-    }
+    /* секция-вид по типу внутри модуля */
+    .kind-sect { margin: 0 0 26px; }
+    .kind-head { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid hsl(var(--border)); margin-bottom: 14px; }
+    .kind-head .ico { font-size: 17px; }
+    .kind-head .t { font-size: 14px; font-weight: 600; color: hsl(var(--foreground)); }
+    .kind-head .n { font-size: 11px; color: hsl(var(--muted-foreground)); }
+    .kind-head .add { margin-left: auto; font-size: 11px; color: hsl(var(--primary)); border: 1px dashed hsl(var(--primary) / .5); padding: 2px 9px; cursor: pointer; }
+    .mod-sub { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: hsl(var(--muted-foreground)); margin: 4px 0 12px; }
+
+    /* карточки */
+    .ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 14px; }
+    .ms-card { border: 1px solid hsl(var(--border)); background: hsl(var(--card)); padding: 14px 15px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: border-color .12s, transform .12s; }
     .ms-card:hover { border-color: hsl(var(--smui-border-hover)); transform: translateY(-2px); }
     .ms-card-top { display: flex; align-items: center; gap: 9px; }
     .ms-card-ico { font-size: 18px; line-height: 1; }
-    .ms-card-type {
-      font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
-      color: hsl(var(--muted-foreground)); margin-left: auto;
-      border: 1px solid hsl(var(--border)); padding: 2px 6px;
-    }
+    .ms-card-type { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: hsl(var(--muted-foreground)); margin-left: auto; border: 1px solid hsl(var(--border)); padding: 2px 6px; }
     .ms-card-title { font-size: 13.5px; font-weight: 600; color: hsl(var(--foreground)); line-height: 1.3; }
     .ms-card-desc { font-size: 12px; color: hsl(var(--muted-foreground)); line-height: 1.5; flex: 1; }
+    .ms-card-meta { font-size: 11px; color: hsl(var(--smui-frost-3)); }
     .ms-card-foot { display: flex; align-items: center; gap: 8px; font-size: 11px; color: hsl(var(--muted-foreground)); }
-    .ms-card-cta { color: hsl(var(--primary)); }
-    .badge-new {
-      font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-      color: hsl(var(--smui-green)); border: 1px solid hsl(var(--smui-green) / .45); padding: 1px 5px;
-    }
+    .ms-card-cta { color: hsl(var(--primary)); margin-left: auto; }
+    .badge-new { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: hsl(var(--smui-green)); border: 1px solid hsl(var(--smui-green) / .45); padding: 1px 5px; }
+    .badge-due { font-size: 9px; letter-spacing: .06em; text-transform: uppercase; color: hsl(var(--smui-orange)); border: 1px solid hsl(var(--smui-orange) / .45); padding: 1px 5px; }
 
-    /* хаб (вариант A): сайдбар категорий + контент */
-    .hub { display: grid; grid-template-columns: 210px 1fr; gap: 20px; align-items: start; }
-    .hub-side { border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1)); }
-    .hub-side-h {
-      padding: 11px 13px; border-bottom: 1px solid hsl(var(--border));
-      font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--muted-foreground));
-    }
-    .hub-cat {
-      display: flex; align-items: center; gap: 9px; padding: 9px 13px; cursor: pointer;
-      font-size: 13px; color: hsl(var(--muted-foreground)); border-left: 2px solid transparent;
-    }
-    .hub-cat:hover { background: hsl(var(--smui-surface-2)); }
-    .hub-cat.active { color: hsl(var(--foreground)); border-left-color: hsl(var(--primary)); background: hsl(var(--accent)); }
-    .hub-cat .n { margin-left: auto; font-size: 11px; opacity: .55; }
+    .empty { color: hsl(var(--muted-foreground)); font-size: 12.5px; padding: 22px; text-align: center; border: 1px dashed hsl(var(--border)); }
+    .hint { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin: -6px 0 18px; line-height: 1.55; }
+    .hint code { color: hsl(var(--smui-frost-2)); }
 
-    /* программа курса (вариант B): аккордеон модулей */
-    .prog-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
-    .prog-bar { height: 6px; background: hsl(var(--smui-surface-2)); border: 1px solid hsl(var(--border)); margin: 10px 0 22px; }
-    .prog-bar i { display: block; height: 100%; background: hsl(var(--primary)); }
-    .mod { border: 1px solid hsl(var(--border)); margin-bottom: 10px; background: hsl(var(--smui-surface-1)); }
-    .mod-h { display: flex; align-items: center; gap: 11px; padding: 12px 14px; cursor: pointer; }
-    .mod-no { width: 26px; height: 26px; border: 1px solid hsl(var(--primary)); color: hsl(var(--primary)); display: grid; place-items: center; font-size: 12px; }
-    .mod-h .t { font-weight: 600; font-size: 13.5px; }
-    .mod-h .s { font-size: 11px; color: hsl(var(--muted-foreground)); margin-left: auto; }
-    .mod-body { border-top: 1px solid hsl(var(--border)); display: none; }
-    .mod.open .mod-body { display: block; }
-    .les { display: flex; align-items: center; gap: 11px; padding: 9px 16px; font-size: 12.5px; border-bottom: 1px solid hsl(var(--border) / .5); color: hsl(var(--muted-foreground)); cursor: pointer; }
-    .les:last-child { border-bottom: none; }
-    .les:hover { background: hsl(var(--smui-surface-2)); color: hsl(var(--foreground)); }
-    .les .st { font-size: 13px; }
-    .les .st.done { color: hsl(var(--smui-green)); }
-    .les .st.next { color: hsl(var(--smui-yellow)); }
-
-    .sub-toggle { display: inline-flex; border: 1px solid hsl(var(--border)); margin-bottom: 20px; }
-    .sub-toggle button {
-      font-family: var(--font-mono); font-size: 12.5px; padding: 8px 18px; cursor: pointer;
-      background: transparent; color: hsl(var(--muted-foreground)); border: none;
-    }
-    .sub-toggle button.active { background: hsl(var(--accent)); color: hsl(var(--accent-foreground)); }
-
-    /* лендинг (вариант D): дорожки */
-    .land-hero { border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1)); padding: 22px; margin-bottom: 18px; }
-    .land-hero h2 { font-size: 19px; margin: 0 0 6px; }
-    .land-hero p { margin: 0; color: hsl(var(--muted-foreground)); font-size: 13px; }
-    .land-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-    .track {
-      border: 1px solid hsl(var(--border)); background: hsl(var(--card)); padding: 18px;
-      cursor: pointer; display: flex; flex-direction: column; gap: 10px; transition: border-color .12s, transform .12s;
-    }
-    .track:hover { border-color: hsl(var(--smui-border-hover)); transform: translateY(-2px); }
-    .track-ico { font-size: 26px; }
-    .track h3 { margin: 0; font-size: 15px; }
-    .track p { margin: 0; font-size: 12px; color: hsl(var(--muted-foreground)); line-height: 1.5; flex: 1; }
-    .track .go { font-size: 11.5px; color: hsl(var(--primary)); }
-    .track .cnt { font-size: 10.5px; color: hsl(var(--muted-foreground)); letter-spacing: .08em; text-transform: uppercase; }
-    .land-strip-h { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--muted-foreground)); margin: 26px 0 12px; }
-
-    .empty { color: hsl(var(--muted-foreground)); font-size: 12.5px; padding: 30px; text-align: center; border: 1px dashed hsl(var(--border)); }
-
-    @media (max-width: 720px) {
+    @media (max-width: 760px) {
       .hub { grid-template-columns: 1fr; }
-      .proto-switch { margin-left: 0; }
+      .hub-side { position: static; }
     }
   </style>
 </head>
 <body class="app-bg">
 
-  <!-- ── Прототип-бар (этого в реальном портале не будет) ── -->
   <div class="proto-bar">
     <div class="proto-bar-row">
       <span class="proto-bar-tag">прототип</span>
-      <span class="proto-bar-title">Как организовать материалы на портале · <strong>4 концепции</strong> — переключай справа →</span>
-      <div class="proto-switch" id="switch">
-        <button class="proto-tab active" data-v="A"><b>A · Хаб</b><span>«База знаний», 1 пункт меню</span></button>
-        <button class="proto-tab" data-v="B"><b>B · Два раздела</b><span>Курс + Справочник</span></button>
-        <button class="proto-tab" data-v="C"><b>C · Каталог</b><span>Карточки + фильтры</span></button>
-        <button class="proto-tab" data-v="D"><b>D · Лендинг</b><span>Дорожки «куда смотреть»</span></button>
-      </div>
+      <span class="proto-bar-title">
+        <strong>Вариант A — Хаб «База знаний»</strong><span class="pill">выбран</span>
+        · по модулям: материалы · домашки · мастер-классы + сквозной вид «всё сразу»
+      </span>
     </div>
   </div>
 
-  <p class="proto-note" id="proto-note"></p>
-
   <div class="proto-stage">
-    <!-- ══════════ Вариант A — Хаб «База знаний» ══════════ -->
-    <section class="proto-variant active" data-v="A">
-      <div class="mini-nav">
-        <span class="kg">KG</span>
-        <span class="mini-tab">VS Code</span>
-        <span class="mini-tab">Проекты</span>
-        <span class="mini-tab is-new"><span class="dot">●</span> База знаний</span>
-        <span class="sp"></span>
-        <span class="ico"></span><span class="ico"></span>
-      </div>
-      <div class="ms-search">
-        <span>🔎</span>
-        <input id="A-search" placeholder="Поиск по материалам: «публикация», «CLAUDE.md», «шпаргалка»…" />
-        <span class="k">/</span>
-      </div>
-      <div class="hub">
-        <aside class="hub-side">
-          <div class="hub-side-h">Разделы</div>
-          <div id="A-cats"></div>
-        </aside>
-        <main id="A-content"></main>
-      </div>
-    </section>
+    <div class="mini-nav">
+      <span class="kg">KG</span>
+      <span class="mini-tab">VS Code</span>
+      <span class="mini-tab">Проекты</span>
+      <span class="mini-tab is-new"><span class="dot">●</span> База знаний</span>
+      <span class="sp"></span>
+      <span class="ico"></span><span class="ico"></span>
+    </div>
 
-    <!-- ══════════ Вариант B — Два раздела ══════════ -->
-    <section class="proto-variant" data-v="B">
-      <div class="mini-nav">
-        <span class="kg">KG</span>
-        <span class="mini-tab">VS Code</span>
-        <span class="mini-tab">Проекты</span>
-        <span class="mini-tab is-new">Курс</span>
-        <span class="mini-tab is-new">Справочник</span>
-        <span class="sp"></span>
-        <span class="ico"></span><span class="ico"></span>
-      </div>
-      <div class="sub-toggle" id="B-toggle">
-        <button class="active" data-s="course">📚 Курс — программа</button>
-        <button data-s="ref">🗂 Справочник — всё остальное</button>
-      </div>
-      <div id="B-course"></div>
-      <div id="B-ref" style="display:none"></div>
-    </section>
+    <div class="ms-search">
+      <span>🔎</span>
+      <input id="search" placeholder="Поиск: «домашка модуль 1», «CLAUDE.md», «запись мастер-класса»…" />
+      <span class="k">/</span>
+    </div>
 
-    <!-- ══════════ Вариант C — Каталог-карточки ══════════ -->
-    <section class="proto-variant" data-v="C">
-      <div class="mini-nav">
-        <span class="kg">KG</span>
-        <span class="mini-tab">VS Code</span>
-        <span class="mini-tab">Проекты</span>
-        <span class="mini-tab is-new"><span class="dot">●</span> Материалы</span>
-        <span class="sp"></span>
-        <span class="ico"></span><span class="ico"></span>
-      </div>
-      <div class="ms-search">
-        <span>🔎</span>
-        <input id="C-search" placeholder="Поиск по всем материалам…" />
-        <span class="k">/</span>
-      </div>
-      <div class="ms-chips" id="C-chips"></div>
-      <div class="ms-grid" id="C-grid"></div>
-    </section>
-
-    <!-- ══════════ Вариант D — Лендинг с дорожками ══════════ -->
-    <section class="proto-variant" data-v="D">
-      <div class="mini-nav">
-        <span class="kg">KG</span>
-        <span class="mini-tab">VS Code</span>
-        <span class="mini-tab">Проекты</span>
-        <span class="mini-tab is-new"><span class="dot">●</span> Обучение</span>
-        <span class="sp"></span>
-        <span class="ico"></span><span class="ico"></span>
-      </div>
-      <div class="land-hero">
-        <h2>Обучение Vibecoding</h2>
-        <p>Не знаешь, с чего начать? Иди по дорожкам сверху вниз. Нужно что-то конкретное — открой нужный блок.</p>
-      </div>
-      <div class="land-grid" id="D-tracks"></div>
-      <div class="land-strip-h">🆕 Недавно добавлено</div>
-      <div class="ms-grid" id="D-new"></div>
-    </section>
+    <div class="hub">
+      <aside class="hub-side" id="side"></aside>
+      <main id="content"></main>
+    </div>
   </div>
 
   <script>
   /* ════════════════════════════════════════════════════════════
-   * ЕДИНЫЙ РЕЕСТР МАТЕРИАЛОВ.
-   * Это и есть «одно аккуратное место»: чтобы добавить материал,
-   * Claude дописывает один объект в этот массив (в реальном
-   * портале — отдельный manifest-файл + папка content/).
-   * Все 4 концепции ниже рисуются из ЭТОГО ЖЕ массива.
+   * ЕДИНЫЙ РЕЕСТР. Чтобы добавить материал/домашку/мастер-класс —
+   * Claude дописывает ОДИН объект сюда (в проде — manifest + папка
+   * content/). Поля: kind (тип), module (к какому модулю, если по
+   * программе), всё остальное — для карточки.
+   *
+   *  kind по модулям:  material · homework · masterclass
+   *  kind глобальные:  start · cheatsheet · template · link · skill · faq
    * ════════════════════════════════════════════════════════════ */
-  const CATS = [
-    { id: 'start',      icon: '🚀', title: 'Старт' },
-    { id: 'course',     icon: '📚', title: 'Программа курса' },
-    { id: 'cheatsheet', icon: '📋', title: 'Шпаргалки' },
-    { id: 'example',    icon: '🧩', title: 'Примеры и мини-сайты' },
-    { id: 'template',   icon: '📦', title: 'Шаблоны' },
-    { id: 'link',       icon: '🔗', title: 'Ссылки' },
-    { id: 'skill',      icon: '✨', title: 'Скиллы' },
-    { id: 'faq',        icon: '⚠',  title: 'FAQ' },
-  ];
-  const TYPE_LABEL = {
-    start: 'гайд', course: 'урок', cheatsheet: 'шпаргалка', example: 'пример',
-    template: 'шаблон', link: 'ссылка', skill: 'скилл', faq: 'faq',
+  const KIND = {
+    start:       { icon:'🚀', label:'С чего начать',     tag:'гайд' },
+    material:    { icon:'📚', label:'Материалы',         tag:'материал' },
+    homework:    { icon:'📝', label:'Домашние задания',  tag:'дз' },
+    masterclass: { icon:'🎥', label:'Мастер-классы',     tag:'запись' },
+    cheatsheet:  { icon:'📋', label:'Шпаргалки',         tag:'шпаргалка' },
+    template:    { icon:'📦', label:'Шаблоны',           tag:'шаблон' },
+    link:        { icon:'🔗', label:'Ссылки',            tag:'ссылка' },
+    skill:       { icon:'✨', label:'Скиллы',            tag:'скилл' },
+    faq:         { icon:'⚠',  label:'FAQ',               tag:'faq' },
   };
+  const MODULES = [
+    { n:1, title:'Основы Claude и портала' },
+    { n:2, title:'Работа с CLAUDE.md и контекстом' },
+  ];
+  // порядок типов внутри модуля
+  const MOD_KINDS = ['material', 'homework', 'masterclass'];
+  // что относится к «Справочнику» (вне модулей)
+  const REF_KINDS = ['cheatsheet', 'template', 'link', 'skill', 'faq'];
 
   const M = [
-    // — Старт / онбординг —
-    { cat:'start', icon:'🧭', title:'Как работать с порталом', desc:'Пошагово: вход, навбар, VS Code, создание проекта, чат с Claude, файлы, контейнер.', cta:'Открыть гайд', isNew:false },
-    { cat:'start', icon:'🚀', title:'Как опубликовать приложение', desc:'Включить публикацию, выбрать кто видит, деплой, относительные пути к ассетам.', cta:'Открыть гайд', isNew:false },
+    // ─────── МОДУЛЬ 1 ───────
+    { kind:'material', module:1, icon:'📖', title:'Конспект: Что такое Claude', desc:'Модель в дата-центре, 3 способа обращения, сравнение с ChatGPT/Cursor/Codex.', cta:'Читать' },
+    { kind:'material', module:1, icon:'📖', title:'Конспект: Воркспейс и контейнер', desc:'Как устроен твой контейнер, маунты workspace / templates / skills.', cta:'Читать' },
+    { kind:'material', module:1, icon:'🖼', title:'Слайды модуля 1', desc:'Презентация с мастер-классов 27–28.05. PDF под печать.', cta:'↓ Скачать', isNew:true },
+    { kind:'homework', module:1, icon:'📝', title:'ДЗ-1: Создай проект из шаблона', desc:'Создай проект из _base, разбери CLAUDE.md, запусти VS Code.', cta:'Открыть задание', due:'срок 02.06' },
+    { kind:'homework', module:1, icon:'📝', title:'ДЗ-2: Опубликуй приложение', desc:'Включи публикацию, выбери видимость, пришли ссылку.', cta:'Открыть задание', due:'срок 05.06' },
+    { kind:'masterclass', module:1, icon:'🎥', title:'Запись МК 27.05 — основы', desc:'Полная запись первого мастер-класса. ~1ч40м.', cta:'Смотреть запись' },
+    { kind:'masterclass', module:1, icon:'🎥', title:'Запись МК 28.05 — деплой', desc:'Публикация и показ приложения клиенту. ~1ч10м.', cta:'Смотреть запись', isNew:true },
 
-    // — Программа курса (модуль 1) —
-    { cat:'course', module:1, icon:'📖', title:'Урок 1 — Что такое Claude и почему именно он', desc:'Модель в дата-центре, 3 способа обращения, сравнение с ChatGPT/Cursor/Codex.', cta:'Читать', status:'done' },
-    { cat:'course', module:1, icon:'📖', title:'Урок 2 — Воркспейс и контейнер', desc:'Как устроен твой контейнер, маунты workspace/templates/skills.', cta:'Читать', status:'done' },
-    { cat:'course', module:1, icon:'📖', title:'Урок 3 — Первый проект из шаблона', desc:'Создаём проект из _base, разбираем CLAUDE.md и протокол онбординга.', cta:'Читать', status:'next' },
-    { cat:'course', module:1, icon:'📖', title:'Урок 4 — Диалог с Claude в VS Code', desc:'Сессии, модели, /resume, /compact, работа с файлами.', cta:'Читать', status:'todo' },
-    { cat:'course', module:1, icon:'📖', title:'Урок 5 — Публикуем результат', desc:'Деплой приложения и показ ссылки клиенту.', cta:'Читать', status:'todo' },
+    // ─────── МОДУЛЬ 2 ───────
+    { kind:'material', module:2, icon:'📖', title:'Конспект: CLAUDE.md и память', desc:'Зачем нужен CLAUDE.md, как писать правила, что такое MEMORY.md.', cta:'Читать', isNew:true },
+    { kind:'homework', module:2, icon:'📝', title:'ДЗ-3: Напиши CLAUDE.md', desc:'Составь CLAUDE.md для своего проекта по чек-листу.', cta:'Открыть задание', due:'срок 09.06', isNew:true },
+    // мастер-классов модуля 2 пока нет — секция покажет «пока пусто»
 
-    // — Шпаргалки —
-    { cat:'cheatsheet', icon:'📋', title:'Шпаргалка по Claude Code', desc:'Горячие клавиши, slash-команды, Agent View, флаги CLI. Под печать на A4.', cta:'Открыть', isNew:false },
-    { cat:'cheatsheet', icon:'📝', title:'.md и CLAUDE.md — что это', desc:'Учебная мини-страница: что такое Markdown и зачем нужен CLAUDE.md.', cta:'Открыть', isNew:true },
+    // ─────── ГЛОБАЛЬНОЕ: старт ───────
+    { kind:'start', icon:'🧭', title:'Как работать с порталом', desc:'Пошагово: вход, навбар, VS Code, проект, чат с Claude, файлы, контейнер.', cta:'Открыть гайд' },
+    { kind:'start', icon:'🚀', title:'Как опубликовать приложение', desc:'Публикация, кто видит, деплой, относительные пути к ассетам.', cta:'Открыть гайд' },
 
-    // — Примеры / мини-сайты (из uroki/) —
-    { cat:'example', icon:'🧩', title:'Структура папки .claude', desc:'Учебный проект: из каких сущностей состоит .claude и за что каждая отвечает.', cta:'Смотреть · Скачать', isNew:true },
-    { cat:'example', icon:'🧩', title:'Мини-сайт «Шпаргалка .md»', desc:'Статический пример без сборки: меню, кнопки «копировать». Можно скопировать к себе.', cta:'Смотреть · Скачать', isNew:true },
-
-    // — Шаблоны —
-    { cat:'template', icon:'🪄', title:'Vibe шаблон (_base)', desc:'Каркас vibe-проекта на Node: src/, deploy, CLAUDE.md с онбордингом.', cta:'↓ .zip · CLAUDE.md', isNew:false },
-    { cat:'template', icon:'🟦', title:'PHP шаблон (Битрикс24)', desc:'Single-PHP приложение Б24: www/, REST-обвязка, deploy-скрипт.', cta:'↓ .zip · CLAUDE.md', isNew:false },
-
-    // — Ссылки —
-    { cat:'link', icon:'🤖', title:'claude.ai', desc:'Логин в основной аккаунт Claude — диалоги, проекты.', cta:'Перейти →', isNew:false },
-    { cat:'link', icon:'🧰', title:'VS Code (десктоп)', desc:'Локальная установка редактора для офлайн-работы.', cta:'Перейти →', isNew:false },
-    { cat:'link', icon:'📦', title:'Vibecode Bitrix24', desc:'Платформа деплоя и аналитики приложений Б24.', cta:'Перейти →', isNew:false },
-
-    // — Скиллы —
-    { cat:'skill', icon:'✨', title:'superpowers', desc:'Общие практики: brainstorming, planning, debugging, code-review, TDD.', cta:'github →', isNew:false },
-    { cat:'skill', icon:'🎨', title:'ui-ux-pro-max', desc:'Frontend и UI: дизайн-система, типографика, доступность, layout.', cta:'github →', isNew:false },
-
-    // — FAQ —
-    { cat:'faq', icon:'⚠', title:'«Вылетает / не пускает» — частые причины', desc:'Чаще всего это вход на dev-портал вместо vibe, или уснувший контейнер.', cta:'Открыть', isNew:false },
+    // ─────── СПРАВОЧНИК ───────
+    { kind:'cheatsheet', icon:'📋', title:'Шпаргалка по Claude Code', desc:'Горячие клавиши, slash-команды, Agent View, флаги CLI. Под печать A4.', cta:'Открыть' },
+    { kind:'cheatsheet', icon:'📝', title:'.md и CLAUDE.md — что это', desc:'Учебная мини-страница: что такое Markdown и зачем нужен CLAUDE.md.', cta:'Открыть', isNew:true },
+    { kind:'template', icon:'🪄', title:'Vibe шаблон (_base)', desc:'Каркас vibe-проекта на Node: src/, deploy, CLAUDE.md с онбордингом.', cta:'↓ .zip · CLAUDE.md' },
+    { kind:'template', icon:'🟦', title:'PHP шаблон (Битрикс24)', desc:'Single-PHP приложение Б24: www/, REST-обвязка, deploy-скрипт.', cta:'↓ .zip · CLAUDE.md' },
+    { kind:'link', icon:'🤖', title:'claude.ai', desc:'Логин в основной аккаунт Claude — диалоги, проекты.', cta:'Перейти →' },
+    { kind:'link', icon:'🧰', title:'VS Code (десктоп)', desc:'Локальная установка редактора для офлайн-работы.', cta:'Перейти →' },
+    { kind:'link', icon:'📦', title:'Vibecode Bitrix24', desc:'Платформа деплоя и аналитики приложений Б24.', cta:'Перейти →' },
+    { kind:'skill', icon:'✨', title:'superpowers', desc:'Общие практики: brainstorming, planning, debugging, code-review, TDD.', cta:'github →' },
+    { kind:'skill', icon:'🎨', title:'ui-ux-pro-max', desc:'Frontend и UI: дизайн-система, типографика, доступность, layout.', cta:'github →' },
+    { kind:'faq', icon:'⚠', title:'«Вылетает / не пускает» — почему', desc:'Чаще всего это вход на dev-портал вместо vibe или уснувший контейнер.', cta:'Открыть' },
   ];
 
-  const catMeta = (id) => CATS.find(c => c.id === id) || { icon:'•', title:id };
-  const count = (id) => M.filter(m => m.cat === id).length;
+  const byKind = (k, mod) => M.filter(m => m.kind === k && (mod == null || m.module === mod));
+  const cnt = (k, mod) => byKind(k, mod).length;
 
-  /* —— карточка (общий рендер для C и D) —— */
+  /* ── карточка ── */
   function card(m) {
     return `<div class="ms-card">
       <div class="ms-card-top">
         <span class="ms-card-ico">${m.icon}</span>
-        <span class="ms-card-type">${TYPE_LABEL[m.cat] || m.cat}</span>
+        <span class="ms-card-type">${KIND[m.kind].tag}</span>
       </div>
       <div class="ms-card-title">${m.title}</div>
       <div class="ms-card-desc">${m.desc}</div>
+      ${m.due ? `<div class="ms-card-meta">⏱ ${m.due}</div>` : ''}
       <div class="ms-card-foot">
         ${m.isNew ? '<span class="badge-new">новое</span>' : ''}
-        <span class="ms-card-cta" style="margin-left:auto">${m.cta || 'Открыть'} →</span>
+        ${m.kind === 'homework' ? '<span class="badge-due">дз</span>' : ''}
+        <span class="ms-card-cta">${m.cta || 'Открыть'} →</span>
       </div>
     </div>`;
   }
+  const grid = (items) => items.length ? `<div class="ms-grid">${items.map(card).join('')}</div>` : '<div class="empty">Пока пусто — здесь появится материал, как только добавим.</div>';
 
-  /* ════════ Вариант A — Хаб ════════ */
-  let A_active = 'start';
-  function renderA(filter) {
-    const cats = document.getElementById('A-cats');
-    cats.innerHTML = CATS.map(c =>
-      `<div class="hub-cat ${c.id===A_active?'active':''}" data-cat="${c.id}">
-        <span>${c.icon}</span><span>${c.title}</span><span class="n">${count(c.id)}</span>
-      </div>`).join('');
-    cats.querySelectorAll('.hub-cat').forEach(el =>
-      el.onclick = () => { A_active = el.dataset.cat; renderA(document.getElementById('A-search').value); });
+  /* ── сайдбар ── */
+  let active = 'mod:1';
+  function renderSide() {
+    let h = '<div class="hub-group-h">База знаний</div>';
+    h += item('start', '🚀', 'С чего начать', cnt('start'));
 
-    const q = (filter || '').trim().toLowerCase();
-    let items = M.filter(m => m.cat === A_active);
-    if (q) items = M.filter(m => (m.title+m.desc).toLowerCase().includes(q));
-    const head = q
-      ? `<div class="page-meta">ПОИСК · «${q}»</div><h1 class="page-h1">Найдено: <em>${items.length}</em></h1>`
-      : `<div class="page-meta">БАЗА ЗНАНИЙ · ${catMeta(A_active).title.toUpperCase()}</div>
-         <h1 class="page-h1">${catMeta(A_active).icon} ${catMeta(A_active).title}</h1>`;
-    document.getElementById('A-content').innerHTML =
-      head + (items.length ? `<div class="ms-grid" style="margin-top:16px">${items.map(card).join('')}</div>` : '<div class="empty">Пока пусто.</div>');
+    h += '<div class="hub-group-h">По модулям</div>';
+    MODULES.forEach(mo => {
+      const total = MOD_KINDS.reduce((s,k)=>s+cnt(k,mo.n),0);
+      h += item('mod:'+mo.n, '📦', 'Модуль '+mo.n, total, true);
+    });
+
+    h += '<div class="hub-group-h">Всё сразу</div>';
+    h += item('all:material',    '📚', 'Все материалы',      cnt('material'));
+    h += item('all:homework',    '📝', 'Все домашние задания', cnt('homework'));
+    h += item('all:masterclass', '🎥', 'Все мастер-классы',  cnt('masterclass'));
+
+    h += '<div class="hub-group-h">Справочник</div>';
+    REF_KINDS.forEach(k => h += item('ref:'+k, KIND[k].icon, KIND[k].label, cnt(k)));
+
+    document.getElementById('side').innerHTML = h;
+    document.querySelectorAll('#side .hub-item').forEach(el => el.onclick = () => { active = el.dataset.id; document.getElementById('search').value=''; render(); });
   }
-  document.getElementById('A-search').oninput = (e) => renderA(e.target.value);
+  function item(id, icon, label, n, strong) {
+    return `<div class="hub-item ${strong?'strong':''} ${active===id?'active':''}" data-id="${id}">
+      <span>${icon}</span><span>${label}</span><span class="n">${n}</span></div>`;
+  }
 
-  /* ════════ Вариант B — Курс + Справочник ════════ */
-  function renderB() {
-    // — программа курса —
-    const lessons = M.filter(m => m.cat === 'course');
-    const done = lessons.filter(l => l.status === 'done').length;
-    const pct = Math.round(done / lessons.length * 100);
-    const stMark = (s) => s==='done' ? '<span class="st done">✓</span>' : s==='next' ? '<span class="st next">▸</span>' : '<span class="st">○</span>';
-    document.getElementById('B-course').innerHTML = `
-      <div class="prog-head"><div class="page-meta">КУРС VIBECODING · ПРОГРАММА</div></div>
-      <h1 class="page-h1">Модуль 1 — <em>основы</em></h1>
-      <p class="page-lead" style="margin-bottom:6px">Последовательная программа. Проходишь по порядку — портал помнит, где ты остановился.</p>
-      <div class="prog-bar"><i style="width:${pct}%"></i></div>
-      <div class="mod open">
-        <div class="mod-h" onclick="this.parentNode.classList.toggle('open')">
-          <span class="mod-no">1</span><span class="t">Модуль 1 · Основы Claude и портала</span>
-          <span class="s">${done}/${lessons.length} пройдено</span>
-        </div>
-        <div class="mod-body">
-          ${lessons.map(l => `<div class="les">${stMark(l.status)} <span>${l.title}</span>
-            <span style="margin-left:auto;color:hsl(var(--primary))">${l.status==='next'?'продолжить →':''}</span></div>`).join('')}
-        </div>
+  /* ── контент ── */
+  function pageHead(meta, title) {
+    return `<div class="page-meta">${meta}</div><h1 class="page-h1">${title}</h1>`;
+  }
+  function kindSect(k, mod) {
+    const items = byKind(k, mod);
+    return `<div class="kind-sect">
+      <div class="kind-head">
+        <span class="ico">${KIND[k].icon}</span>
+        <span class="t">${KIND[k].label}</span>
+        <span class="n">${items.length}</span>
+        <span class="add">+ добавить</span>
       </div>
-      <div class="mod">
-        <div class="mod-h" onclick="this.parentNode.classList.toggle('open')">
-          <span class="mod-no" style="border-color:hsl(var(--border));color:hsl(var(--muted-foreground))">2</span>
-          <span class="t" style="color:hsl(var(--muted-foreground))">Модуль 2 · скоро</span>
-          <span class="s">в работе</span>
-        </div>
-      </div>`;
-
-    // — справочник (всё, кроме уроков) —
-    const ref = M.filter(m => m.cat !== 'course');
-    document.getElementById('B-ref').innerHTML = `
-      <div class="page-meta">СПРАВОЧНИК · ${ref.length} материалов</div>
-      <h1 class="page-h1">Всё <em>под рукой</em></h1>
-      <p class="page-lead">Не по порядку — заходишь, когда нужно. Инструкции, шпаргалки, примеры, шаблоны, ссылки.</p>
-      <div class="ms-chips" id="B-chips"></div>
-      <div class="ms-grid" id="B-grid"></div>`;
-    const refCats = CATS.filter(c => c.id !== 'course');
-    let bFilter = 'all';
-    const drawB = () => {
-      document.getElementById('B-chips').innerHTML =
-        `<span class="ms-chip ${bFilter==='all'?'active':''}" data-f="all">Все <span class="n">${ref.length}</span></span>` +
-        refCats.map(c => `<span class="ms-chip ${bFilter===c.id?'active':''}" data-f="${c.id}">${c.icon} ${c.title} <span class="n">${count(c.id)}</span></span>`).join('');
-      const items = bFilter==='all' ? ref : ref.filter(m => m.cat===bFilter);
-      document.getElementById('B-grid').innerHTML = items.map(card).join('');
-      document.querySelectorAll('#B-chips .ms-chip').forEach(ch => ch.onclick = () => { bFilter = ch.dataset.f; drawB(); });
-    };
-    drawB();
-  }
-  document.querySelectorAll('#B-toggle button').forEach(btn => btn.onclick = () => {
-    document.querySelectorAll('#B-toggle button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('B-course').style.display = btn.dataset.s==='course' ? '' : 'none';
-    document.getElementById('B-ref').style.display    = btn.dataset.s==='ref'    ? '' : 'none';
-  });
-
-  /* ════════ Вариант C — Каталог ════════ */
-  let C_filter = 'all', C_q = '';
-  function renderC() {
-    const chips = document.getElementById('C-chips');
-    chips.innerHTML =
-      `<span class="ms-chip ${C_filter==='all'?'active':''}" data-f="all">Все <span class="n">${M.length}</span></span>` +
-      `<span class="ms-chip ${C_filter==='new'?'active':''}" data-f="new">🆕 Новое <span class="n">${M.filter(m=>m.isNew).length}</span></span>` +
-      CATS.map(c => `<span class="ms-chip ${C_filter===c.id?'active':''}" data-f="${c.id}">${c.icon} ${c.title} <span class="n">${count(c.id)}</span></span>`).join('');
-    chips.querySelectorAll('.ms-chip').forEach(ch => ch.onclick = () => { C_filter = ch.dataset.f; renderC(); });
-
-    let items = M.slice();
-    if (C_filter === 'new') items = items.filter(m => m.isNew);
-    else if (C_filter !== 'all') items = items.filter(m => m.cat === C_filter);
-    if (C_q) items = items.filter(m => (m.title+m.desc).toLowerCase().includes(C_q));
-    document.getElementById('C-grid').innerHTML = items.length ? items.map(card).join('') : '<div class="empty">Ничего не найдено.</div>';
-  }
-  document.getElementById('C-search').oninput = (e) => { C_q = e.target.value.trim().toLowerCase(); renderC(); };
-
-  /* ════════ Вариант D — Лендинг ════════ */
-  function renderD() {
-    const tracks = [
-      { cat:'start',      big:'Начни здесь',        sub:'онбординг' },
-      { cat:'course',     big:'Программа курса',     sub:'модули и уроки' },
-      { cat:'cheatsheet', big:'Шпаргалки',           sub:'под рукой' },
-      { cat:'example',    big:'Примеры и мини-сайты', sub:'разбери код' },
-      { cat:'link',       big:'Полезные ссылки',     sub:'внешние ресурсы' },
-    ];
-    document.getElementById('D-tracks').innerHTML = tracks.map(t => {
-      const c = catMeta(t.cat);
-      return `<div class="track">
-        <span class="track-ico">${c.icon}</span>
-        <h3>${t.big}</h3>
-        <p>${t.sub}</p>
-        <span class="cnt">${count(t.cat)} материалов</span>
-        <span class="go">Открыть раздел →</span>
-      </div>`;
-    }).join('');
-    document.getElementById('D-new').innerHTML = M.filter(m => m.isNew).map(card).join('');
+      ${grid(items)}
+    </div>`;
   }
 
-  /* ════════ Переключатель концепций ════════ */
-  const NOTES = {
-    A: 'Один пункт меню <span class="menu-pill">База знаний</span> вместо двух. Слева — разделы, справа — материалы, сверху — поиск по всему сразу. Объединяет «Курс» и «Материалы». Привычно, как документация. <b>Плюс:</b> всё в одном месте. <b>Минус:</b> программу курса и справку видно одинаково — линейность курса теряется.',
-    B: 'Два пункта <span class="menu-pill">Курс</span> и <span class="menu-pill">Справочник</span>. Курс — строго по порядку, с прогрессом и «продолжить». Справочник — всё остальное карточками с фильтром. <b>Плюс:</b> чёткое разделение «учусь по программе» / «ищу справку». <b>Минус:</b> два места — надо понимать, куда идти.',
-    C: 'Один пункт <span class="menu-pill">Материалы</span>, всё — лентой карточек с чипами-фильтрами (тип, «новое») и поиском. <b>Плюс:</b> идеально масштабируется, «кинул карточку — появилась», ничего не прячется в подвкладках. <b>Минус:</b> для новичка нет явной «дороги», по которой идти.',
-    D: 'Один пункт <span class="menu-pill">Обучение</span>. Стартовая — крупные «дорожки» (Начни здесь / Программа / Шпаргалки / Примеры / Ссылки), каждая ведёт вглубь, снизу — «Недавно добавлено». <b>Плюс:</b> новичок сразу видит, куда смотреть. <b>Минус:</b> лишний клик до конкретного материала.',
-  };
-  function show(v) {
-    document.querySelectorAll('.proto-tab').forEach(t => t.classList.toggle('active', t.dataset.v === v));
-    document.querySelectorAll('.proto-variant').forEach(s => s.classList.toggle('active', s.dataset.v === v));
-    document.getElementById('proto-note').innerHTML = NOTES[v];
-    if (v==='A') renderA(); if (v==='B') renderB(); if (v==='C') renderC(); if (v==='D') renderD();
-    location.hash = v;
-  }
-  document.querySelectorAll('.proto-tab').forEach(t => t.onclick = () => show(t.dataset.v));
+  function render(q) {
+    const c = document.getElementById('content');
+    q = (q || '').trim().toLowerCase();
 
-  // init
-  renderA(); renderB(); renderC(); renderD();
-  show((location.hash || '#A').replace('#','').toUpperCase().match(/^[ABCD]$/) ? location.hash.replace('#','').toUpperCase() : 'A');
+    // поиск — поверх всего, плоской сеткой
+    if (q) {
+      const items = M.filter(m => (m.title+m.desc+(KIND[m.kind].label)).toLowerCase().includes(q));
+      c.innerHTML = pageHead('ПОИСК · «'+q+'»', 'Найдено: <em>'+items.length+'</em>') + grid(items);
+      document.querySelectorAll('#side .hub-item').forEach(el => el.classList.remove('active'));
+      return;
+    }
+
+    if (active.startsWith('mod:')) {
+      const n = +active.split(':')[1];
+      const mo = MODULES.find(m => m.n === n);
+      c.innerHTML = pageHead('БАЗА ЗНАНИЙ · МОДУЛЬ '+n, '📦 Модуль '+n+' — <em>'+mo.title+'</em>')
+        + '<p class="hint">Всё по модулю в одном месте: конспекты, домашки и записи мастер-классов. Добавляешь любой тип кнопкой <code>+ добавить</code> — он попадёт ровно сюда и заодно в сквозной вид «Всё сразу».</p>'
+        + MOD_KINDS.map(k => kindSect(k, n)).join('');
+    }
+    else if (active.startsWith('all:')) {
+      const k = active.split(':')[1];
+      let html = pageHead('БАЗА ЗНАНИЙ · СКВОЗНОЙ ВИД', KIND[k].icon+' Все '+KIND[k].label.toLowerCase())
+        + '<p class="hint">Один список со всех модулей сразу — удобно проверить, что ничего не забыто.</p>';
+      MODULES.forEach(mo => {
+        const items = byKind(k, mo.n);
+        html += `<div class="mod-sub">Модуль ${mo.n} · ${mo.title}</div>` + grid(items);
+      });
+      c.innerHTML = html;
+    }
+    else if (active.startsWith('ref:')) {
+      const k = active.split(':')[1];
+      c.innerHTML = pageHead('СПРАВОЧНИК · '+KIND[k].label.toUpperCase(), KIND[k].icon+' '+KIND[k].label) + grid(byKind(k));
+    }
+    else if (active === 'start') {
+      c.innerHTML = pageHead('БАЗА ЗНАНИЙ · СТАРТ', '🚀 С чего начать')
+        + '<p class="hint">Минимум, чтобы начать работать. Дальше — по модулям слева.</p>' + grid(byKind('start'));
+    }
+    renderSide();
+  }
+
+  document.getElementById('search').oninput = (e) => render(e.target.value);
+
+  renderSide();
+  render();
   </script>
 </body>
 </html>
