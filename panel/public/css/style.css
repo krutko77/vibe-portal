@@ -712,6 +712,18 @@ body.pc-fullscreen.has-left-chat .dashboard { display: none; }
 }
 .chat-pane-right { border-right: none; border-left: 1px solid hsl(var(--border)); }
 .chat-pane.hidden { display: none; }
+
+/* Видимость панелей чата — производная ТОЛЬКО от того же класса на body, который
+   резервирует колонку грида (.main-layout). Единственный источник истины:
+   панель видна ⟺ грид выделил под неё место. Раньше видимость держалась на
+   отдельном классе .hidden, который мог рассинхронизироваться с грид-классом
+   (has-left-chat оставался → пустая колонка слева, контент уезжал вправо —
+   тот самый баг «непропорциональных отступов»). !important — чтобы перебить
+   глобальную утилиту .hidden (display:none !important), если .hidden залип. */
+body:not(.has-left-chat)  .chat-pane-left  { display: none !important; }
+body:not(.has-right-chat) .chat-pane-right { display: none !important; }
+body.has-left-chat  .chat-pane-left  { display: flex !important; }
+body.has-right-chat .chat-pane-right { display: flex !important; }
 .chat-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 12px;
