@@ -32,17 +32,22 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
                                           ├── /api/*         JSON API
                                           └── /code/<user>/* прокси → 127.0.0.1:820X
                                                                        (контейнер vibe-<user>)
+                                          └── /<user>/<project>/* публикация (см. ниже)
 Контейнер vibe-<user>:
-  image:   vibe-workspace:dev (Debian 12 + Node 22 + code-server + claude-cli)
-  user:    student (uid 1000), no sudo, --cap-drop=ALL, --no-new-privileges
-  limits:  mem 1.5G, cpu 1.0
+  image:   vibe-workspace:dev (Debian 12 + Node 22 + code-server + claude-cli + openssh-server + procps)
+  user:    student (uid 1000), no sudo, --cap-drop=ALL, --no-new-privileges, --init (tini)
+  cmd:     vibe-entrypoint.sh — поднимает sshd (десктопный VS Code) + exec code-server
+  limits:  mem 3G, cpu 1.5
   network: vibe-net (br-vibe, 172.30.0.0/24)
   mounts:
     /data/vibe-students/<user>   → /home/student/workspace   rw
     /opt/vibe-portal/templates   → /home/student/templates   ro   (только курсовые app-*)
+    /data/config/ssh/<user>/host → /home/student/.sshd        rw   (host-key + authorized_keys)
+    /data/config/vscode-server/<user> → /home/student/.vscode-server rw (персист VS Code server)
   env:
     ANTHROPIC_BASE_URL=http://172.30.0.1:8190        ← шим
     ANTHROPIC_AUTH_TOKEN=sk-vibe-shim-placeholder    ← фейк, реальный токен у шима
+  ports наружу: 127.0.0.1:820X→8080 (code-server), 0.0.0.0:84XX→2222 (sshd, десктопный VS Code)
 ```
 
 ## Изоляция (iptables — chain VIBE-FILTER в FORWARD, VIBE-INPUT в INPUT)
@@ -129,6 +134,9 @@ systemctl restart anthropic-shim
 | ANY | `/admin-code/*` | admin | прокси в code-server проекта (127.0.0.1:8300), HTTP+WS гейт по isAdmin |
 | GET | `/api/template-download/:name` | user | zip базового шаблона (whitelist: `_base`, `_b24-single-php`) |
 | GET | `/api/template-claude/:which` | user | `CLAUDE.md` из шаблона отдельным файлом (`base`→`_base`, `b24`→`_b24-single-php`) |
+| GET | `/api/ssh-config` | user | данные подключения по SSH (десктопный VS Code): `~/.ssh/config` сниппет, deep-links; лениво провижит ключи/порт |
+| GET | `/api/ssh-key` | user | скачать личный приватный ключ (файл для `~/.ssh/`) |
+| POST | `/api/ssh-key/regenerate` | user | перевыпуск ключа (старый перестаёт пускать; host-key не меняется) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
 | GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
 | GET | `/api/transcripts/_feed` | admin | вся лента диалогов (опц. `?user=`), для `/logs.html` |
@@ -234,6 +242,39 @@ slot 1, 2, … — **отдельный процесс `code-server` в том �
 применить `docker update --memory 3072m --memory-swap 3072m --cpus 1.5 vibe-<u>`,
 новые получат при пересоздании.
 
+**Десктопный VS Code по SSH (`lib/ssh-access.js`, `workspace-image/vibe-entrypoint.sh`).**
+Ученик может работать в нативном VS Code на своём ноуте (Remote-SSH), а не в
+браузере. **sshd живёт ВНУТРИ контейнера** (от `student`, non-root, только pubkey),
+порт `2222` контейнера публикуется наружу на `0.0.0.0:84XX` (`sshPort`, аллоцируется
+рядом с code-server-портом, хранится в `users-vibe.json`). Почему внутри, а не
+шлюзом на хосте: VS Code Remote-SSH обязательно открывает порт-форвардинг к своему
+серверу, а при sshd на хосте форвардинг в namespace хоста не дотягивается до server
+VS Code в namespace контейнера — проверено, **host-gateway с VS Code не работает**.
+Внутри контейнера форвардинг остаётся в его namespace (заперт iptables: только
+шим+интернет) — безопасно.
+
+Поток: ученик в панели жмёт «💻 Десктоп VS Code» → скачивает личный ключ
+(`GET /api/ssh-key`, панель генерит ed25519, приватник НЕ монтируется в контейнер) +
+готовый `~/.ssh/config` (`GET /api/ssh-config`, с `StrictHostKeyChecking accept-new`,
+чтобы не упираться в вопрос об отпечатке) → коннектится к `vibe-<user>`. На карточке
+проекта кнопка `💻` = deep-link `vscode://vscode-remote/ssh-remote+vibe-<user>/…`.
+Перевыпуск: `POST /api/ssh-key/regenerate` (host-key/отпечаток не меняем — персист в
+`/data/config/ssh/<user>/host`).
+
+Тонкости (все проверены спайком, см. спеку/план `docs/superpowers/*/2026-06-04-desktop-vscode-ssh*`):
+- **`KexAlgorithms curve25519-sha256`** в конфиге sshd обязателен — иначе постквантовый
+  KEX виснет между OpenSSH 9.x (контейнер) и свежим macOS-клиентом 10.x.
+- **`SetEnv ANTHROPIC_BASE_URL=… ANTHROPIC_AUTH_TOKEN=… CLAUDE_CODE_DISABLE_1M_CONTEXT=1`**
+  в конфиге sshd — иначе claude-cli (и расширение) в SSH-сессии не наследуют docker-env
+  и лезут напрямую в `api.anthropic.com`. С SetEnv — идут через шим, аудит цел.
+- `--init` (tini) как PID 1 — reaping зомби (sshd форкает per-connection дети).
+- idle-reaper (`reapIdleContainers`) перед `docker stop` проверяет established-соединения
+  на `sshPort` (`ss`) — живая SSH-сессия = активность, не усыпляем.
+- code-server (браузер) остаётся параллельно. Образ: `openssh-server`+`procps` (`ps`
+  нужен VS Code server; рантайм-`apt` в контейнере невозможен из-за CapDrop=ALL).
+- Расширения desktop VS Code хранятся в `.vscode-server/extensions` (НЕ в общем volume
+  code-server) — при необходимости предустанавливать отдельно.
+
 ## Бутстрап первого admin'а
 
 ```bash
@@ -262,13 +303,15 @@ slot 1, 2, … — **отдельный процесс `code-server` в том �
 /opt/vibe-portal/
 ├── CLAUDE.md                          этот файл
 ├── .claude/settings.json              permissions для Claude
-├── workspace-image/Dockerfile         vibe-workspace:dev
+├── workspace-image/
+│   ├── Dockerfile                     vibe-workspace:dev (+ openssh-server, procps)
+│   └── vibe-entrypoint.sh             autostart sshd (curve25519+SetEnv) + code-server
 ├── shim/
 │   ├── server.js                      OAuth swap proxy
 │   └── transcript.js                  аудит диалогов (IP→ученик, SSE-парсер, JSONL)
 ├── panel/
 │   ├── server.js                      Express :3020
-│   ├── lib/{auth,students,templates,transcripts,publish,leaderboard,code-slots}.js
+│   ├── lib/{auth,students,templates,transcripts,publish,leaderboard,code-slots,ssh-access}.js
 │   └── public/{index.html,history.html,logs.html,dashboard.html,css/,js/}
 ├── scripts/
 │   ├── setup-iptables.sh              VIBE-FILTER/VIBE-INPUT chains
@@ -295,7 +338,10 @@ slot 1, 2, … — **отдельный процесс `code-server` в том �
     │     (claude-vibe.credentials.json — legacy, шим читает /root/.claude/.credentials.json)
     ├── env/vibe-panel.env             SESSION_SECRET
     ├── sessions-vibe/                 session-file-store
-    └── transcripts/<user>/<date>.jsonl  аудит диалогов (пишет шим, читает панель)
+    ├── transcripts/<user>/<date>.jsonl  аудит диалогов (пишет шим, читает панель)
+    ├── ssh/<user>/                    SSH-доступ ученика: id_ed25519 (приватник, для скачивания),
+    │     └── host/                    монтируется в контейнер → .sshd: authorized_keys + host-key
+    └── vscode-server/<user>/          персист VS Code server (десктопный VS Code по SSH)
 ```
 
 ## Откуда обновляются шаблоны
@@ -324,7 +370,9 @@ fieldsmap24, parser1c, pult24, quality24, support24, timepay24.
 | 3020 (127.0.0.1) | vibe-panel |
 | 8190 (0.0.0.0) | anthropic-shim (фильтр через iptables на 172.30.0.0/24 + 127/8) |
 | 8200-8299 (127.0.0.1) | code-server'ы контейнеров учеников (host-binding слота 0) |
+| 8400-8499 (0.0.0.0) | sshd контейнеров учеников (десктопный VS Code по SSH, `sshPort`) |
 | 8080+slot (в контейнере) | code-server'ы слотов (multi-window под одной учёткой, vibe-net) |
+| 2222 (в контейнере) | sshd ученика (публикуется на 0.0.0.0:84XX) |
 | 8300 (127.0.0.1) | admin code-server (root проекта), прокси `/admin-code/` (только admin) |
 | 3001-3099 (в контейнере) | приложения учеников (доступ через панель, наружу не торчат) |
 
