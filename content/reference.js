@@ -15,6 +15,7 @@ window.KB_REFERENCE = [
   { id:'claude-folder', group:'reference', kind:'example',    icon:'🧩', sub:'claude-folder', title:'Структура папки .claude',     desc:'Из чего состоит .claude и за что отвечает.' },
   { id:'templates-dl',  group:'reference', kind:'template',   icon:'📦', sub:'templates-dl',  title:'Шаблоны проектов',            desc:'Скачать _base и _b24-single-php.' },
   { id:'skills',        group:'reference', kind:'skill',      icon:'✨', sub:'skills',        title:'Установленные скиллы',        desc:'superpowers, ui-ux-pro-max, claude-memory.' },
-  { id:'links',         group:'reference', kind:'link',       icon:'🔗', sub:'links',         title:'Полезные ссылки',             desc:'claude.ai, VS Code, Vibecode и альтернативы.' },
+  { id:'software',      group:'reference', kind:'software',   icon:'💿', sub:'software',      title:'Полезный софт',               desc:'Редактор, AI-альтернативы, голосовой ввод, скриншоты, буфер обмена.' },
+  { id:'links',         group:'reference', kind:'link',       icon:'🔗', sub:'links',         title:'Полезные ссылки',             desc:'claude.ai, Vibecode и документация.' },
   { id:'faq',           group:'reference', kind:'faq',        icon:'⚠',  sub:'faq',           title:'FAQ — частые проблемы',       desc:'«Вылетает / не пускает» и другое.' },
 ];
