@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Прото · База знаний — 4 стиля — Vibe</title>
+<link rel="icon" type="image/png" href="/KG_fi.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet">
+<style>
+  /* ════════════ БАЗА + ПЕРЕКЛЮЧАТЕЛЬ ════════════ */
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:#0e0e12;color:#fff;font-family:'DM Sans',sans-serif;padding-top:54px}
+  img{max-width:100%;display:block}
+  a{text-decoration:none;color:inherit}
+  .proto-bar{position:fixed;top:0;left:0;right:0;height:54px;z-index:1000;display:flex;align-items:center;gap:16px;
+    padding:0 18px;background:rgba(14,14,18,.86);backdrop-filter:blur(14px);border-bottom:1px solid #26262f;font-family:'IBM Plex Mono',monospace}
+  .proto-bar b{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:#9aa0b0;white-space:nowrap}
+  .proto-tabs{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+  .proto-tabs a{display:flex;flex-direction:column;line-height:1.15;padding:6px 12px;border:1px solid #2e2e3a;border-radius:9px;
+    font-size:11px;color:#c7ccd8;transition:.16s;background:#16161d}
+  .proto-tabs a span{font-size:9px;color:#7a8090;letter-spacing:.04em}
+  .proto-tabs a:hover{border-color:#4f46e5;color:#fff;transform:translateY(-1px)}
+  .proto-sec{scroll-margin-top:54px;position:relative}
+  .proto-flag{position:absolute;top:14px;left:14px;z-index:50;font-family:'IBM Plex Mono',monospace;font-size:10px;
+    letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(6px)}
+
+  /* ═══ A · CIRCULATE (светлый каталог, индиго + лайм) ═══ */
+  .va{--ink:#1f2433;--mut:#828aa0;--line:#e9edf4;--bg2:#f5f8fd;--indigo:#4f46e5;--lime:#b9f23f;--lime-d:#a3dd24;--star:#f6b500;
+    background:#fff;color:var(--ink);font-family:'Plus Jakarta Sans',sans-serif;padding:0 0 70px}
+  .va .av-nav{display:flex;align-items:center;gap:30px;padding:20px 46px;border-bottom:1px solid var(--line)}
+  .av-brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:-.02em}
+  .av-mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--lime),#7fd60d);display:grid;place-items:center;color:#1f2433;font-weight:800}
+  .av-menu{display:flex;gap:26px;font-weight:600;font-size:14px;color:var(--mut)}
+  .av-menu a.on{color:var(--indigo)}
+  .av-right{margin-left:auto;display:flex;align-items:center;gap:16px;color:var(--mut);font-weight:600;font-size:13px}
+  .av-ava{width:34px;height:34px;border-radius:50%;background:#dfe4f3;box-shadow:0 0 0 1px var(--line)}
+  .va .av-wrap{display:grid;grid-template-columns:230px 1fr;gap:34px;padding:34px 46px 0}
+  .av-h1{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;margin:0 0 6px}
+  .av-h1 h1{font-size:30px;font-weight:800;color:var(--indigo);margin:0;letter-spacing:-.02em}
+  .av-sort{font-size:13px;color:var(--mut);font-weight:600}
+  .av-side{align-self:start;position:sticky;top:70px}
+  .av-side h4{font-size:15px;font-weight:800;margin:22px 0 12px}
+  .av-side h4:first-child{margin-top:6px}
+  .av-chk{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);margin:9px 0;font-weight:500;cursor:pointer}
+  .av-box{width:18px;height:18px;border-radius:5px;border:2px solid #cfd6e6;display:grid;place-items:center;flex:none}
+  .av-box.c{background:var(--indigo);border-color:var(--indigo)}
+  .av-box.c::after{content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(0,-1px)}
+  .av-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .av-card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;transition:.18s;display:flex;flex-direction:column}
+  .av-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px -18px rgba(31,36,51,.32);border-color:#dfe5f2}
+  .av-thumb{height:120px;position:relative;overflow:hidden}
+  .av-thumb .g{position:absolute;inset:0}
+  .av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;opacity:.85}
+  .av-tag{position:absolute;top:10px;left:10px;font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:999px;background:#fff;color:var(--indigo);box-shadow:0 2px 8px rgba(31,36,51,.1)}
+  .av-body{padding:13px 15px 15px;display:flex;flex-direction:column;flex:1}
+  .av-body h3{font-size:14.5px;font-weight:700;margin:0 0 8px;line-height:1.35}
+  .av-stars{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mut);font-weight:600}
+  .av-stars b{color:var(--star);letter-spacing:1px}
+  .av-meta{font-size:12px;color:var(--mut);font-weight:600;margin:8px 0 12px}
+  .av-meta.due{color:#e8632f}
+  .av-cta{margin-top:auto;border:none;border-radius:10px;padding:11px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;color:#fff;background:var(--indigo);transition:.15s}
+  .av-cta:hover{filter:brightness(1.07)}
+  .av-cta.lime{background:linear-gradient(180deg,var(--lime),var(--lime-d));color:#1f2433;box-shadow:0 6px 16px -6px rgba(163,221,36,.7)}
+
+  /* ═══ B · INCLASS (тёмный фиолетовый лендинг) ═══ */
+  .vb{--txt:#f4eeff;--mut:#b7a6db;--vi:#8b5cf6;--vi2:#a855f7;--pink:#ec4899;
+    background:radial-gradient(120% 80% at 75% -10%,#3a1d6e 0%,#1c0c39 45%,#150828 100%);color:var(--txt);font-family:'Satoshi',sans-serif;overflow:hidden}
+  .vb ::selection{background:var(--pink);color:#fff}
+  .bv-nav{display:flex;align-items:center;gap:34px;padding:24px 54px}
+  .bv-brand{display:flex;align-items:center;gap:10px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:23px}
+  .bv-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--vi2),var(--pink));display:grid;place-items:center;font-size:15px}
+  .bv-menu{display:flex;gap:28px;font-weight:500;font-size:15px;color:var(--mut)}
+  .bv-menu a.on,.bv-menu a:hover{color:#fff}
+  .bv-actions{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .bv-login{font-weight:600;font-size:15px}
+  .bv-signup{padding:11px 24px;border-radius:999px;border:1px solid rgba(255,255,255,.35);font-weight:600;font-size:14px}
+  .bv-signup:hover{background:#fff;color:#1c0c39}
+  .bv-hero{text-align:center;padding:54px 54px 28px}
+  .bv-hero h1{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(38px,6vw,70px);line-height:1.02;margin:0 auto 18px;max-width:15ch;letter-spacing:-.02em}
+  .bv-hero h1 em{font-style:normal;background:linear-gradient(105deg,var(--vi2),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .bv-hero p{color:var(--mut);font-size:17px;max-width:56ch;margin:0 auto 26px;line-height:1.6}
+  .bv-btns{display:flex;gap:14px;justify-content:center;margin-bottom:44px}
+  .bv-b1{padding:14px 30px;border-radius:999px;background:linear-gradient(100deg,var(--vi2),var(--vi));font-weight:700;font-size:15px;box-shadow:0 14px 38px -10px rgba(139,92,246,.7)}
+  .bv-b1:hover{transform:translateY(-2px)}
+  .bv-b2{padding:14px 26px;border-radius:999px;border:1px solid rgba(255,255,255,.28);font-weight:600;font-size:15px;display:flex;align-items:center;gap:9px}
+  .bv-strip{display:grid;grid-template-columns:1.5fr 1fr 1.3fr 1fr;gap:14px;max-width:1080px;margin:0 auto;padding:0 54px}
+  .bv-tile{border-radius:20px;padding:22px;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1)}
+  .bv-tile.stat{background:rgba(255,255,255,.05);justify-content:flex-start}
+  .bv-tile .num{font-family:'Clash Display',sans-serif;font-size:40px;font-weight:700;line-height:1}
+  .bv-tile small{color:var(--mut);font-size:12.5px;margin-top:8px;line-height:1.4}
+  .bv-tile.img{padding:0;overflow:hidden;background:linear-gradient(135deg,#7c3aed,#ec4899)}
+  .bv-tile.img .ph{flex:1;display:grid;place-items:center;font-size:40px}
+  .bv-tile.feat .ar{font-size:22px;margin-bottom:10px}
+  .bv-tile.feat b{font-weight:700;font-size:15px}
+  .bv-dash{max-width:1080px;margin:46px auto 0;padding:0 54px}
+  .bv-dashcard{background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.13);border-radius:22px;padding:20px 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .bv-stat2{background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:15px}
+  .bv-stat2 .k{font-size:11.5px;color:var(--mut)}
+  .bv-stat2 .v{font-family:'Clash Display',sans-serif;font-size:24px;font-weight:600;margin-top:6px}
+  .bv-stat2 .v small{font-size:12px;color:var(--vi2);font-weight:400}
+  .bv-foot{text-align:center;color:var(--mut);font-size:13px;padding:40px 0 50px}
+
+  /* ═══ C · DASHBOARD (мягкий сине-фиолетовый) ═══ */
+  .vc{--bg:#e7ebfb;--navy:#1c2a72;--blue:#4256e3;--blue2:#6b7cf2;--txt:#222a4a;--mut:#8b91ae;--soft:#eef1ff;--card:#fff;
+    background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--txt);padding:30px}
+  .cv-shell{background:#f3f5ff;border-radius:30px;display:grid;grid-template-columns:92px 1fr;overflow:hidden;box-shadow:0 40px 90px -50px rgba(28,42,114,.5);min-height:660px}
+  .cv-rail{background:var(--navy);padding:26px 0;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .cv-logo{width:42px;height:42px;border-radius:13px;background:rgba(255,255,255,.13);display:grid;place-items:center;font-size:19px;margin-bottom:16px}
+  .cv-ic{width:54px;padding:8px 0;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#aeb6e8;font-size:9px;cursor:pointer;text-align:center}
+  .cv-ic .gl{font-size:18px}
+  .cv-ic.on{background:rgba(255,255,255,.14);color:#fff}
+  .cv-ic:hover{color:#fff}
+  .cv-main{padding:26px 30px}
+  .cv-top{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .cv-date{font-size:20px;font-weight:700}.cv-date span{color:var(--mut);font-weight:500}
+  .cv-arrow{width:34px;height:34px;border-radius:50%;background:#dfe4fb;display:grid;place-items:center;color:var(--navy);font-size:14px}
+  .cv-search{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .cv-pill{background:var(--blue);color:#fff;border-radius:999px;padding:10px 16px;font-weight:700;font-size:13px;display:flex;gap:8px;align-items:center}
+  .cv-user{display:flex;align-items:center;gap:9px;font-weight:600;font-size:13px}
+  .cv-uava{width:34px;height:34px;border-radius:50%;background:#cdd5f7}
+  .cv-cols{display:grid;grid-template-columns:1.6fr 1fr;gap:28px}
+  .cv-h2{font-size:17px;font-weight:700;margin:0 0 14px}
+  .cv-classes{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:26px}
+  .cv-cl{border-radius:18px;padding:15px;color:#fff;min-height:120px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(160deg,var(--blue2),var(--blue))}
+  .cv-cl:nth-child(1){background:linear-gradient(160deg,#2b3a96,#1c2a72)}
+  .cv-cl:nth-child(3){background:linear-gradient(160deg,#7c8bf5,#5566e8)}
+  .cv-cl .nm{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .cv-cl .mt{font-size:11px;opacity:.88;display:flex;justify-content:space-between}
+  .cv-add{border-radius:18px;border:2px dashed #c2c9ee;display:grid;place-items:center;text-align:center;color:var(--mut);font-size:12px;font-weight:600}
+  .cv-list .row{background:var(--card);border-radius:16px;padding:13px 15px;display:flex;align-items:center;gap:13px;margin-bottom:11px;box-shadow:0 10px 24px -18px rgba(28,42,114,.5)}
+  .cv-list .row.hl{background:var(--blue);color:#fff}
+  .cv-ricon{width:42px;height:42px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:18px;flex:none}
+  .cv-list .row.hl .cv-ricon{background:rgba(255,255,255,.2)}
+  .cv-rt b{display:block;font-size:13.5px;font-weight:700}
+  .cv-rt small{font-size:12px;color:var(--mut)}
+  .cv-list .row.hl small{color:rgba(255,255,255,.82)}
+  .cv-sched .slot{display:flex;gap:12px;margin-bottom:10px;align-items:flex-start}
+  .cv-time{font-size:11px;color:var(--mut);width:46px;padding-top:14px;flex:none;font-weight:600}
+  .cv-block{flex:1;background:var(--card);border-radius:14px;padding:12px 15px;box-shadow:0 8px 20px -16px rgba(28,42,114,.5)}
+  .cv-block.now{background:var(--blue);color:#fff}
+  .cv-block b{font-size:13.5px;font-weight:700;display:flex;justify-content:space-between}
+  .cv-block small{font-size:11.5px;color:var(--mut)}
+  .cv-block.now small{color:rgba(255,255,255,.82)}
+  .cv-start{margin-top:9px;border:1px solid rgba(255,255,255,.6);border-radius:9px;padding:7px;text-align:center;font-size:11.5px;font-weight:600}
+
+  /* ═══ D · МОЙ — редакционный минимал (paper / ink / terracotta) ═══ */
+  .vd{--paper:#f8f5ef;--paper2:#efe9dd;--ink:#1a1815;--mut:#736d61;--line:#e0d9ca;--clay:#cf5a33;
+    background:#f8f5ef;color:var(--ink);font-family:'Hanken Grotesk',sans-serif;padding:0 0 80px}
+  .dv-nav{display:flex;align-items:center;gap:30px;padding:26px 60px;border-bottom:1px solid var(--line)}
+  .dv-brand{font-family:'Fraunces',serif;font-weight:600;font-size:23px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .dv-dot{width:11px;height:11px;border-radius:50%;background:var(--clay)}
+  .dv-menu{display:flex;gap:30px;margin-left:18px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut);text-transform:uppercase}
+  .dv-menu a.on{color:var(--ink);border-bottom:2px solid var(--clay);padding-bottom:3px}
+  .dv-right{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut);display:flex;gap:18px;align-items:center}
+  .dv-ava{width:32px;height:32px;border-radius:50%;background:var(--paper2);border:1px solid var(--line)}
+  .dv-head{padding:56px 60px 30px;display:grid;grid-template-columns:1fr auto;align-items:end;gap:30px;border-bottom:1px solid var(--line)}
+  .dv-kick{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--clay);margin-bottom:16px}
+  .dv-head h1{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(44px,7vw,82px);line-height:.98;margin:0;letter-spacing:-.025em}
+  .dv-head h1 em{font-style:italic;color:var(--clay)}
+  .dv-head p{font-size:15px;color:var(--mut);max-width:42ch;line-height:1.6;margin:0}
+  .dv-wrap{display:grid;grid-template-columns:200px 1fr;gap:50px;padding:34px 60px 0}
+  .dv-idx{align-self:start;position:sticky;top:74px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut)}
+  .dv-idx .lab{letter-spacing:.18em;text-transform:uppercase;font-size:10px;color:var(--ink);margin-bottom:14px}
+  .dv-idx a{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);color:var(--mut)}
+  .dv-idx a:hover{color:var(--clay)}.dv-idx a b{color:var(--ink);font-weight:500}
+  .dv-rows{border-top:1px solid var(--ink)}
+  .dv-row{display:grid;grid-template-columns:54px 1fr auto;gap:26px;align-items:center;padding:24px 4px;border-bottom:1px solid var(--line);transition:.18s;cursor:pointer}
+  .dv-row:hover{background:var(--paper2);padding-left:14px;padding-right:14px}
+  .dv-no{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--clay)}
+  .dv-rt h3{font-family:'Fraunces',serif;font-weight:500;font-size:23px;margin:0 0 5px;letter-spacing:-.01em}
+  .dv-rt p{font-size:13.5px;color:var(--mut);margin:0;max-width:62ch;line-height:1.5}
+  .dv-rt .badge{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:7px;display:inline-block}
+  .dv-rt .badge.due{color:var(--clay)}
+  .dv-arrow{font-size:22px;color:var(--ink);transition:.18s}
+  .dv-row:hover .dv-arrow{color:var(--clay);transform:translate(4px,-4px)}
+
+  @media(max-width:900px){
+    .va .av-wrap,.dv-wrap{grid-template-columns:1fr}
+    .av-side,.dv-idx{display:none}
+    .av-grid{grid-template-columns:repeat(2,1fr)}
+    .bv-strip,.bv-dashcard{grid-template-columns:1fr 1fr}
+    .cv-shell{grid-template-columns:1fr}.cv-rail{flex-direction:row;flex-wrap:wrap}
+    .cv-cols,.cv-classes{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <b>Vibe · база знаний → 4 стиля</b>
+  <div class="proto-tabs">
+    <a href="#A">A · Circulate<span>светлый каталог</span></a>
+    <a href="#B">B · Inclass<span>тёмный лендинг</span></a>
+    <a href="#C">C · Dashboard<span>дашборд</span></a>
+    <a href="#D">D · мой<span>редакц. минимал</span></a>
+  </div>
+</div>
+
+<!-- ═══════════════ A · CIRCULATE ═══════════════ -->
+<section class="proto-sec va" id="A">
+  <div class="proto-flag">A · Circulate</div>
+  <nav class="av-nav">
+    <div class="av-brand"><span class="av-mark">V</span>Vibe</div>
+    <div class="av-menu"><a>Дашборд</a><a>Курс</a><a class="on">База знаний</a><a>Проекты</a></div>
+    <div class="av-right"><span>UA · ENG</span><span>🔔</span><div class="av-ava"></div></div>
+  </nav>
+  <div class="av-wrap">
+    <div class="av-h1"><h1>База знаний</h1><div class="av-sort">сначала новые ⌄</div></div>
+    <aside class="av-side">
+      <h4>Модуль</h4>
+      <label class="av-chk"><span class="av-box c"></span>Модуль 1</label>
+      <label class="av-chk"><span class="av-box c"></span>Модуль 2</label>
+      <h4>Тип</h4>
+      <label class="av-chk"><span class="av-box c"></span>Материалы</label>
+      <label class="av-chk"><span class="av-box c"></span>Домашки</label>
+      <label class="av-chk"><span class="av-box"></span>Мастер-классы</label>
+      <label class="av-chk"><span class="av-box"></span>Справочник</label>
+      <h4>Статус</h4>
+      <label class="av-chk"><span class="av-box"></span>Новое</label>
+      <label class="av-chk"><span class="av-box"></span>С дедлайном</label>
+    </aside>
+    <div class="av-grid">
+      <article class="av-card"><div class="av-thumb"><div class="g" style="background:linear-gradient(135deg,#eef0ff,#dfe4ff)"></div><div class="av-emoji">📖</div><span class="av-tag">Материал</span></div>
+        <div class="av-body"><h3>Конспект: Что такое Claude</h3><div class="av-stars"><b>★★★★★</b> (132)</div><div class="av-meta">Модуль 1 · 8 мин</div><button class="av-cta lime">Читать</button></div></article>
+      <article class="av-card"><div class="av-thumb"><div class="g" style="background:linear-gradient(135deg,#fdeaf4,#f8d6e8)"></div><div class="av-emoji">📝</div><span class="av-tag" style="color:#e8632f">Домашка</span></div>
+        <div class="av-body"><h3>ДЗ-1: Проект из шаблона</h3><div class="av-stars"><b>★★★★☆</b> (54)</div><div class="av-meta due">⏱ срок 02.06 · Модуль 1</div><button class="av-cta">Открыть задание</button></div></article>
+      <article class="av-card"><div class="av-thumb"><div class="g" style="background:linear-gradient(135deg,#1c2440,#34406e)"></div><div class="av-emoji" style="opacity:1">🎥</div><span class="av-tag">Запись</span></div>
+        <div class="av-body"><h3>Запись МК 28.05 — деплой</h3><div class="av-stars"><b>★★★★★</b> (41)</div><div class="av-meta">Модуль 1 · ~1ч10м</div><button class="av-cta">Смотреть</button></div></article>
+      <article class="av-card"><div class="av-thumb"><div class="g" style="background:linear-gradient(135deg,#fff3e8,#ffe6cf)"></div><div class="av-emoji">📖</div><span class="av-tag">Материал</span></div>
+        <div class="av-body"><h3>Конспект: CLAUDE.md и память</h3><div class="av-stars"><b>★★★★★</b> (28)</div><div class="av-meta">Модуль 2 · новое</div><button class="av-cta lime">Читать</button></div></article>
+      <article class="av-card"><div class="av-thumb"><div class="g" style="background:linear-gradient(135deg,#fdeaf4,#f8d6e8)"></div><div class="av-emoji">📝</div><span class="av-tag" style="color:#e8632f">Домашка</span></div>
+        <div class="av-body"><h3>ДЗ-3: Напиши CLAUDE.md</h3><div class="av-stars"><b>★★★★☆</b> (12)</div><div class="av-meta due">⏱ срок 09.06 · Модуль 2</div><button class="av-cta">Открыть задание</button></div></article>
+      <article class="av-card"><div class="av-thumb"><div class="g" style="background:linear-gradient(135deg,#e8fbf1,#cdf3e0)"></div><div class="av-emoji">📋</div><span class="av-tag">Справочник</span></div>
+        <div class="av-body"><h3>Шпаргалка по Claude Code</h3><div class="av-stars"><b>★★★★★</b> (210)</div><div class="av-meta">горячие клавиши · slash</div><button class="av-cta">Открыть</button></div></article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ B · INCLASS ═══════════════ -->
+<section class="proto-sec vb" id="B">
+  <div class="proto-flag">B · Inclass</div>
+  <nav class="bv-nav">
+    <div class="bv-brand"><span class="bv-mark">✦</span>Vibe</div>
+    <div class="bv-menu"><a class="on">Главная</a><a>База знаний</a><a>Курс</a><a>Проекты</a></div>
+    <div class="bv-actions"><a class="bv-login">Войти</a><a class="bv-signup">Начать</a></div>
+  </nav>
+  <div class="bv-hero">
+    <h1>База знаний курса <em>Vibecoding</em></h1>
+    <p>Конспекты модулей, домашки с дедлайнами и записи мастер-классов — в одном месте. Плюс справочник: шпаргалки, шаблоны, ссылки и FAQ.</p>
+    <div class="bv-btns"><a class="bv-b1">Открыть базу знаний →</a><a class="bv-b2">▶ Как устроено</a></div>
+  </div>
+  <div class="bv-strip">
+    <div class="bv-tile feat"><div class="ar">→</div><b>Конспекты<br>по модулям</b><small style="color:var(--mut);margin-top:8px">Сжатая теория к каждому уроку</small></div>
+    <div class="bv-tile stat"><div class="num">2</div><small>модуля с материалами и домашками</small></div>
+    <div class="bv-tile img"><div class="ph">🎥</div></div>
+    <div class="bv-tile stat"><div class="num">3</div><small>домашних задания с дедлайнами</small></div>
+  </div>
+  <div class="bv-dash">
+    <div class="bv-dashcard">
+      <div class="bv-stat2"><div class="k">Конспекты</div><div class="v">3 <small>темы</small></div></div>
+      <div class="bv-stat2"><div class="k">Домашки</div><div class="v">3 <small>с дедлайном</small></div></div>
+      <div class="bv-stat2"><div class="k">Записи МК</div><div class="v">2 <small>видео</small></div></div>
+      <div class="bv-stat2"><div class="k">Справочник</div><div class="v">9 <small>карточек</small></div></div>
+    </div>
+  </div>
+  <div class="bv-foot">Прото-лендинг · в духе референса Inclass · контент — реальный хаб «База знаний»</div>
+</section>
+
+<!-- ═══════════════ C · DASHBOARD ═══════════════ -->
+<section class="proto-sec vc" id="C">
+  <div class="proto-flag">C · Dashboard</div>
+  <div class="cv-shell">
+    <div class="cv-rail">
+      <div class="cv-logo">🎓</div>
+      <div class="cv-ic on"><span class="gl">◴</span>Старт</div>
+      <div class="cv-ic"><span class="gl">📦</span>Модули</div>
+      <div class="cv-ic"><span class="gl">📚</span>Материалы</div>
+      <div class="cv-ic"><span class="gl">📝</span>Домашки</div>
+      <div class="cv-ic"><span class="gl">🎥</span>Записи</div>
+      <div class="cv-ic"><span class="gl">📋</span>Справка</div>
+    </div>
+    <div class="cv-main">
+      <div class="cv-top">
+        <div class="cv-arrow">‹</div>
+        <div class="cv-date">База знаний · <span>сегодня 4 июня</span></div>
+        <div class="cv-arrow">›</div>
+        <div class="cv-search"><div class="cv-pill">🔎 Поиск материалов</div><div class="cv-user"><div class="cv-uava"></div>Студент</div></div>
+      </div>
+      <div class="cv-cols">
+        <div>
+          <h2 class="cv-h2">Разделы базы знаний</h2>
+          <div class="cv-classes">
+            <div class="cv-cl"><div class="nm">Модуль 1</div><div class="mt"><span>7 материалов</span><span>2 дз</span></div></div>
+            <div class="cv-cl"><div class="nm">Модуль 2</div><div class="mt"><span>1 конспект</span><span>1 дз</span></div></div>
+            <div class="cv-cl"><div class="nm">Справочник</div><div class="mt"><span>шпаргалки</span><span>9</span></div></div>
+            <div class="cv-add">＋<br>Добавить</div>
+          </div>
+          <h2 class="cv-h2">Новое и рекомендуемое</h2>
+          <div class="cv-list">
+            <div class="row hl"><div class="cv-ricon">📖</div><div class="cv-rt"><b>Конспект: CLAUDE.md и память</b><small>модуль 2 · добавлено сегодня</small></div></div>
+            <div class="row"><div class="cv-ricon">🎥</div><div class="cv-rt"><b>Запись МК 28.05 — деплой</b><small>модуль 1 · ~1ч10м</small></div></div>
+            <div class="row"><div class="cv-ricon">🖼</div><div class="cv-rt"><b>Слайды модуля 1</b><small>PDF под печать</small></div></div>
+          </div>
+        </div>
+        <div>
+          <h2 class="cv-h2">Ближайшие дедлайны</h2>
+          <div class="cv-sched">
+            <div class="slot"><div class="cv-time">02.06</div><div class="cv-block"><b>ДЗ-1</b><small>Проект из шаблона · модуль 1</small></div></div>
+            <div class="slot"><div class="cv-time">05.06</div><div class="cv-block now"><b>ДЗ-2 <span>скоро</span></b><small>Опубликуй приложение</small><div class="cv-start">▶ Открыть задание</div></div></div>
+            <div class="slot"><div class="cv-time">09.06</div><div class="cv-block"><b>ДЗ-3</b><small>Напиши CLAUDE.md · модуль 2</small></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ D · МОЙ ═══════════════ -->
+<section class="proto-sec vd" id="D">
+  <div class="proto-flag" style="background:rgba(207,90,51,.92)">D · мой вариант</div>
+  <nav class="dv-nav">
+    <div class="dv-brand"><span class="dv-dot"></span>Vibe</div>
+    <div class="dv-menu"><a>Дашборд</a><a>Курс</a><a class="on">База знаний</a><a>Проекты</a></div>
+    <div class="dv-right"><span>UA · ENG</span><div class="dv-ava"></div></div>
+  </nav>
+  <header class="dv-head">
+    <div>
+      <div class="dv-kick">Vibe — Kiselev Group · база знаний</div>
+      <h1>Материалы<br>и <em>домашки</em></h1>
+    </div>
+    <p>Конспекты, задания и записи мастер-классов по модулям. Справочник — шпаргалки, шаблоны и ссылки. Кратко, по делу, без воды.</p>
+  </header>
+  <div class="dv-wrap">
+    <aside class="dv-idx">
+      <div class="lab">Разделы</div>
+      <a href="#D"><b>Модуль 1</b><span>07</span></a>
+      <a href="#D"><b>Модуль 2</b><span>02</span></a>
+      <a href="#D"><b>Справочник</b><span>09</span></a>
+      <a href="#D"><b>С чего начать</b><span>→</span></a>
+    </aside>
+    <div class="dv-rows">
+      <a class="dv-row" href="#D"><div class="dv-no">01</div><div class="dv-rt"><span class="badge">Материал · модуль 1</span><h3>Конспект: Что такое Claude</h3><p>Модель в дата-центре, три способа обращения, сравнение с ChatGPT, Cursor и Codex.</p></div><div class="dv-arrow">↗</div></a>
+      <a class="dv-row" href="#D"><div class="dv-no">02</div><div class="dv-rt"><span class="badge due">Домашка · срок 02.06</span><h3>ДЗ-1 · Проект из шаблона</h3><p>Создай проект из _base, разбери CLAUDE.md, запусти VS Code и пришли результат.</p></div><div class="dv-arrow">↗</div></a>
+      <a class="dv-row" href="#D"><div class="dv-no">03</div><div class="dv-rt"><span class="badge">Запись · модуль 1</span><h3>Мастер-класс 28.05 — деплой</h3><p>Публикация приложения и показ результата клиенту. Полная запись, ~1ч10м.</p></div><div class="dv-arrow">↗</div></a>
+      <a class="dv-row" href="#D"><div class="dv-no">04</div><div class="dv-rt"><span class="badge">Материал · модуль 2 · новое</span><h3>Конспект: CLAUDE.md и память</h3><p>Зачем нужен CLAUDE.md, как писать правила и что такое MEMORY.md.</p></div><div class="dv-arrow">↗</div></a>
+      <a class="dv-row" href="#D"><div class="dv-no">05</div><div class="dv-rt"><span class="badge due">Домашка · срок 09.06</span><h3>ДЗ-3 · Напиши CLAUDE.md</h3><p>Составь CLAUDE.md для своего проекта по чек-листу из конспекта.</p></div><div class="dv-arrow">↗</div></a>
+      <a class="dv-row" href="#D"><div class="dv-no">06</div><div class="dv-rt"><span class="badge">Справочник</span><h3>Шпаргалка по Claude Code</h3><p>Горячие клавиши, slash-команды, Agent View и флаги CLI — для печати на A4.</p></div><div class="dv-arrow">↗</div></a>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
