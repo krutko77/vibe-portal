@@ -2166,3 +2166,17 @@ html:not(.dark) .course-placeholder-desc a:hover {
   margin-top: 26px; padding-top: 14px; border-top: 1px solid hsl(var(--border));
   font-size: 12px; color: hsl(var(--muted-foreground));
 }
+
+/* ───────────────────────── База знаний (хаб) ───────────────────────── */
+.kb-layout { display: grid; grid-template-columns: 234px 1fr; gap: 20px; align-items: start; }
+.kb-side { border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1)); position: sticky; top: 70px; }
+.kb-group-h { padding: 11px 13px 6px; font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: hsl(var(--muted-foreground)); opacity: .8; }
+.kb-group-h:not(:first-child) { border-top: 1px solid hsl(var(--border)); margin-top: 4px; }
+.kb-item { display: flex; align-items: center; gap: 9px; padding: 8px 13px; cursor: pointer; font-size: 13px; color: hsl(var(--muted-foreground)); border-left: 2px solid transparent; }
+.kb-item:hover { background: hsl(var(--smui-surface-2)); }
+.kb-item.active { color: hsl(var(--foreground)); border-left-color: hsl(var(--primary)); background: hsl(var(--accent)); }
+.kb-item .n { margin-left: auto; font-size: 11px; opacity: .55; }
+.kb-search { display: flex; align-items: center; gap: 10px; border: 1px solid hsl(var(--border)); background: hsl(var(--smui-surface-1)); padding: 9px 13px; margin-bottom: 16px; }
+.kb-search input { flex: 1; background: transparent; border: none; outline: none; color: hsl(var(--foreground)); font-family: var(--font-mono); font-size: 13px; }
+.kb-search .k { font-size: 11px; color: hsl(var(--muted-foreground)); border: 1px solid hsl(var(--border)); padding: 1px 6px; }
+@media (max-width: 760px) { .kb-layout { grid-template-columns: 1fr; } .kb-side { position: static; } }
