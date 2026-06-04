@@ -47,6 +47,34 @@ async function getJsonWithRetry(url, tries = 3) {
 const openModal  = (id) => $('#' + id).classList.remove('hidden');
 const closeModal = (id) => $('#' + id).classList.add('hidden');
 
+// ── SSH-доступ (десктопный VS Code) ──────────────────────────
+let _sshCfg = null;
+async function loadSshCfg(force) {
+  if (!_sshCfg || force) _sshCfg = await api('/api/ssh-config');
+  return _sshCfg;
+}
+async function openSshModal() {
+  try {
+    const cfg = await loadSshCfg();
+    $('#ssh-config-text').value = cfg.configSnippet;
+    openModal('modal-ssh');
+  } catch (e) { alert('SSH: ' + e.message); }
+}
+async function doRegenSshKey() {
+  if (!confirm('Перевыпустить ключ? Старый ключ перестанет пускать — после этого скачай новый.')) return;
+  try {
+    _sshCfg = await api('/api/ssh-key/regenerate', { method: 'POST' });
+    $('#ssh-config-text').value = _sshCfg.configSnippet;
+    window.location.href = '/api/ssh-key'; // сразу отдать новый ключ на скачивание
+  } catch (e) { alert(e.message); }
+}
+async function openDesktopVsCode(projectName) {
+  try {
+    const cfg = await loadSshCfg();
+    window.location.href = cfg.projectUriBase + encodeURIComponent(projectName);
+  } catch (e) { alert('SSH: ' + e.message); }
+}
+
 const escapeHtml = (s) => (s || '').replace(/[&<>"]/g, c => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
 })[c]);
@@ -660,6 +688,7 @@ async function refreshProjects() {
                 </button>
                 <button class="btn btn-sm" data-action="claude" title="Claude">CLAUDE</button>
                 <button class="btn btn-sm" data-action="vscode">VS Code →</button>
+                <button class="btn btn-sm" data-action="vscode-desktop" title="Открыть в десктопном VS Code (по SSH)">💻</button>
                 <button class="btn btn-sm" data-action="download" title="Скачать проект (.zip)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
@@ -685,6 +714,7 @@ async function refreshProjects() {
       $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
       $('[data-action="vscode"]', tr).onclick = () =>
         openVsCodeFor(ME.username, '/home/student/workspace/' + name);
+      $('[data-action="vscode-desktop"]', tr).onclick = () => openDesktopVsCode(name);
       $('[data-action="download"]', tr).onclick = () => {
         window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
       };
@@ -1321,6 +1351,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // «+ Шаблон»
   $('#btn-create').onclick = openCreateModal;
   $('#create-submit').onclick = doCreateFromBase;
+
+  // SSH-доступ (десктопный VS Code)
+  $('#btn-ssh')?.addEventListener('click', openSshModal);
+  $('#ssh-dl-key')?.addEventListener('click', () => { window.location.href = '/api/ssh-key'; });
+  $('#ssh-copy-config')?.addEventListener('click', () => {
+    const t = $('#ssh-config-text'); t.select();
+    navigator.clipboard?.writeText(t.value).catch(() => {});
+  });
+  $('#ssh-regen')?.addEventListener('click', doRegenSshKey);
   // Publish modal
   $('#pub-save').onclick = savePublish;
   $('#pub-redeploy').onclick = redeployPublish;

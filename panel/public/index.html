@@ -238,6 +238,7 @@
             <button class="btn btn-primary" id="btn-upload">+ Свой проект</button>
             <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
             <button class="btn btn-primary" id="btn-create">+ Из шаблона</button>
+            <button class="btn" id="btn-ssh" title="Работать в десктопном VS Code по SSH">💻 Десктоп VS Code</button>
           </div>
         </div>
         <div class="projects-table-wrap" id="projectsList"></div>
@@ -1214,6 +1215,39 @@ description: Объясняет каждый шаг простыми слова�
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-add-user">Отмена</button>
         <button class="btn btn-primary" id="add-user-submit">Создать ученика</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: SSH-доступ (десктопный VS Code) ───────────── -->
+  <div class="modal-overlay hidden" id="modal-ssh" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <span class="modal-title">Подключение по SSH · десктопный VS Code</span>
+        <button class="modal-close" data-close="modal-ssh" aria-label="Закрыть">✕</button>
+      </div>
+      <ol style="padding-left:18px;line-height:1.7;margin:4px 0">
+        <li>Установи <b>VS Code</b> и расширение <b>«Remote - SSH»</b> (один раз).</li>
+        <li>Скачай свой ключ и положи файл в папку <code>~/.ssh/</code>:
+          <div style="margin:6px 0">
+            <button class="btn btn-sm btn-primary" id="ssh-dl-key">↓ Скачать ключ</button>
+          </div>
+        </li>
+        <li>Добавь это в файл <code>~/.ssh/config</code>:
+          <textarea id="ssh-config-text" class="form-input" readonly rows="6"
+                    style="font-family:monospace;font-size:12px;margin-top:6px"></textarea>
+          <button class="btn btn-sm" id="ssh-copy-config" style="margin-top:4px">Копировать конфиг</button>
+        </li>
+        <li>В VS Code: <code>F1 → Remote-SSH: Connect to Host</code> → выбери <b>vibe-…</b>.
+          Откроется без пароля. На карточке проекта кнопка <b>💻</b> сразу откроет нужную папку.</li>
+      </ol>
+      <div class="form-hint" style="margin-top:8px">
+        Ключ — твой личный доступ, никому не передавай. Если потерял или скомпрометирован —
+        перевыпусти (старый перестанет работать).
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="ssh-regen">Перевыпустить ключ</button>
+        <button class="btn btn-primary" data-close="modal-ssh">Готово</button>
       </div>
     </div>
   </div>

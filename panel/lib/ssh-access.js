@@ -85,8 +85,10 @@ export function sshConfig(username, sshPort) {
     port: sshPort,
     user: 'student',
     alias,
+    // StrictHostKeyChecking accept-new — авто-приём host-key при первом коннекте
+    // (host-key персистит, не меняется), чтобы ученик не упирался в вопрос об отпечатке.
     configSnippet:
-      `Host ${alias}\n    HostName ${SSH_HOST}\n    Port ${sshPort}\n    User student\n    IdentityFile ~/.ssh/${alias}\n`,
+      `Host ${alias}\n    HostName ${SSH_HOST}\n    Port ${sshPort}\n    User student\n    IdentityFile ~/.ssh/${alias}\n    StrictHostKeyChecking accept-new\n`,
     knownHostsLine,
     keyFileName: alias,
     workspaceUri: `vscode://vscode-remote/ssh-remote+${alias}/home/student/workspace`,
