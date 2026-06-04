@@ -221,14 +221,22 @@ const COURSE = [
   },
 ];
 
+window.COURSE = COURSE;  // хаб «База знаний» (kb.js) читает структуру курса отсюда
+
 // Текущий выбранный пункт. Форматы: "m1.l3" (урок), "m1.materials", "m1.homework", "m1.meetup", "m6.bonus", "intro" (welcome)
 let courseSelected = localStorage.getItem('vibe.course.sel') || 'intro';
 const courseExpanded = new Set(JSON.parse(localStorage.getItem('vibe.course.exp') || '["m1"]'));
 
 function renderCourse() {
-  renderCourseTree();
-  renderCourseContent();
+  renderCourseContent();   // дерево курса заменено сайдбаром хаба (renderCourseTree больше не нужно)
 }
+
+// Выбор пункта курса из сайдбара хаба «База знаний» ('m1' | 'm1.materials' | 'm1.l3' | …)
+window.courseSelect = function (sel) {
+  courseSelected = sel;
+  localStorage.setItem('vibe.course.sel', sel);
+  renderCourseContent();   // рендерит в #course-content (теперь внутри #kb-course-host)
+};
 
 function renderCourseTree() {
   const tree = $('#course-tree');
@@ -461,19 +469,14 @@ function renderCourseContent() {
 
 // ── View tab switcher (VS CODE / Проекты / Курс / Материалы) ──
 function setActiveView(view) {
-  const allowed = ['vscode', 'projects', 'course', 'materials'];
+  const allowed = ['vscode', 'projects', 'kb'];
   if (!allowed.includes(view)) view = 'vscode';
   localStorage.setItem('vibe.view', view);
   $$('.btn-nav').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   $$('.view').forEach(s => s.classList.toggle('hidden', s.dataset.view !== view));
   // подгрузка контента view-зависимо
   if (view === 'vscode') refreshRecentProjects();
-  if (view === 'course') renderCourse();
-}
-
-function setActiveMaterialsTab(sub) {
-  $$('.materials-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === sub));
-  $$('.materials-page').forEach(p => p.classList.toggle('hidden', p.dataset.sub !== sub));
+  if (view === 'kb') window.renderKb && window.renderKb();
 }
 
 async function refreshAll() {
@@ -1341,10 +1344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $$('.btn-nav').forEach(b => {
     b.onclick = () => setActiveView(b.dataset.view);
   });
-  // Materials sub-tabs
-  $$('.materials-tab').forEach(b => {
-    b.onclick = () => setActiveMaterialsTab(b.dataset.sub);
-  });
+  // (подвкладки «Материалов» заменены сайдбаром хаба «База знаний» — см. kb.js)
 
   // Open VS Code button (на VS CODE view)
   $('#openCodeBtn').onclick = () => {
