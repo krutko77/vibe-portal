@@ -37,17 +37,11 @@
         </svg>
         <span class="btn-nav-text">Проекты</span>
       </button>
-      <button class="btn-nav" data-view="course" title="Курс Vibecoding">
+      <button class="btn-nav" data-view="kb" title="База знаний — курс и материалы">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
         </svg>
-        <span class="btn-nav-text">Курс</span>
-      </button>
-      <button class="btn-nav" data-view="materials" title="Материалы и инструкции">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <span class="btn-nav-text">Материалы</span>
+        <span class="btn-nav-text">База знаний</span>
       </button>
     </div>
 
@@ -259,62 +253,21 @@
       </div>
     </section>
 
-    <!-- ── view: КУРС ────────────────────────────────────── -->
-    <section class="view view-course hidden" data-view="course">
-      <div class="course-layout">
-        <aside class="course-side">
-          <div class="course-side-head">
-            <span class="course-side-title">Курс Vibecoding</span>
-            <span class="course-side-sub">программа · 6 модулей</span>
-          </div>
-          <nav class="course-tree" id="course-tree"></nav>
-        </aside>
-        <main class="course-content" id="course-content">
+    <!-- ── view: БАЗА ЗНАНИЙ (курс + материалы в одном хабе) ──────── -->
+    <section class="view view-kb hidden" data-view="kb">
+      <div class="kb-search">
+        <span>🔎</span>
+        <input id="kb-search" placeholder="Поиск по материалам…" />
+        <span class="k">/</span>
+      </div>
+      <div class="kb-layout">
+        <aside class="kb-side" id="kb-side"></aside>
+        <main class="kb-content" id="kb-content">
+          <div class="course-layout" id="kb-course-host">
+            <main class="course-content" id="course-content">
           <!-- наполняется из JS -->
-        </main>
-      </div>
-    </section>
-
-    <!-- ── view: МАТЕРИАЛЫ ───────────────────────────────── -->
-    <section class="view view-materials hidden" data-view="materials">
-      <div class="materials-subnav">
-        <button class="materials-tab active" data-sub="how-to">
-          <span class="materials-tab-icon">📘</span>
-          <span class="materials-tab-text">Инструкция</span>
-        </button>
-        <button class="materials-tab" data-sub="cheatsheet">
-          <span class="materials-tab-icon">📋</span>
-          <span class="materials-tab-text">Шпаргалка</span>
-        </button>
-        <button class="materials-tab" data-sub="claude-md">
-          <span class="materials-tab-icon">📄</span>
-          <span class="materials-tab-text">CLAUDE.md</span>
-        </button>
-        <button class="materials-tab" data-sub="claude-folder">
-          <span class="materials-tab-icon">🗂</span>
-          <span class="materials-tab-text">Папка .claude</span>
-        </button>
-        <button class="materials-tab" data-sub="templates-dl">
-          <span class="materials-tab-icon">📦</span>
-          <span class="materials-tab-text">Шаблоны</span>
-        </button>
-        <button class="materials-tab" data-sub="publish">
-          <span class="materials-tab-icon">🚀</span>
-          <span class="materials-tab-text">Публикация</span>
-        </button>
-        <button class="materials-tab" data-sub="skills">
-          <span class="materials-tab-icon">✨</span>
-          <span class="materials-tab-text">Скиллы</span>
-        </button>
-        <button class="materials-tab" data-sub="links">
-          <span class="materials-tab-icon">🔗</span>
-          <span class="materials-tab-text">Ссылки</span>
-        </button>
-        <button class="materials-tab" data-sub="faq">
-          <span class="materials-tab-icon">⚠</span>
-          <span class="materials-tab-text">FAQ</span>
-        </button>
-      </div>
+            </main>
+          </div>
 
       <!-- materials > Инструкция -->
       <div class="materials-page" data-sub="how-to">
@@ -1080,6 +1033,8 @@ description: Объясняет каждый шаг простыми слова�
           <p>Используй скилл <code>claude-memory</code>: <code>/memory update</code> в чате — сохранит ключевые моменты. Или открой новую сессию из чата проекта в портале (история в портале сохраняется).</p>
         </details>
       </div>
+        </main>
+      </div>
     </section>
 
   </main>
@@ -1423,6 +1378,8 @@ description: Объясняет каждый шаг простыми слова�
   </div>
 
   <script src="/js/lessons-m1.js"></script>
+  <script src="/content/reference.js"></script>
+  <script src="/js/kb.js"></script>
   <script src="/js/app.js"></script>
 </body>
 </html>
