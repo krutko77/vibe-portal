@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Шпаргалка: что такое .md и CLAUDE.md</title>
+  <meta name="description" content="Простая шпаргалка для новичков: что такое Markdown-файл (.md) и зачем нужен CLAUDE.md.">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <!-- Кнопка меню для телефона -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Открыть меню">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Затемнение позади меню на телефоне -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Боковое меню -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__brand">
+      <span class="sidebar__logo">📘</span>
+      <span class="sidebar__title">Шпаргалка</span>
+    </div>
+    <p class="sidebar__subtitle">.md и CLAUDE.md простыми словами</p>
+    <nav class="nav">
+      <a class="nav__link" href="#md">1 · Что такое .md файл</a>
+      <a class="nav__link" href="#syntax">2 · Синтаксис Markdown</a>
+      <a class="nav__link" href="#claude">3 · Что такое CLAUDE.md</a>
+      <a class="nav__link" href="#why">4 · Почему он важен</a>
+      <a class="nav__link" href="#what">5 · Что туда писать</a>
+      <a class="nav__link" href="#cheatsheet">6 · Памятка</a>
+    </nav>
+  </aside>
+
+  <!-- Контент -->
+  <main class="content">
+
+    <!-- Шапка -->
+    <header class="hero">
+      <span class="hero__badge">Шпаргалка для начинающих</span>
+      <h1 class="hero__title">Что такое <code>.md</code> файл и зачем нужен <code>CLAUDE.md</code></h1>
+      <p class="hero__lead">Без сложных слов. Прочитаете за 5 минут — и больше не будете путаться.</p>
+    </header>
+
+    <!-- 1. Что такое .md -->
+    <section class="section" id="md">
+      <span class="section__num">Раздел 1</span>
+      <h2 class="section__title">Что такое <code>.md</code> файл</h2>
+      <p><b><code>.md</code></b> — это обычный текстовый файл. Буквы <code>md</code> в конце имени означают <b>Markdown</b> («маркдаун»).</p>
+      <p>Представьте обычную заметку. В Markdown вы добавляете к тексту простые значки, и заметка «оживает»: где-то появляется заголовок, где-то — список, где-то — жирное слово.</p>
+
+      <div class="callout callout--idea">
+        <span class="callout__icon">💡</span>
+        <div>
+          <b>Аналогия.</b> Markdown — это как заметка, которая умеет сама себя красиво оформлять. Вы пишете обычный текст и ставите пару значков, а файл показывает заголовки, списки и ссылки.
+        </div>
+      </div>
+
+      <p>Главное преимущество: такой файл читается и так, <i>и</i> так. Откроете в простом «Блокноте» — увидите текст со значками. Откроете в нужной программе (или на сайте, в GitHub, в Notion) — увидите красивое оформление.</p>
+
+      <ul class="ticks">
+        <li>Открывается где угодно — это просто текст.</li>
+        <li>Лёгкий: никаких тяжёлых файлов, как у Word.</li>
+        <li>Понятен и человеку, и программам (и ИИ-помощникам).</li>
+      </ul>
+    </section>
+
+    <!-- 2. Синтаксис -->
+    <section class="section" id="syntax">
+      <span class="section__num">Раздел 2</span>
+      <h2 class="section__title">Синтаксис Markdown за минуту</h2>
+      <p>Запоминать всё не нужно. Вот 90% того, что пригодится. Слева — что напечатать, справа — что получится.</p>
+
+      <div class="syntax">
+        <div class="syntax__row">
+          <pre class="code"><code># Заголовок
+## Поменьше</code></pre>
+          <div class="syntax__result">
+            <div class="r-h1">Заголовок</div>
+            <div class="r-h2">Поменьше</div>
+          </div>
+        </div>
+
+        <div class="syntax__row">
+          <pre class="code"><code>**жирный**
+*курсив*</code></pre>
+          <div class="syntax__result">
+            <p><b>жирный</b><br><i>курсив</i></p>
+          </div>
+        </div>
+
+        <div class="syntax__row">
+          <pre class="code"><code>- молоко
+- хлеб
+- кофе</code></pre>
+          <div class="syntax__result">
+            <ul class="r-list"><li>молоко</li><li>хлеб</li><li>кофе</li></ul>
+          </div>
+        </div>
+
+        <div class="syntax__row">
+          <pre class="code"><code>1. первое
+2. второе</code></pre>
+          <div class="syntax__result">
+            <ol class="r-list"><li>первое</li><li>второе</li></ol>
+          </div>
+        </div>
+
+        <div class="syntax__row">
+          <pre class="code"><code>[Google](https://google.com)</code></pre>
+          <div class="syntax__result">
+            <p><a href="#syntax" onclick="return false;">Google</a></p>
+          </div>
+        </div>
+
+        <div class="syntax__row">
+          <pre class="code"><code>`команда в строке`</code></pre>
+          <div class="syntax__result">
+            <p><code>команда в строке</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout--note">
+        <span class="callout__icon">📝</span>
+        <div>Самое частое: <code>#</code> для заголовков, <code>-</code> для списков, <code>**</code> вокруг слова для жирного. Этого хватит на старте.</div>
+      </div>
+    </section>
+
+    <!-- 3. Что такое CLAUDE.md -->
+    <section class="section" id="claude">
+      <span class="section__num">Раздел 3</span>
+      <h2 class="section__title">Что такое <code>CLAUDE.md</code></h2>
+      <p><code>CLAUDE.md</code> — это такой же Markdown-файл, но с особым именем и особой ролью. Это <b>записка для ИИ-помощника</b> (Claude Code) о вашем проекте.</p>
+
+      <div class="callout callout--idea">
+        <span class="callout__icon">🧠</span>
+        <div>
+          <b>Аналогия.</b> Представьте, что к вам пришёл новый толковый сотрудник. Прежде чем он начнёт работать, вы оставляете ему записку: «вот так у нас всё устроено, так запускаем проект, такие у нас правила». <code>CLAUDE.md</code> — это и есть та самая записка, только для ИИ.
+        </div>
+      </div>
+
+      <p>Когда ИИ-помощник начинает работать с вашим проектом, он первым делом читает <code>CLAUDE.md</code> и сразу понимает контекст — без долгих объяснений каждый раз.</p>
+      <p>Лежит этот файл обычно в самой главной папке проекта, рядом с остальными файлами.</p>
+    </section>
+
+    <!-- 4. Почему важен -->
+    <section class="section" id="why">
+      <span class="section__num">Раздел 4</span>
+      <h2 class="section__title">Почему <code>CLAUDE.md</code> важен</h2>
+      <p>Без него ИИ каждый раз начинает «с чистого листа». С ним — работает как сотрудник, который уже в курсе дела.</p>
+
+      <div class="cards">
+        <div class="benefit">
+          <div class="benefit__icon">🔁</div>
+          <h3>Не повторяться</h3>
+          <p>Один раз записали правила — и не объясняете одно и то же в каждом разговоре.</p>
+        </div>
+        <div class="benefit">
+          <div class="benefit__icon">🎯</div>
+          <h3>Точнее результат</h3>
+          <p>Помощник знает ваш проект и реже делает не то, что вы хотели.</p>
+        </div>
+        <div class="benefit">
+          <div class="benefit__icon">🎨</div>
+          <h3>Единый стиль</h3>
+          <p>Код и тексты получаются в одном стиле, потому что правила записаны в одном месте.</p>
+        </div>
+        <div class="benefit">
+          <div class="benefit__icon">⚡</div>
+          <h3>Быстрее старт</h3>
+          <p>Новый человек (или ИИ) сразу видит, как всё устроено, и не тратит время на разбор.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Что писать -->
+    <section class="section" id="what">
+      <span class="section__num">Раздел 5</span>
+      <h2 class="section__title">Что писать в <code>CLAUDE.md</code></h2>
+      <p>Пишите коротко и по делу — то, что хотели бы рассказать новому помощнику. Вот пример живого файла:</p>
+
+      <div class="code-block">
+        <div class="code-block__head">
+          <span class="code-block__name">CLAUDE.md</span>
+          <button class="copy-btn" type="button">Копировать</button>
+        </div>
+        <pre class="code code--block"><code># Мой проект
+
+Сайт-визитка для кофейни. Делаю в одиночку.
+
+## Как запускать
+- Открыть `index.html` двойным кликом — всё работает без установок.
+
+## Стиль
+- Тексты — на русском, дружелюбно и просто.
+- Цвета: бежевый фон, коричневый акцент.
+- Без сложных библиотек, только чистый HTML и CSS.
+
+## Чего избегать
+- Не добавлять рекламу и всплывающие окна.
+- Не усложнять код — он должен быть понятен новичку.</code></pre>
+      </div>
+
+      <p>О чём обычно пишут:</p>
+      <ul class="ticks">
+        <li><b>Что за проект</b> — пара предложений.</li>
+        <li><b>Как запускать</b> — команды или шаги.</li>
+        <li><b>Правила и стиль</b> — язык, цвета, как оформлять.</li>
+        <li><b>Чего избегать</b> — что точно не нужно делать.</li>
+      </ul>
+    </section>
+
+    <!-- 6. Памятка -->
+    <section class="section" id="cheatsheet">
+      <span class="section__num">Раздел 6</span>
+      <h2 class="section__title">Памятка и частые ошибки</h2>
+
+      <div class="split-tips">
+        <div class="tips tips--good">
+          <h3>✅ Делайте так</h3>
+          <ul>
+            <li>Имя файла — ровно <code>CLAUDE.md</code> (с большими буквами).</li>
+            <li>Кладите его в главную папку проекта.</li>
+            <li>Пишите коротко: лучше 10 понятных строк, чем 3 страницы.</li>
+            <li>Обновляйте, когда правила меняются.</li>
+          </ul>
+        </div>
+        <div class="tips tips--bad">
+          <h3>⛔ Частые ошибки</h3>
+          <ul>
+            <li>Назвать файл <code>claude.txt</code> или <code>Claude.MD</code> — не сработает.</li>
+            <li>Забыть значки Markdown — текст «слипнется».</li>
+            <li>Писать «воду» вместо конкретики.</li>
+            <li>Положить файл не в ту папку.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout--idea">
+        <span class="callout__icon">🎓</span>
+        <div><b>Запомните одно:</b> <code>.md</code> — это текст, который умеет красиво оформляться, а <code>CLAUDE.md</code> — записка о проекте для ИИ-помощника. Всё остальное — детали.</div>
+      </div>
+
+      <footer class="footer">Шпаргалка · сделано для учеников · можно переносить куда угодно</footer>
+    </section>
+
+  </main>
+
+  <script src="assets/js/script.js"></script>
+</body>
+</html>

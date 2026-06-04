@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Как работает HTTP-запрос — конспект</title>
+  <style>
+    :root{
+      --bg:#0f1115; --panel:#171a21; --line:#2a2f3a; --txt:#e6e8ec; --mut:#9aa3b2;
+      --acc:#d97757; --acc2:#7aa2f7; --ok:#7bd88f; --code:#11141a;
+      --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);
+      line-height:1.7;font-size:16px}
+    .wrap{max-width:860px;margin:0 auto;padding:0 20px}
+    header{padding:56px 0 28px;border-bottom:1px solid var(--line);
+      background:radial-gradient(1000px 360px at 18% -10%,rgba(217,119,87,.14),transparent 60%)}
+    .badge{display:inline-block;font-family:var(--mono);font-size:12px;color:var(--acc);
+      border:1px solid var(--acc);border-radius:999px;padding:4px 12px}
+    h1{font-size:clamp(26px,4vw,38px);margin:16px 0 0;letter-spacing:-.02em;line-height:1.15}
+    main{padding:32px 0 64px}
+    h2{font-size:23px;margin:38px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
+    a{color:var(--acc2)}
+    .tldr{background:linear-gradient(135deg,rgba(217,119,87,.12),rgba(122,162,247,.07));
+      border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;
+      padding:16px 18px;color:var(--txt);margin:24px 0}
+    blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--acc2);
+      background:var(--panel);border-radius:8px;color:var(--mut)}
+    code{font-family:var(--mono);font-size:13.5px;color:var(--acc2);
+      background:var(--code);padding:2px 6px;border-radius:5px}
+    pre.mermaid{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+      padding:22px;margin:20px 0;text-align:center;overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:15px;margin:14px 0}
+    th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:var(--mut);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+    ul,ol{padding-left:22px} li{margin:5px 0}
+    .toc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+    .toc ul{margin:6px 0;list-style:none;padding-left:0}
+    .toc a{text-decoration:none}
+    footer{border-top:1px solid var(--line);padding:24px 0 64px;color:var(--mut);
+      font-size:13px;font-family:var(--mono)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <span class="badge">КОНСПЕКТ</span>
+      <h1>Как работает HTTP-запрос</h1>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <div class="tldr"><b>TL;DR.</b> HTTP — простой протокол «вопрос-ответ»: браузер спрашивает,
+    сервер отвечает. Путь от ввода адреса до картинки на экране — DNS → соединение (для HTTPS
+    ещё TLS) → HTTP-запрос → ответ со статус-кодом → отрисовка — обычно меньше секунды.</div>
+
+    <div class="toc">
+      <b>📑 Оглавление</b>
+      <ul>
+        <li><a href="#map">Карта темы</a></li>
+        <li><a href="#stages">1. Этапы HTTP-запроса</a></li>
+        <li><a href="#methods">2. HTTP-методы</a></li>
+        <li><a href="#codes">3. Статус-коды</a></li>
+        <li><a href="#terms">Ключевые термины</a></li>
+        <li><a href="#takeaways">Главные выводы</a></li>
+      </ul>
+    </div>
+
+    <h2 id="map">🗺️ Карта темы</h2>
+<pre class="mermaid">
+mindmap
+  root("HTTP-запрос")
+    DNS
+      "Домен в IP"
+    Соединение
+      "TLS для HTTPS"
+      "Шифрование трафика"
+    Запрос
+      "Метод: GET / POST"
+    Ответ
+      "Статус-код"
+      "HTML / CSS / JS"
+    Отрисовка
+      "Парсинг и рендер"
+</pre>
+
+    <h2 id="stages">1. Этапы HTTP-запроса</h2>
+    <p>Полный путь от ввода адреса до готовой страницы — последовательность шагов:</p>
+<pre class="mermaid">
+flowchart TD
+    A["Ввод адреса example.com"] --> B["DNS: домен в IP"]
+    B --> C["Соединение с сервером по IP"]
+    C --> D{"Сайт по HTTPS?"}
+    D -->|"да"| E["TLS-рукопожатие: обмен ключами"]
+    D -->|"нет"| F["HTTP-запрос"]
+    E --> F
+    F --> G["Сервер обрабатывает: БД, вычисления"]
+    G --> H["Ответ и статус-код"]
+    H --> I["Браузер парсит HTML, грузит CSS/JS"]
+    I --> J["Страница отрисована"]
+</pre>
+    <ul>
+      <li><b>DNS</b> — «телефонная книга интернета»: по домену возвращает IP-адрес.</li>
+      <li><b>TLS-рукопожатие</b> нужно для HTTPS, чтобы зашифровать трафик.</li>
+    </ul>
+    <blockquote>💬 «Иначе пароли бы летели открытым текстом» — поэтому почти все сайты на HTTPS.</blockquote>
+
+    <h2 id="methods">2. HTTP-методы</h2>
+    <table>
+      <tr><th>Метод</th><th>Когда используется</th></tr>
+      <tr><td><code>GET</code></td><td>Читаем данные (открыть страницу) — самый частый</td></tr>
+      <tr><td><code>POST</code></td><td>Отправляем данные (форма логина)</td></tr>
+      <tr><td><code>PUT</code> / <code>DELETE</code></td><td>Изменение/удаление — больше для API</td></tr>
+    </table>
+
+    <h2 id="codes">3. Статус-коды</h2>
+    <p>Три самых частых, которые стоит запомнить:</p>
+<pre class="mermaid">
+flowchart LR
+    R["Ответ сервера"] --> S200["200 — OK, всё хорошо"]
+    R --> S404["404 — страница не найдена"]
+    R --> S500["500 — ошибка на сервере"]
+</pre>
+
+    <h2 id="terms">🔑 Ключевые термины</h2>
+    <table>
+      <tr><th>Термин</th><th>Определение</th></tr>
+      <tr><td><b>HTTP</b></td><td>Протокол «вопрос-ответ» между клиентом и сервером</td></tr>
+      <tr><td><b>DNS</b></td><td>Сопоставляет доменное имя и IP-адрес</td></tr>
+      <tr><td><b>HTTPS / TLS</b></td><td>Шифрование трафика через обмен ключами</td></tr>
+      <tr><td><b>Статус-код</b></td><td>Число в ответе: результат обработки запроса</td></tr>
+    </table>
+
+    <h2 id="takeaways">✅ Главные выводы</h2>
+    <ul>
+      <li>HTTP — это <b>просто протокол «вопрос-ответ»</b>, ничего магического.</li>
+      <li>HTTPS защищает данные: без него пароли передавались бы открытым текстом.</li>
+      <li>Статус-код сразу показывает исход: <b>200</b> — успех, <b>404</b> — не найдено, <b>500</b> — ошибка сервера.</li>
+    </ul>
+
+  </main>
+
+  <footer class="wrap">
+    Сгенерировано скиллом <code>transcript-to-notes</code> • диаграммы — Mermaid
+  </footer>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+  </script>
+</body>
+</html>

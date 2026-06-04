@@ -2091,6 +2091,10 @@ html:not(.dark) .course-placeholder-desc a:hover {
   display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: hsl(var(--muted-foreground)); margin-bottom: 6px;
 }
+.note-quote pre {
+  margin: 0; font: inherit; color: inherit;
+  white-space: pre; overflow-x: auto;
+}
 
 /* Шаги */
 .note-steps { margin: 16px 0; padding: 0; list-style: none; counter-reset: st; }

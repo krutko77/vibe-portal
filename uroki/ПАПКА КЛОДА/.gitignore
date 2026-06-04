@@ -1,0 +1,10 @@
+# Личные настройки — у каждого свои, в репозиторий не попадают
+.claude/settings.local.json
+
+# Секреты
+.env
+*.key
+
+# Системное
+.DS_Store
+node_modules/

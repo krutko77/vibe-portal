@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Структура папки .claude — учебный проект</title>
+  <style>
+    :root{
+      --bg:#0f1115; --panel:#171a21; --panel2:#1d2129; --line:#2a2f3a;
+      --txt:#e6e8ec; --mut:#9aa3b2; --acc:#d97757; --acc2:#7aa2f7; --ok:#7bd88f;
+      --code:#11141a; --radius:14px;
+      --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+      --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);
+      line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+    header{padding:64px 0 40px;border-bottom:1px solid var(--line);
+      background:radial-gradient(1200px 400px at 20% -10%,rgba(217,119,87,.14),transparent 60%)}
+    .badge{display:inline-block;font-family:var(--mono);font-size:12px;color:var(--acc);
+      border:1px solid var(--acc);border-radius:999px;padding:4px 12px;letter-spacing:.04em}
+    h1{font-size:clamp(28px,5vw,44px);margin:18px 0 10px;letter-spacing:-.02em;line-height:1.1}
+    h1 .dot{color:var(--acc)}
+    .lead{color:var(--mut);font-size:18px;max-width:680px;margin:0}
+    nav{position:sticky;top:0;background:rgba(15,17,21,.82);backdrop-filter:blur(10px);
+      border-bottom:1px solid var(--line);z-index:5}
+    nav .wrap{display:flex;gap:18px;flex-wrap:wrap;padding:12px 20px}
+    nav a{color:var(--mut);text-decoration:none;font-size:14px;font-family:var(--mono)}
+    nav a:hover{color:var(--txt)}
+    section{padding:48px 0;border-bottom:1px solid var(--line)}
+    h2{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+    h2 .num{font-family:var(--mono);color:var(--acc);font-size:16px;margin-right:10px}
+    .sub{color:var(--mut);margin:0 0 24px}
+    .tree{background:var(--code);border:1px solid var(--line);border-radius:var(--radius);
+      padding:20px 22px;font-family:var(--mono);font-size:13.5px;color:#cdd3de;
+      overflow-x:auto;white-space:pre;line-height:1.7}
+    .tree .c{color:var(--acc)}      /* папки */
+    .tree .f{color:var(--acc2)}     /* файлы-сущности */
+    .tree .cm{color:#67707f}        /* комментарий */
+    .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+      padding:18px 18px 16px}
+    .card h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:8px}
+    .card .tag{font-family:var(--mono);font-size:11px;color:var(--mut);
+      background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+    .card p{margin:0;color:var(--mut);font-size:14px}
+    .card code{color:var(--acc2);font-family:var(--mono);font-size:12.5px}
+    pre.code{background:var(--code);border:1px solid var(--line);border-radius:var(--radius);
+      padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;
+      color:#cdd3de;margin:14px 0}
+    pre.code .k{color:var(--acc)} pre.code .s{color:var(--ok)} pre.code .cm{color:#67707f}
+    .steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;gap:12px}
+    .steps li{counter-increment:s;background:var(--panel);border:1px solid var(--line);
+      border-radius:var(--radius);padding:16px 18px 16px 56px;position:relative}
+    .steps li::before{content:counter(s);position:absolute;left:16px;top:16px;width:26px;height:26px;
+      border-radius:50%;background:var(--acc);color:#0f1115;font-weight:700;font-size:14px;
+      display:flex;align-items:center;justify-content:center;font-family:var(--mono)}
+    .steps b{color:var(--txt)} .steps span{color:var(--mut)}
+    table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+    th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:var(--mut);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em}
+    td code{font-family:var(--mono);font-size:12.5px;color:var(--acc2)}
+    .note{background:linear-gradient(135deg,rgba(217,119,87,.10),rgba(122,162,247,.06));
+      border:1px solid var(--line);border-left:3px solid var(--acc);
+      border-radius:10px;padding:14px 16px;color:var(--mut);font-size:14px;margin-top:18px}
+    .note b{color:var(--txt)}
+    footer{padding:40px 0 64px;color:var(--mut);font-size:13px;font-family:var(--mono)}
+    a.inline{color:var(--acc2)}
+    /* --- Вкладки --- */
+    .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 22px;
+      border:1px solid var(--line);border-radius:12px;padding:6px;background:var(--panel)}
+    .tabs button{flex:1 1 auto;min-width:96px;background:transparent;border:0;cursor:pointer;
+      color:var(--mut);font-family:var(--mono);font-size:13px;padding:9px 12px;border-radius:8px;
+      transition:.15s;white-space:nowrap}
+    .tabs button:hover{color:var(--txt);background:var(--panel2)}
+    .tabs button.active{background:var(--acc);color:#0f1115;font-weight:600}
+    .panel-tab{display:none;animation:fade .25s ease}
+    .panel-tab.active{display:block}
+    @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    .panel-tab h3{font-size:20px;margin:0 0 4px}
+    .panel-tab .what{color:var(--mut);margin:0 0 18px;font-size:15px}
+    .meta{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+    .meta span{font-family:var(--mono);font-size:12px;color:var(--mut);background:var(--panel2);
+      border:1px solid var(--line);border-radius:7px;padding:4px 10px}
+    .meta span b{color:var(--acc2);font-weight:500}
+    .h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);
+      font-family:var(--mono);margin:22px 0 8px}
+    .life{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:8px}
+    .life li{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc2);
+      border-radius:9px;padding:11px 14px;font-size:14px;color:var(--mut)}
+    .life li b{color:var(--txt);font-weight:600}
+    pre.code .a{color:var(--acc2)} /* ключи frontmatter/json */
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="badge">УЧЕБНЫЙ ПРОЕКТ</span>
+    <h1>Папка <span class="dot">.claude</span> изнутри</h1>
+    <p class="lead">Как устроена конфигурация Claude Code: из каких сущностей состоит папка
+    <code>.claude</code>, что такое <code>CLAUDE.md</code> и как подключить MCP-сервер.</p>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#tree">Структура</a>
+  <a href="#entities">Сущности</a>
+  <a href="#claudemd">CLAUDE.md</a>
+  <a href="#mcp">MCP</a>
+  <a href="#install">Установка MCP</a>
+  <a href="#detail">Подробно ↓</a>
+</div></nav>
+
+<main class="wrap">
+
+  <!-- 1. Дерево -->
+  <section id="tree">
+    <h2><span class="num">01</span>Структура папки</h2>
+    <p class="sub">Всё, что настраивает поведение Claude в проекте, лежит в <code>.claude/</code>.
+    Рядом — <code>CLAUDE.md</code> (память) и <code>.mcp.json</code> (внешние инструменты).</p>
+<div class="tree">ПАПКА КЛОДА/
+├── <span class="f">CLAUDE.md</span>                     <span class="cm"># память и правила проекта</span>
+├── <span class="f">index.html</span>                    <span class="cm"># эта страница</span>
+├── <span class="f">.mcp.json</span>                     <span class="cm"># MCP-серверы (общие для команды)</span>
+└── <span class="c">.claude/</span>
+    ├── <span class="f">settings.json</span>             <span class="cm"># права, хуки, тумблеры MCP</span>
+    ├── <span class="f">settings.local.json.example</span> <span class="cm"># пример личных настроек</span>
+    ├── <span class="c">skills/</span>                   <span class="cm"># навыки</span>
+    │   ├── <span class="c">superpowers/</span>          <span class="cm"># процессные скиллы</span>
+    │   └── <span class="c">ui-ux-pro-max/</span>        <span class="cm"># дизайн-интеллект</span>
+    ├── <span class="c">commands/</span>                 <span class="cm"># слэш-команды</span>
+    │   ├── <span class="f">prototype-first.md</span>
+    │   └── <span class="f">explain-claude.md</span>
+    ├── <span class="c">agents/</span>                   <span class="cm"># субагенты</span>
+    │   └── <span class="f">ui-prototyper.md</span>
+    ├── <span class="c">hooks/</span>                    <span class="cm"># скрипты на события</span>
+    │   └── <span class="f">session-start.sh</span>
+    └── <span class="c">output-styles/</span>            <span class="cm"># стили вывода</span>
+        └── <span class="f">tutor.md</span></div>
+  </section>
+
+  <!-- 2. Сущности -->
+  <section id="entities">
+    <h2><span class="num">02</span>Сущности и за что отвечают</h2>
+    <p class="sub">Каждая папка внутри <code>.claude</code> — отдельный тип расширения Claude Code.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>📄 CLAUDE.md <span class="tag">память</span></h3>
+        <p>Грузится в контекст всегда. Правила, договорённости, контекст проекта.</p>
+      </div>
+      <div class="card">
+        <h3>🧠 skills <span class="tag">навыки</span></h3>
+        <p>Переиспользуемые инструкции «как делать X». Файл <code>SKILL.md</code> в папке навыка. Вызываются по запросу.</p>
+      </div>
+      <div class="card">
+        <h3>⌨️ commands <span class="tag">/команды</span></h3>
+        <p>Слэш-команды. Markdown с frontmatter в <code>commands/имя.md</code> → вызов <code>/имя</code>.</p>
+      </div>
+      <div class="card">
+        <h3>🤖 agents <span class="tag">субагенты</span></h3>
+        <p>Отдельный исполнитель со своим набором инструментов и чистым контекстом.</p>
+      </div>
+      <div class="card">
+        <h3>🪝 hooks <span class="tag">события</span></h3>
+        <p>Скрипты на <code>SessionStart</code>, <code>PreToolUse</code> и др. Запускает сам harness, а не модель.</p>
+      </div>
+      <div class="card">
+        <h3>🎨 output-styles <span class="tag">тон</span></h3>
+        <p>Меняют манеру ответов Claude (например режим «Наставник»).</p>
+      </div>
+      <div class="card">
+        <h3>🔌 .mcp.json <span class="tag">инструменты</span></h3>
+        <p>Подключение внешних MCP-серверов: Figma, Pencil, Playwright, Context7…</p>
+      </div>
+      <div class="card">
+        <h3>⚙️ settings.json <span class="tag">настройки</span></h3>
+        <p>Права (permissions), переменные окружения, хуки, тумблеры MCP-серверов.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. CLAUDE.md -->
+  <section id="claudemd">
+    <h2><span class="num">03</span>Из чего состоит <code>CLAUDE.md</code></h2>
+    <p class="sub">Обычный Markdown — но Claude читает его как системные инструкции проекта.
+    Чёткой схемы нет, но удачный файл содержит блоки:</p>
+    <table>
+      <tr><th>Блок</th><th>Зачем</th></tr>
+      <tr><td>Назначение проекта</td><td>Что это и для чего — пара строк сверху.</td></tr>
+      <tr><td>Структура / навигация</td><td>Где что лежит, ключевые файлы и папки.</td></tr>
+      <tr><td>Правила работы</td><td>Договорённости: «сначала прототип», «секреты — мимо репо» и т.п.</td></tr>
+      <tr><td>Команды и инструменты</td><td>Как запускать, какие MCP подключены.</td></tr>
+      <tr><td>Стиль и ограничения</td><td>Чего делать не нужно, на каком языке отвечать.</td></tr>
+    </table>
+    <div class="note"><b>Иерархия памяти.</b> Claude объединяет <code>~/.claude/CLAUDE.md</code>
+    (глобально, для всех проектов) и <code>./CLAUDE.md</code> (этот проект). Локальный
+    дополняет и переопределяет глобальный.</div>
+  </section>
+
+  <!-- 4. MCP -->
+  <section id="mcp">
+    <h2><span class="num">04</span>Что такое MCP</h2>
+    <p class="sub"><b>MCP (Model Context Protocol)</b> — стандарт, по которому Claude
+    подключается к внешним «серверам инструментов». Каждый сервер добавляет набор
+    инструментов: Figma даёт доступ к дизайну, Pencil — к прототипам, Playwright — к браузеру.</p>
+    <p class="sub">Конфигурация в проекте — файл <code>.mcp.json</code>. Он коммитится и
+    шарится на всю команду. Секреты в него не пишут — подставляют через переменные окружения.</p>
+<pre class="code"><span class="cm">// .mcp.json — подключение MCP-сервера Figma</span>
+{
+  <span class="k">"mcpServers"</span>: {
+    <span class="k">"figma"</span>: {
+      <span class="k">"command"</span>: <span class="s">"npx"</span>,
+      <span class="k">"args"</span>: [<span class="s">"-y"</span>, <span class="s">"figma-developer-mcp"</span>, <span class="s">"--stdio"</span>],
+      <span class="k">"env"</span>: { <span class="k">"FIGMA_API_KEY"</span>: <span class="s">"${FIGMA_API_KEY}"</span> }
+    }
+  }
+}</pre>
+    <table>
+      <tr><th>Поле</th><th>Что значит</th></tr>
+      <tr><td><code>command</code></td><td>Чем запустить сервер (обычно <code>npx</code>).</td></tr>
+      <tr><td><code>args</code></td><td>Аргументы запуска, в т.ч. имя пакета сервера.</td></tr>
+      <tr><td><code>env</code></td><td>Переменные окружения сервера — сюда идут токены через <code>${...}</code>.</td></tr>
+    </table>
+  </section>
+
+  <!-- 5. Установка -->
+  <section id="install">
+    <h2><span class="num">05</span>Как подключить MCP-сервер</h2>
+    <p class="sub">На примере Figma. Аналогично для Pencil, Playwright, Context7.</p>
+    <ol class="steps">
+      <li><b>Получить токен.</b> <span>Figma → Settings → Security → Personal access tokens → создать токен.</span></li>
+      <li><b>Положить токен в окружение.</b> <span>В <code>~/.zshrc</code>: <code>export FIGMA_API_KEY="figd_..."</code> и перезапустить терминал.</span></li>
+      <li><b>Описать сервер в <code>.mcp.json</code>.</b> <span>Блок <code>mcpServers.figma</code> как в примере выше.</span></li>
+      <li><b>Разрешить сервер.</b> <span>В <code>.claude/settings.json</code> добавить имя в <code>enabledMcpjsonServers</code>.</span></li>
+      <li><b>Перезапустить Claude Code.</b> <span>Проверить статус командой <code>/mcp</code> — сервер должен быть <span style="color:var(--ok)">connected</span>.</span></li>
+    </ol>
+    <div class="note"><b>Альтернатива через CLI:</b> <code>claude mcp add figma -- npx -y figma-developer-mcp --stdio</code>
+    — добавит сервер без ручного редактирования JSON.</div>
+  </section>
+
+  <!-- 6. Подробно по вкладкам -->
+  <section id="detail">
+    <h2><span class="num">06</span>Каждая сущность подробно</h2>
+    <p class="sub">Переключай вкладки. По каждой: что это, где лежит, пример и как применять в жизни.</p>
+
+    <div class="tabs" id="tabs">
+      <button class="active" data-tab="skills">🧠 Skills</button>
+      <button data-tab="commands">⌨️ Команды</button>
+      <button data-tab="mcp">🔌 MCP</button>
+      <button data-tab="agents">🤖 agents/</button>
+      <button data-tab="hooks">🪝 hooks/</button>
+      <button data-tab="styles">🎨 output-styles/</button>
+      <button data-tab="settings">⚙️ settings.json</button>
+      <button data-tab="gitignore">🙈 .gitignore</button>
+    </div>
+
+    <!-- SKILLS -->
+    <div class="panel-tab active" data-panel="skills">
+      <h3>🧠 Skills — навыки</h3>
+      <p class="what">Переиспользуемый «рецепт», который объясняет Claude <b>как делать X</b>:
+      пошаговый процесс, правила, чек-листы. Claude подгружает скилл <b>только когда он нужен</b>
+      (по описанию в <code>description</code>), а не держит в контексте всегда — это экономит память.</p>
+      <div class="meta">
+        <span><b>Где:</b> .claude/skills/&lt;имя&gt;/SKILL.md</span>
+        <span><b>Формат:</b> Markdown + frontmatter</span>
+        <span><b>Вызов:</b> авто по смыслу или <code>/имя</code></span>
+      </div>
+      <div class="h4">Пример — SKILL.md</div>
+<pre class="code"><span class="cm">---</span>
+<span class="a">name:</span> commit-style
+<span class="a">description:</span> <span class="s">Use when writing git commits — формат и правила сообщений</span>
+<span class="cm">---</span>
+
+<span class="k"># Стиль коммитов</span>
+
+1. Заголовок ≤ 50 символов, в повелительном наклонении.
+2. Пустая строка, затем тело: <span class="s">что</span> и <span class="s">зачем</span>, не «как».
+3. Внизу ссылка на задачу: <span class="s">Refs: JIRA-123</span>.</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Онбординг правил команды.</b> Завернул «как мы пишем тесты / коммиты / PR» в скилл — и Claude соблюдает их сам, без напоминаний в каждом чате.</li>
+        <li><b>Сложный повторяемый процесс.</b> «Деплой на прод», «миграция БД», «разбор инцидента» — один раз описал шаги, дальше вызываешь по имени.</li>
+        <li><b>В этом проекте:</b> <code>superpowers</code> даёт скиллы <code>brainstorming</code>, <code>test-driven-development</code>, <code>systematic-debugging</code>; <code>ui-ux-pro-max</code> — выбор стиля, палитры и шрифтов под задачу.</li>
+      </ul>
+    </div>
+
+    <!-- COMMANDS -->
+    <div class="panel-tab" data-panel="commands">
+      <h3>⌨️ Команды — слэш-команды</h3>
+      <p class="what">Готовый шаблон запроса, который запускается командой <code>/имя</code>.
+      Удобно для действий, которые повторяешь часто и хочешь звать одним словом.
+      Аргументы подставляются через <code>$ARGUMENTS</code>.</p>
+      <div class="meta">
+        <span><b>Где:</b> .claude/commands/&lt;имя&gt;.md</span>
+        <span><b>Формат:</b> Markdown + frontmatter</span>
+        <span><b>Вызов:</b> <code>/имя аргументы</code></span>
+      </div>
+      <div class="h4">Пример — commands/review.md</div>
+<pre class="code"><span class="cm">---</span>
+<span class="a">description:</span> <span class="s">Ревью текущих изменений по нашему чек-листу</span>
+<span class="a">argument-hint:</span> [папка или файл]
+<span class="a">allowed-tools:</span> Read, Grep, Bash(git diff:*)
+<span class="cm">---</span>
+
+Проверь изменения в <span class="k">$ARGUMENTS</span> на: баги, безопасность,
+читаемость. Дай список замечаний с приоритетами.</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Частые рутины одной командой.</b> <code>/review</code>, <code>/changelog</code>, <code>/translate</code> — не печатаешь длинный промпт каждый раз.</li>
+        <li><b>Единый процесс для всей команды.</b> Команда лежит в репозитории → у всех одинаковый <code>/deploy</code> или <code>/new-component</code>.</li>
+        <li><b>В этом проекте:</b> <code>/prototype-first</code> — UI сначала прототипом в Pencil, потом код; <code>/explain-claude</code> — объясняет структуру папки.</li>
+      </ul>
+    </div>
+
+    <!-- MCP -->
+    <div class="panel-tab" data-panel="mcp">
+      <h3>🔌 MCP — внешние инструменты</h3>
+      <p class="what"><b>Model Context Protocol</b> — способ подключить к Claude внешние «серверы
+      инструментов». Каждый сервер добавляет реальные действия: Figma — читать/писать дизайн,
+      Pencil — собирать прототипы, Playwright — управлять браузером, Context7 — свежая документация.</p>
+      <div class="meta">
+        <span><b>Где:</b> .mcp.json (корень проекта)</span>
+        <span><b>Формат:</b> JSON</span>
+        <span><b>Статус:</b> команда <code>/mcp</code></span>
+      </div>
+      <div class="h4">Пример — .mcp.json</div>
+<pre class="code">{
+  <span class="a">"mcpServers"</span>: {
+    <span class="a">"playwright"</span>: {
+      <span class="a">"command"</span>: <span class="s">"npx"</span>,
+      <span class="a">"args"</span>: [<span class="s">"-y"</span>, <span class="s">"@playwright/mcp@latest"</span>]
+    },
+    <span class="a">"figma"</span>: {
+      <span class="a">"command"</span>: <span class="s">"npx"</span>,
+      <span class="a">"args"</span>: [<span class="s">"-y"</span>, <span class="s">"figma-developer-mcp"</span>, <span class="s">"--stdio"</span>],
+      <span class="a">"env"</span>: { <span class="a">"FIGMA_API_KEY"</span>: <span class="s">"${FIGMA_API_KEY}"</span> }
+    }
+  }
+}</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Дизайн → код.</b> Кидаешь ссылку на макет Figma — Claude читает его через MCP и верстает близко к оригиналу.</li>
+        <li><b>Проверка живого сайта.</b> Playwright MCP открывает страницу, кликает, снимает скриншот — Claude видит результат, а не догадывается.</li>
+        <li><b>Свежие доки.</b> Context7 подтягивает актуальную документацию библиотеки, чтобы код не опирался на устаревшие знания модели.</li>
+        <li><b>Секреты — через <code>env</code> и <code>${...}</code>,</b> а не текстом в файле: <code>.mcp.json</code> коммитится в репозиторий.</li>
+      </ul>
+    </div>
+
+    <!-- AGENTS -->
+    <div class="panel-tab" data-panel="agents">
+      <h3>🤖 agents/ — субагенты</h3>
+      <p class="what">Отдельный «работник» со <b>своим набором инструментов и чистым контекстом</b>.
+      Главный Claude поручает ему узкую задачу, тот выполняет и возвращает только результат —
+      основной диалог не засоряется деталями. Можно запускать несколько параллельно.</p>
+      <div class="meta">
+        <span><b>Где:</b> .claude/agents/&lt;имя&gt;.md</span>
+        <span><b>Формат:</b> Markdown + frontmatter</span>
+        <span><b>Вызов:</b> авто или явно «через субагента»</span>
+      </div>
+      <div class="h4">Пример — agents/ui-prototyper.md</div>
+<pre class="code"><span class="cm">---</span>
+<span class="a">name:</span> ui-prototyper
+<span class="a">description:</span> <span class="s">Быстрая сборка UI-прототипов в Pencil (.pen)</span>
+<span class="a">tools:</span> mcp__pencil__batch_design, mcp__pencil__get_screenshot, Skill
+<span class="a">model:</span> sonnet
+<span class="cm">---</span>
+
+Ты — узкий субагент-прототайпер. По описанию экрана собери .pen
+и верни путь к файлу + скриншот. Не пиши длинных сообщений.</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Тяжёлый поиск по кодовой базе.</b> Субагент перелопачивает сотни файлов и отдаёт вывод — главный контекст остаётся чистым.</li>
+        <li><b>Параллельные варианты.</b> Запустил трёх <code>ui-prototyper</code> — получил 3 наброска экрана одновременно.</li>
+        <li><b>Ограничение прав.</b> Субагенту-ревьюеру даёшь только <code>Read</code>/<code>Grep</code> — он физически не сможет что-то изменить.</li>
+      </ul>
+    </div>
+
+    <!-- HOOKS -->
+    <div class="panel-tab" data-panel="hooks">
+      <h3>🪝 hooks/ — реакции на события</h3>
+      <p class="what">Shell-команды, которые <b>сам Claude Code</b> (не модель!) запускает на событие:
+      старт сессии, перед/после вызова инструмента, остановка. Поэтому хуки — для
+      <b>гарантированных</b> действий, которые должны срабатывать всегда.</p>
+      <div class="meta">
+        <span><b>Где:</b> .claude/hooks/ + регистрация в settings.json</span>
+        <span><b>Формат:</b> любой исполняемый скрипт</span>
+        <span><b>События:</b> SessionStart, PreToolUse, PostToolUse, Stop…</span>
+      </div>
+      <div class="h4">Пример — авто-форматирование после правки файла</div>
+<pre class="code"><span class="cm">// .claude/settings.json</span>
+<span class="a">"hooks"</span>: {
+  <span class="a">"PostToolUse"</span>: [{
+    <span class="a">"matcher"</span>: <span class="s">"Edit|Write"</span>,
+    <span class="a">"hooks"</span>: [{ <span class="a">"type"</span>: <span class="s">"command"</span>,
+      <span class="a">"command"</span>: <span class="s">"npx prettier --write \"$CLAUDE_FILE_PATHS\""</span> }]
+  }]
+}</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Авто-формат и линт.</b> После каждого <code>Edit</code> прогоняется Prettier/ESLint — код всегда причёсан.</li>
+        <li><b>Защита от опасного.</b> <code>PreToolUse</code> блокирует <code>rm -rf</code> или правку <code>.env</code> до выполнения.</li>
+        <li><b>Контекст на старте.</b> <code>SessionStart</code> печатает правила проекта — как <code>session-start.sh</code> в этом проекте.</li>
+        <li><b>Уведомления.</b> На <code>Stop</code> — звук или сообщение в Slack «задача готова».</li>
+      </ul>
+    </div>
+
+    <!-- OUTPUT STYLES -->
+    <div class="panel-tab" data-panel="styles">
+      <h3>🎨 output-styles/ — стиль ответов</h3>
+      <p class="what">Меняют <b>манеру и тон</b>, в котором Claude отвечает, не трогая саму логику работы.
+      Один и тот же запрос можно получить «по-инженерному кратко» или «как от наставника с пояснениями».</p>
+      <div class="meta">
+        <span><b>Где:</b> .claude/output-styles/&lt;имя&gt;.md</span>
+        <span><b>Формат:</b> Markdown + frontmatter</span>
+        <span><b>Вызов:</b> команда <code>/output-style</code></span>
+      </div>
+      <div class="h4">Пример — output-styles/tutor.md</div>
+<pre class="code"><span class="cm">---</span>
+<span class="a">name:</span> Наставник
+<span class="a">description:</span> <span class="s">Объясняет каждый шаг простыми словами</span>
+<span class="cm">---</span>
+
+Перед действием говори ЧТО и ЗАЧЕМ делаешь.
+После — что получилось и как проверить.
+Добавляй врезки «💡 Почему так».</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Обучение.</b> Режим «Наставник» — джуниор видит не только результат, но и рассуждения.</li>
+        <li><b>Скорость для своих.</b> Сжатый стиль без воды, когда нужен только diff и команды.</li>
+        <li><b>Под аудиторию.</b> Демо клиенту — больше объяснений; внутренняя работа — сухие факты.</li>
+      </ul>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel-tab" data-panel="settings">
+      <h3>⚙️ settings.json — настройки проекта</h3>
+      <p class="what">Главный конфиг поведения Claude в проекте: <b>права</b> (что можно без спроса,
+      что спросить, что запретить), переменные окружения, регистрация хуков и тумблеры MCP-серверов.
+      Личное (не для репозитория) выносят в <code>settings.local.json</code>.</p>
+      <div class="meta">
+        <span><b>Где:</b> .claude/settings.json</span>
+        <span><b>Формат:</b> JSON</span>
+        <span><b>Личное:</b> settings.local.json (в .gitignore)</span>
+      </div>
+      <div class="h4">Пример — settings.json</div>
+<pre class="code">{
+  <span class="a">"permissions"</span>: {
+    <span class="a">"allow"</span>: [<span class="s">"Read"</span>, <span class="s">"Bash(git diff:*)"</span>],
+    <span class="a">"ask"</span>:   [<span class="s">"Bash(git push:*)"</span>],
+    <span class="a">"deny"</span>:  [<span class="s">"Read(./.env)"</span>]
+  },
+  <span class="a">"enabledMcpjsonServers"</span>: [<span class="s">"figma"</span>, <span class="s">"pencil"</span>]
+}</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Меньше лишних вопросов.</b> Безопасное (<code>Read</code>, <code>git diff</code>) в <code>allow</code> → Claude не дёргает разрешением на каждом шаге.</li>
+        <li><b>Подушка безопасности.</b> <code>git push</code> в <code>ask</code>, <code>.env</code> в <code>deny</code> → опасное не уйдёт незаметно.</li>
+        <li><b>Общие правила команды.</b> <code>settings.json</code> в репо — у всех одинаковые права; личные исключения каждый держит в своём <code>settings.local.json</code>.</li>
+      </ul>
+    </div>
+
+    <!-- GITIGNORE -->
+    <div class="panel-tab" data-panel="gitignore">
+      <h3>🙈 .gitignore — что не коммитить</h3>
+      <p class="what">Список файлов и папок, которые git <b>игнорирует</b>. В контексте Claude важен,
+      чтобы в репозиторий не утекли <b>секреты</b> и <b>личные настройки</b>, и чтобы не тащить мусор.</p>
+      <div class="meta">
+        <span><b>Где:</b> .gitignore (корень)</span>
+        <span><b>Формат:</b> по строке на шаблон</span>
+        <span><b>Действие:</b> исключает из git</span>
+      </div>
+      <div class="h4">Пример — .gitignore</div>
+<pre class="code"><span class="cm"># Личные настройки Claude — у каждого свои</span>
+.claude/settings.local.json
+
+<span class="cm"># Секреты</span>
+.env
+*.key
+
+<span class="cm"># Системное</span>
+.DS_Store
+node_modules/</pre>
+      <div class="h4">Как применять в жизни</div>
+      <ul class="life">
+        <li><b>Не утекут токены.</b> <code>.env</code> и ключи остаются только на твоей машине.</li>
+        <li><b>Личное отдельно от общего.</b> <code>settings.local.json</code> игнорируется, а общий <code>settings.json</code> — коммитится.</li>
+        <li><b>Чистый репозиторий.</b> Без <code>node_modules/</code> и <code>.DS_Store</code> история не засоряется.</li>
+      </ul>
+    </div>
+
+  </section>
+
+</main>
+
+<footer class="wrap">
+  Учебный проект • структура .claude • CLAUDE.md + MCP + skills + commands<br>
+  Подробности — в <a class="inline" href="CLAUDE.md">CLAUDE.md</a> или командой <code>/explain-claude</code>
+</footer>
+
+<script>
+  const tabs = document.querySelectorAll('#tabs button');
+  const panels = document.querySelectorAll('.panel-tab');
+  tabs.forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.tab;
+    tabs.forEach(b => b.classList.toggle('active', b === btn));
+    panels.forEach(p => p.classList.toggle('active', p.dataset.panel === id));
+    document.getElementById('detail').scrollIntoView({behavior:'smooth', block:'start'});
+  }));
+</script>
+
+</body>
+</html>

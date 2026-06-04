@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/mcp.json",
+  "_comment": "Учебный пример конфигурации MCP-серверов на уровне проекта. Файл .mcp.json коммитится в репозиторий и шарится на всю команду. Секреты сюда НЕ кладут — подставляют через переменные окружения. Подробности установки см. в index.html.",
+  "mcpServers": {
+    "figma": {
+      "_comment": "Дизайн ↔ код в обе стороны. Нужен Personal Access Token из Figma (Settings → Security → Personal access tokens).",
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp", "--stdio"],
+      "env": {
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      }
+    },
+    "pencil": {
+      "_comment": "Редактор .pen-прототипов. Используется командой /prototype-first для проектирования UI до кода.",
+      "command": "npx",
+      "args": ["-y", "@pencil/mcp@latest"]
+    },
+    "playwright": {
+      "_comment": "Управление браузером: навигация, клики, скриншоты, проверка живого сайта.",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "context7": {
+      "_comment": "Актуальная документация библиотек и фреймворков прямо в контекст.",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    }
+  }
+}

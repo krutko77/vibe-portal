@@ -286,6 +286,14 @@
           <span class="materials-tab-icon">📋</span>
           <span class="materials-tab-text">Шпаргалка</span>
         </button>
+        <button class="materials-tab" data-sub="claude-md">
+          <span class="materials-tab-icon">📄</span>
+          <span class="materials-tab-text">CLAUDE.md</span>
+        </button>
+        <button class="materials-tab" data-sub="claude-folder">
+          <span class="materials-tab-icon">🗂</span>
+          <span class="materials-tab-text">Папка .claude</span>
+        </button>
         <button class="materials-tab" data-sub="templates-dl">
           <span class="materials-tab-icon">📦</span>
           <span class="materials-tab-text">Шаблоны</span>
@@ -472,6 +480,326 @@
               <tr><td><code>--output-format stream-json</code></td><td>стрим NDJSON для скриптов</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- materials > CLAUDE.md -->
+      <div class="materials-page hidden" data-sub="claude-md">
+        <div class="page-meta">VIBE PORTAL · CLAUDE.MD</div>
+        <h1 class="page-h1"><em>CLAUDE.md</em> — память проекта</h1>
+        <p class="page-lead">Обычный Markdown-файл с особым именем. Claude Code читает его первым делом в начале каждой сессии и сразу понимает контекст — как записка новому сотруднику.</p>
+        <div class="anchor-chips">
+          <a href="#cm-what" class="anchor-chip">Что это</a>
+          <a href="#cm-md" class="anchor-chip">Markdown</a>
+          <a href="#cm-why" class="anchor-chip">Зачем</a>
+          <a href="#cm-write" class="anchor-chip">Что писать</a>
+          <a href="#cm-tree" class="anchor-chip">Иерархия</a>
+          <a href="#cm-tips" class="anchor-chip">Памятка</a>
+        </div>
+
+        <div class="page-sect" id="cm-what">
+          <div class="page-sect-no">ЧТО ТАКОЕ .MD И CLAUDE.MD</div>
+          <p><code>.md</code> — это обычный текстовый файл (Markdown). Вы пишете текст и пару значков, а файл «оживает»: где-то заголовок, где-то список, где-то жирное слово. Открывается где угодно, лёгкий, понятен и человеку, и ИИ.</p>
+          <p><code>CLAUDE.md</code> — такой же Markdown, но с особым именем и ролью: это <strong>записка для ИИ-помощника</strong> о вашем проекте. Лежит в главной папке проекта, рядом с остальными файлами.</p>
+          <div class="note-callout is-key">
+            <span class="note-callout-ic">🧠</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">аналогия</span>
+              Пришёл новый толковый сотрудник. Прежде чем он начнёт работать, вы оставляете ему записку: «вот так у нас всё устроено, так запускаем проект, такие правила». <code>CLAUDE.md</code> — та самая записка, только для ИИ.
+            </span>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cm-md">
+          <div class="page-sect-no">MARKDOWN ЗА МИНУТУ</div>
+          <table class="page-table">
+            <thead><tr><th>Напечатать</th><th>Получится</th></tr></thead>
+            <tbody>
+              <tr><td><code># Заголовок</code></td><td>крупный заголовок</td></tr>
+              <tr><td><code>## Поменьше</code></td><td>подзаголовок</td></tr>
+              <tr><td><code>**жирный**</code></td><td><strong>жирный</strong></td></tr>
+              <tr><td><code>*курсив*</code></td><td><em>курсив</em></td></tr>
+              <tr><td><code>- пункт</code></td><td>маркированный список</td></tr>
+              <tr><td><code>1. пункт</code></td><td>нумерованный список</td></tr>
+              <tr><td><code>[текст](ссылка)</code></td><td>ссылка</td></tr>
+              <tr><td><code>`код`</code></td><td>код в строке</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:8px;">90% случаев: <code>#</code> для заголовков, <code>-</code> для списков, <code>**</code> вокруг слова для жирного. Этого хватит на старте.</p>
+        </div>
+
+        <div class="page-sect" id="cm-why">
+          <div class="page-sect-no">ЗАЧЕМ ОН НУЖЕН</div>
+          <p>Без него ИИ каждый раз начинает «с чистого листа». С ним — работает как сотрудник, который уже в курсе дела.</p>
+          <table class="page-table">
+            <tbody>
+              <tr><td>🔁 Не повторяться</td><td>Один раз записали правила — не объясняете одно и то же в каждом разговоре.</td></tr>
+              <tr><td>🎯 Точнее результат</td><td>Помощник знает проект и реже делает не то, что вы хотели.</td></tr>
+              <tr><td>🎨 Единый стиль</td><td>Код и тексты в одном стиле — правила лежат в одном месте.</td></tr>
+              <tr><td>⚡ Быстрее старт</td><td>Новый человек или ИИ сразу видит, как всё устроено.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="page-sect" id="cm-write">
+          <div class="page-sect-no">ЧТО ПИСАТЬ</div>
+          <p>Коротко и по делу — то, что рассказали бы новому помощнику:</p>
+          <ul class="page-list">
+            <li><strong>Что за проект</strong> — пара предложений.</li>
+            <li><strong>Как запускать</strong> — команды или шаги.</li>
+            <li><strong>Правила и стиль</strong> — язык, цвета, как оформлять.</li>
+            <li><strong>Чего избегать</strong> — что точно не нужно делать.</li>
+          </ul>
+          <div class="note-quote">
+            <span class="note-quote-label">CLAUDE.md · пример живого файла</span>
+            <pre># Мой проект
+
+Сайт-визитка для кофейни. Делаю в одиночку.
+
+## Как запускать
+- Открыть `index.html` двойным кликом — работает без установок.
+
+## Стиль
+- Тексты на русском, дружелюбно и просто.
+- Цвета: бежевый фон, коричневый акцент.
+- Только чистый HTML и CSS, без сложных библиотек.
+
+## Чего избегать
+- Без рекламы и всплывающих окон.
+- Не усложнять код — он должен быть понятен новичку.</pre>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cm-tree">
+          <div class="page-sect-no">ИЗ ЧЕГО СОСТОИТ · ИЕРАРХИЯ ПАМЯТИ</div>
+          <p>Чёткой схемы нет, но удачный файл обычно содержит блоки:</p>
+          <table class="page-table">
+            <tbody>
+              <tr><td>Назначение</td><td>Что это и для чего — пара строк сверху.</td></tr>
+              <tr><td>Структура</td><td>Где что лежит, ключевые файлы и папки.</td></tr>
+              <tr><td>Правила работы</td><td>Договорённости: «сначала прототип», «секреты — мимо репо».</td></tr>
+              <tr><td>Команды</td><td>Как запускать, какие MCP подключены.</td></tr>
+              <tr><td>Стиль и ограничения</td><td>Чего делать не нужно, на каком языке отвечать.</td></tr>
+            </tbody>
+          </table>
+          <div class="note-callout is-tip">
+            <span class="note-callout-ic">🧩</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">иерархия памяти</span>
+              Claude объединяет <code>~/.claude/CLAUDE.md</code> (глобально, для всех проектов) и <code>./CLAUDE.md</code> (этот проект). Локальный дополняет и переопределяет глобальный.
+            </span>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cm-tips">
+          <div class="page-sect-no">ПАМЯТКА</div>
+          <div class="note-callout is-tip">
+            <span class="note-callout-ic">✅</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">делайте так</span>
+              Имя файла — ровно <code>CLAUDE.md</code> (с большими буквами) · кладите его в главную папку проекта · пишите коротко (лучше 10 понятных строк, чем 3 страницы) · обновляйте, когда правила меняются.
+            </span>
+          </div>
+          <div class="note-callout is-warn">
+            <span class="note-callout-ic">⛔</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">частые ошибки</span>
+              Назвать файл <code>claude.txt</code> или <code>Claude.MD</code> — не сработает · забыть значки Markdown — текст «слипнется» · писать «воду» вместо конкретики · положить файл не в ту папку.
+            </span>
+          </div>
+          <div class="note-callout is-key">
+            <span class="note-callout-ic">🎓</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">запомнить одно</span>
+              <code>.md</code> — это текст, который умеет красиво оформляться, а <code>CLAUDE.md</code> — записка о проекте для ИИ-помощника. Всё остальное — детали. Создать заготовку в проекте можно командой <code>/init</code>.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- materials > Папка .claude -->
+      <div class="materials-page hidden" data-sub="claude-folder">
+        <div class="page-meta">VIBE PORTAL · ПАПКА .CLAUDE</div>
+        <h1 class="page-h1">Папка <em>.claude</em> изнутри</h1>
+        <p class="page-lead">Всё, что настраивает поведение Claude Code в проекте, лежит в <code>.claude/</code>. Рядом — <code>CLAUDE.md</code> (память) и <code>.mcp.json</code> (внешние инструменты). Каждая папка внутри — отдельный тип расширения.</p>
+        <div class="anchor-chips">
+          <a href="#cf-tree" class="anchor-chip">Структура</a>
+          <a href="#cf-entities" class="anchor-chip">Сущности</a>
+          <a href="#cf-skills" class="anchor-chip">Skills</a>
+          <a href="#cf-commands" class="anchor-chip">Команды</a>
+          <a href="#cf-agents" class="anchor-chip">Агенты</a>
+          <a href="#cf-hooks" class="anchor-chip">Хуки</a>
+          <a href="#cf-styles" class="anchor-chip">Стили</a>
+          <a href="#cf-settings" class="anchor-chip">settings</a>
+          <a href="#cf-mcp" class="anchor-chip">MCP</a>
+        </div>
+
+        <div class="page-sect" id="cf-tree">
+          <div class="page-sect-no">СТРУКТУРА ПАПКИ</div>
+          <div class="note-quote">
+            <span class="note-quote-label">проект/</span>
+            <pre>проект/
+├── CLAUDE.md                # память и правила проекта
+├── .mcp.json                # MCP-серверы (общие для команды)
+└── .claude/
+    ├── settings.json        # права, хуки, тумблеры MCP
+    ├── settings.local.json  # личные настройки (в .gitignore)
+    ├── skills/              # навыки (SKILL.md)
+    ├── commands/            # слэш-команды (/имя)
+    ├── agents/              # субагенты
+    ├── hooks/               # скрипты на события
+    └── output-styles/       # стили вывода (тон ответов)</pre>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cf-entities">
+          <div class="page-sect-no">СУЩНОСТИ — ЗА ЧТО ОТВЕЧАЮТ</div>
+          <table class="page-table">
+            <thead><tr><th>Сущность</th><th>Где</th><th>Что делает</th></tr></thead>
+            <tbody>
+              <tr><td>CLAUDE.md</td><td>корень / <code>~/.claude/</code></td><td>Память и правила. Грузится в контекст всегда.</td></tr>
+              <tr><td>skills</td><td><code>skills/&lt;имя&gt;/SKILL.md</code></td><td>Навыки «как делать X». Вызываются по запросу.</td></tr>
+              <tr><td>commands</td><td><code>commands/&lt;имя&gt;.md</code></td><td>Слэш-команды <code>/имя</code> — шаблон запроса.</td></tr>
+              <tr><td>agents</td><td><code>agents/&lt;имя&gt;.md</code></td><td>Субагенты со своим набором инструментов.</td></tr>
+              <tr><td>hooks</td><td><code>hooks/</code> + settings</td><td>Скрипты на события. Запускает сам harness.</td></tr>
+              <tr><td>output-styles</td><td><code>output-styles/&lt;имя&gt;.md</code></td><td>Меняют манеру ответов Claude.</td></tr>
+              <tr><td>.mcp.json</td><td>корень</td><td>Внешние серверы инструментов (Figma, Playwright…).</td></tr>
+              <tr><td>settings.json</td><td><code>.claude/</code></td><td>Права, env, хуки, тумблеры MCP.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="page-sect" id="cf-skills">
+          <div class="page-sect-no">🧠 SKILLS — НАВЫКИ</div>
+          <p>Переиспользуемый «рецепт»: как делать X (процесс, правила, чек-листы). Claude подгружает скилл <strong>только когда он нужен</strong> (по полю <code>description</code>), а не держит в контексте всегда — это экономит память.</p>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:0 0 4px;"><strong>Где:</strong> <code>.claude/skills/&lt;имя&gt;/SKILL.md</code> · <strong>Вызов:</strong> авто по смыслу или <code>/имя</code></p>
+          <div class="note-quote">
+            <span class="note-quote-label">SKILL.md</span>
+            <pre>---
+name: commit-style
+description: Use when writing git commits — формат сообщений
+---
+
+# Стиль коммитов
+1. Заголовок ≤ 50 символов, в повелительном наклонении.
+2. Тело: что и зачем, не «как».</pre>
+          </div>
+          <p>В этом портале скиллы дают <code>superpowers</code> (brainstorming, test-driven-development, systematic-debugging) и <code>ui-ux-pro-max</code> (стиль, палитра, шрифты под задачу).</p>
+        </div>
+
+        <div class="page-sect" id="cf-commands">
+          <div class="page-sect-no">⌨️ COMMANDS — СЛЭШ-КОМАНДЫ</div>
+          <p>Готовый шаблон запроса, который запускается командой <code>/имя</code>. Удобно для действий, которые повторяешь часто. Аргументы подставляются через <code>$ARGUMENTS</code>.</p>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:0 0 4px;"><strong>Где:</strong> <code>.claude/commands/&lt;имя&gt;.md</code> · <strong>Вызов:</strong> <code>/имя аргументы</code></p>
+          <div class="note-quote">
+            <span class="note-quote-label">commands/review.md</span>
+            <pre>---
+description: Ревью текущих изменений по чек-листу
+argument-hint: [папка или файл]
+allowed-tools: Read, Grep, Bash(git diff:*)
+---
+
+Проверь изменения в $ARGUMENTS на баги, безопасность,
+читаемость. Дай список замечаний с приоритетами.</pre>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cf-agents">
+          <div class="page-sect-no">🤖 AGENTS — СУБАГЕНТЫ</div>
+          <p>Отдельный «работник» со <strong>своим набором инструментов и чистым контекстом</strong>. Главный Claude поручает ему узкую задачу, тот выполняет и возвращает только результат — основной диалог не засоряется. Можно запускать несколько параллельно.</p>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:0 0 4px;"><strong>Где:</strong> <code>.claude/agents/&lt;имя&gt;.md</code> · <strong>Вызов:</strong> авто или явно «через субагента»</p>
+          <ul class="page-list">
+            <li><strong>Тяжёлый поиск по кодовой базе</strong> — субагент перелопачивает сотни файлов, главный контекст чист.</li>
+            <li><strong>Параллельные варианты</strong> — три субагента дают 3 наброска одновременно.</li>
+            <li><strong>Ограничение прав</strong> — ревьюеру дать только <code>Read</code>/<code>Grep</code>, он физически не сможет ничего изменить.</li>
+          </ul>
+        </div>
+
+        <div class="page-sect" id="cf-hooks">
+          <div class="page-sect-no">🪝 HOOKS — РЕАКЦИИ НА СОБЫТИЯ</div>
+          <p>Shell-команды, которые <strong>сам Claude Code</strong> (не модель!) запускает на событие: старт сессии, перед/после вызова инструмента, остановка. Поэтому хуки — для <strong>гарантированных</strong> действий, которые должны срабатывать всегда.</p>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:0 0 4px;"><strong>Где:</strong> <code>.claude/hooks/</code> + регистрация в <code>settings.json</code> · <strong>События:</strong> SessionStart, PreToolUse, PostToolUse, Stop…</p>
+          <div class="note-quote">
+            <span class="note-quote-label">settings.json · авто-формат после правки файла</span>
+            <pre>"hooks": {
+  "PostToolUse": [{
+    "matcher": "Edit|Write",
+    "hooks": [{ "type": "command",
+      "command": "npx prettier --write \"$CLAUDE_FILE_PATHS\"" }]
+  }]
+}</pre>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cf-styles">
+          <div class="page-sect-no">🎨 OUTPUT-STYLES — СТИЛЬ ОТВЕТОВ</div>
+          <p>Меняют <strong>манеру и тон</strong> ответов Claude, не трогая логику работы. Один запрос можно получить «по-инженерному кратко» или «как от наставника с пояснениями».</p>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:0 0 4px;"><strong>Где:</strong> <code>.claude/output-styles/&lt;имя&gt;.md</code> · <strong>Вызов:</strong> команда <code>/output-style</code></p>
+          <div class="note-quote">
+            <span class="note-quote-label">output-styles/tutor.md</span>
+            <pre>---
+name: Наставник
+description: Объясняет каждый шаг простыми словами
+---
+
+Перед действием говори ЧТО и ЗАЧЕМ делаешь.
+После — что получилось и как проверить.</pre>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cf-settings">
+          <div class="page-sect-no">⚙️ SETTINGS.JSON — НАСТРОЙКИ ПРОЕКТА</div>
+          <p>Главный конфиг поведения: <strong>права</strong> (что можно без спроса, что спросить, что запретить), переменные окружения, регистрация хуков и тумблеры MCP. Личное (не для репозитория) выносят в <code>settings.local.json</code> (в <code>.gitignore</code>).</p>
+          <div class="note-quote">
+            <span class="note-quote-label">settings.json</span>
+            <pre>{
+  "permissions": {
+    "allow": ["Read", "Bash(git diff:*)"],
+    "ask":   ["Bash(git push:*)"],
+    "deny":  ["Read(./.env)"]
+  },
+  "enabledMcpjsonServers": ["figma", "pencil"]
+}</pre>
+          </div>
+          <div class="note-callout is-tip">
+            <span class="note-callout-ic">🛡️</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">меньше лишних вопросов</span>
+              Безопасное (<code>Read</code>, <code>git diff</code>) в <code>allow</code> → Claude не дёргает разрешением на каждом шаге. Опасное (<code>git push</code>, <code>.env</code>) — в <code>ask</code>/<code>deny</code>.
+            </span>
+          </div>
+        </div>
+
+        <div class="page-sect" id="cf-mcp">
+          <div class="page-sect-no">🔌 MCP — ВНЕШНИЕ ИНСТРУМЕНТЫ</div>
+          <p><strong>MCP (Model Context Protocol)</strong> — стандарт, по которому Claude подключается к внешним «серверам инструментов». Каждый сервер добавляет реальные действия: Figma — дизайн, Playwright — браузер, Context7 — свежая документация. Конфиг проекта — <code>.mcp.json</code> (коммитится, шарится на команду).</p>
+          <div class="note-quote">
+            <span class="note-quote-label">.mcp.json · подключение Figma</span>
+            <pre>{
+  "mcpServers": {
+    "figma": {
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp", "--stdio"],
+      "env": { "FIGMA_API_KEY": "${FIGMA_API_KEY}" }
+    }
+  }
+}</pre>
+          </div>
+          <div class="page-sect-no" style="margin-top:14px;">Как подключить сервер (на примере Figma)</div>
+          <ol class="note-steps">
+            <li><strong>Получить токен.</strong> Figma → Settings → Security → Personal access tokens.</li>
+            <li><strong>Положить токен в окружение.</strong> В <code>~/.zshrc</code>: <code>export FIGMA_API_KEY="figd_…"</code>, перезапустить терминал.</li>
+            <li><strong>Описать сервер</strong> в <code>.mcp.json</code> (блок как выше).</li>
+            <li><strong>Разрешить сервер</strong> — добавить имя в <code>enabledMcpjsonServers</code> в <code>settings.json</code>.</li>
+            <li><strong>Перезапустить Claude Code</strong> и проверить статус командой <code>/mcp</code> (должен быть connected).</li>
+          </ol>
+          <div class="note-callout is-warn">
+            <span class="note-callout-ic">🔑</span>
+            <span class="note-callout-body">
+              <span class="note-callout-label">секреты — мимо репозитория</span>
+              Токены только через <code>env</code> и <code>${...}</code>, а не текстом: <code>.mcp.json</code> коммитится в git. Быстрая альтернатива JSON: <code>claude mcp add figma -- npx -y figma-developer-mcp --stdio</code>.
+            </span>
+          </div>
         </div>
       </div>
 

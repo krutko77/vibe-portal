@@ -1,0 +1,321 @@
+/* ===== Переменные темы ===== */
+:root {
+  --accent: #4f46e5;
+  --accent-soft: #eef0ff;
+  --bg: #ffffff;
+  --bg-soft: #f7f8fa;
+  --text: #1a1a1a;
+  --text-soft: #5f6368;
+  --muted: #9aa0a6;
+  --border: #ececec;
+  --code-bg: #f6f7f9;
+  --radius: 12px;
+  --sidebar-w: 280px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ===== База ===== */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+code {
+  font-family: var(--mono);
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.88em;
+  color: #374151;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Боковое меню ===== */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--bg-soft);
+  border-right: 1px solid var(--border);
+  padding: 28px 22px;
+  overflow-y: auto;
+  z-index: 40;
+}
+.sidebar__brand { display: flex; align-items: center; gap: 10px; }
+.sidebar__logo { font-size: 22px; }
+.sidebar__title { font-size: 18px; font-weight: 700; }
+.sidebar__subtitle {
+  margin: 6px 0 22px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav__link {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-soft);
+  transition: background 0.15s, color 0.15s;
+}
+.nav__link:hover { background: #eef0f2; text-decoration: none; color: var(--text); }
+.nav__link.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== Контент ===== */
+.content {
+  margin-left: var(--sidebar-w);
+  max-width: 760px;
+  padding: 56px 40px 96px;
+}
+
+/* ===== Шапка ===== */
+.hero { margin-bottom: 56px; }
+.hero__badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+.hero__title {
+  font-size: 36px;
+  line-height: 1.2;
+  font-weight: 800;
+  margin: 18px 0 12px;
+  letter-spacing: -0.02em;
+}
+.hero__title code { font-size: 0.82em; background: var(--bg-soft); }
+.hero__lead { font-size: 17px; color: var(--text-soft); margin: 0; }
+
+/* ===== Секции ===== */
+.section {
+  padding-top: 28px;
+  margin-bottom: 56px;
+  scroll-margin-top: 24px;
+}
+.section__num {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.section__title {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 6px 0 18px;
+  letter-spacing: -0.01em;
+}
+.section p { margin: 0 0 16px; }
+
+/* ===== Списки с галочками ===== */
+.ticks { list-style: none; padding: 0; margin: 16px 0; }
+.ticks li {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 9px;
+}
+.ticks li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ===== Выноски ===== */
+.callout {
+  display: flex;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  margin: 22px 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.callout__icon { font-size: 20px; flex-shrink: 0; }
+.callout--idea { background: var(--accent-soft); }
+.callout--note { background: var(--bg-soft); border: 1px solid var(--border); }
+
+/* ===== Таблица синтаксиса ===== */
+.syntax {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 22px 0;
+}
+.syntax__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.syntax__row:last-child { border-bottom: none; }
+.syntax__row .code {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--code-bg);
+  border-right: 1px solid var(--border);
+  font-size: 13px;
+  white-space: pre;
+  overflow-x: auto;
+}
+.syntax__result { padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; }
+.syntax__result p { margin: 0; }
+.r-h1 { font-size: 20px; font-weight: 700; }
+.r-h2 { font-size: 15px; font-weight: 700; color: var(--text-soft); }
+.r-list { margin: 0; padding-left: 20px; }
+
+/* ===== Код (общий) ===== */
+.code { font-family: var(--mono); color: #374151; }
+.code code { background: none; padding: 0; color: inherit; }
+
+/* ===== Блок кода с копированием ===== */
+.code-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 22px 0;
+}
+.code-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+}
+.code-block__name { font-family: var(--mono); font-size: 13px; color: var(--text-soft); }
+.copy-btn {
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.copy-btn:hover { background: var(--accent-soft); }
+.copy-btn.is-copied { color: #16a34a; border-color: #bbf7d0; }
+.code--block {
+  margin: 0;
+  padding: 16px 18px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* ===== Карточки выгод ===== */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 22px 0;
+}
+.benefit {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  background: var(--bg);
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.benefit:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.06); transform: translateY(-2px); }
+.benefit__icon { font-size: 26px; }
+.benefit h3 { margin: 10px 0 6px; font-size: 16px; }
+.benefit p { margin: 0; font-size: 14px; color: var(--text-soft); }
+
+/* ===== Памятка (две колонки) ===== */
+.split-tips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 22px 0;
+}
+.tips {
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+.tips h3 { margin: 0 0 12px; font-size: 16px; }
+.tips ul { margin: 0; padding-left: 18px; }
+.tips li { margin-bottom: 9px; font-size: 14px; }
+.tips--good { background: #f0fdf4; border-color: #dcfce7; }
+.tips--bad { background: #fef2f2; border-color: #fee2e2; }
+
+/* ===== Подвал ===== */
+.footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ===== Кнопка-гамбургер и затемнение (телефон) ===== */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 60;
+  width: 42px; height: 42px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.menu-toggle span {
+  display: block;
+  width: 18px; height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+}
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 30;
+}
+
+/* ===== Адаптив ===== */
+@media (max-width: 860px) {
+  .menu-toggle { display: flex; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 2px 0 16px rgba(0,0,0,0.08);
+  }
+  .sidebar.is-open { transform: translateX(0); }
+  .overlay.is-open { display: block; }
+  .content {
+    margin-left: 0;
+    padding: 72px 22px 80px;
+  }
+  .hero__title { font-size: 28px; }
+  .cards, .split-tips { grid-template-columns: 1fr; }
+  .syntax__row { grid-template-columns: 1fr; }
+  .syntax__row .code { border-right: none; border-bottom: 1px solid var(--border); }
+}
