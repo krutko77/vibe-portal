@@ -41,6 +41,14 @@ RUN mkdir -p /home/student/.config/code-server && \
     printf 'bind-addr: 0.0.0.0:8080\nauth: none\ncert: false\ndisable-telemetry: true\ndisable-update-check: true\n' \
         > /home/student/.config/code-server/config.yaml
 
+# Дефолтная модель claude-cli — sonnet (иначе claude-code по умолчанию берёт opus,
+# ×5 дороже). user-level settings → читается при любом запуске claude (терминал,
+# VS Code-расширение, десктоп по SSH). Ученик может переключиться через /model.
+# Рантайм-страховка дублирует это (panel/lib/students.js → ensureClaudeModelDefault),
+# т.к. ~/.claude не персистится между пересозданиями контейнера.
+RUN printf '{\n  "theme": "light",\n  "model": "sonnet"\n}\n' \
+        > /home/student/.claude/settings.json
+
 EXPOSE 8080
 EXPOSE 2222
 

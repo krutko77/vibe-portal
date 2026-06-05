@@ -9,7 +9,7 @@ import {
 } from './auth.js';
 import { hasKeepAlive } from './publish.js';
 import { ensureKeys, removeKeys, sshMountDir } from './ssh-access.js';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execFile } from 'node:child_process';
 
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
 const TEMPLATES_DIR = process.env.TEMPLATES_DIR || '/opt/vibe-portal/templates';
@@ -24,7 +24,38 @@ const SHIM_BASE_URL = process.env.SHIM_BASE_URL || 'http://172.30.0.1:8190';
 const MEM_LIMIT_MB = parseInt(process.env.STUDENT_MEM_LIMIT_MB || '3072', 10);
 const CPU_LIMIT = parseFloat(process.env.STUDENT_CPU_LIMIT || '1.5');
 
+// Дефолтная модель для claude-cli ВНУТРИ контейнера ученика. claude-code 2.1.x
+// по умолчанию берёт opus (дорого, ×5 к sonnet). Панельные чаты прибивают
+// --model sonnet сами, но claude в VS Code (терминал/расширение/десктоп по SSH)
+// запускается без флага — потому пиннимся через user-level settings (см. ниже).
+const STUDENT_DEFAULT_MODEL = process.env.STUDENT_DEFAULT_MODEL || 'sonnet';
+
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+
+// Прописать дефолт-модель в ~/.claude/settings.json внутри контейнера. Это
+// user-level настройка: claude читает её при ЛЮБОМ запуске (терминал code-server,
+// VS Code-расширение, десктоп по SSH) независимо от cwd и способа входа. Это
+// ДЕФОЛТ, а не замок — ученик при желании переключается через /model. Идемпотентно
+// и merge (тему/прочее не трогаем). ~/.claude не персистится между пересозданиями
+// контейнера → повторяем при каждом холодном старте (вызов в dockerStart).
+// Best-effort: не валим старт контейнера, если exec не удался.
+function ensureClaudeModelDefault(username) {
+  const m = JSON.stringify(STUDENT_DEFAULT_MODEL);
+  const js =
+    `const fs=require('fs'),p=process.env.HOME+'/.claude/settings.json';` +
+    `let o={};try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch{}` +
+    `if(o.model!==${m}){o.model=${m};fs.writeFileSync(p,JSON.stringify(o,null,2))}`;
+  return new Promise((resolve) => {
+    execFile('docker',
+      ['exec', '-u', 'student', containerName(username), 'node', '-e', js],
+      { timeout: 15_000 },
+      (err, _o, stderr) => {
+        if (err) process.stderr.write(
+          `[students] ensureClaudeModelDefault ${username}: ${stderr || err.message}\n`);
+        resolve();
+      });
+  });
+}
 
 export function containerName(username) {
   return `vibe-${username}`;
@@ -286,6 +317,7 @@ export async function dockerStart(username) {
   }
   if (info.State.Running) return info;
   await c.start();
+  await ensureClaudeModelDefault(username); // дефолт claude = sonnet (иначе opus, дорого)
   return await c.inspect();
 }
 

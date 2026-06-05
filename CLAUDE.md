@@ -50,6 +50,23 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
   ports наружу: 127.0.0.1:820X→8080 (code-server), 0.0.0.0:84XX→2222 (sshd, десктопный VS Code)
 ```
 
+**Дефолтная модель claude-cli внутри контейнера = `sonnet`.** claude-code 2.1.x
+по умолчанию берёт **opus** (×5 дороже sonnet) — а claude в VS Code
+(терминал code-server / расширение / десктоп по SSH) запускается **без**
+`--model`, в отличие от панельных чатов (project-chat/user-chat прибивают
+`--model sonnet` сами). Поэтому пиннимся через user-level
+`~/.claude/settings.json` → `{"model":"sonnet"}`: claude читает его при любом
+запуске независимо от cwd и способа входа. Это **дефолт, а не замок** — ученик
+при желании переключается через `/model`. Доставка в двух местах:
+`workspace-image/Dockerfile` (бейкается в образ для будущих пересборок) и
+`panel/lib/students.js → ensureClaudeModelDefault()` (рантайм-хук в `dockerStart`:
+прописывает при каждом холодном старте, т.к. `~/.claude` **не персистится** между
+пересозданиями контейнера; идемпотентно, merge — тему не трогает). Значение
+переопределяется env `STUDENT_DEFAULT_MODEL`. Существующим контейнерам применять
+`docker exec -u student vibe-<u> node -e '…settings.json…'` (или они подхватят сами
+при следующем старте). Проверка: модель видна в транскрипте шима
+(`/api/transcripts`) — должна быть `claude-sonnet-4-6`, а не `claude-opus-4-8`.
+
 ## Изоляция (iptables — chain VIBE-FILTER в FORWARD, VIBE-INPUT в INPUT)
 
 Контейнеры `vibe-net` могут:
