@@ -1258,9 +1258,9 @@ description: Объясняет каждый шаг простыми слова�
           системы — выбери <b>Linux</b>. Первый раз ставится мини-сервер (~минуту).</li>
 
         <li><b>Открой папку:</b> <code>File → Open Folder</code> →
-          <code>/home/student/workspace</code> (вся твоя рабочая папка). Или просто жми
-          кнопку <b>💻</b> на нужном проекте в списке — она сразу откроет его папку
-          (и скопирует ссылку).</li>
+          <code>/home/student/workspace</code> (вся твоя рабочая папка). Или жми кнопку
+          <b>💻</b> на нужном проекте — откроется окошко с кнопкой «Открыть в VS Code»
+          и готовым адресом его папки.</li>
       </ol>
       <div class="form-hint" style="margin-top:8px">
         💤 Если контейнер «спал» — при заходе по SSH он сам просыпается (~10 сек). Если первый
@@ -1271,6 +1271,29 @@ description: Объясняет каждый шаг простыми слова�
       <div class="modal-footer">
         <button class="btn btn-ghost" id="ssh-regen">Перевыпустить ключ</button>
         <button class="btn btn-primary" data-close="modal-ssh">Готово</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Открыть проект в десктопном VS Code ────────── -->
+  <div class="modal-overlay hidden" id="modal-proj-vscode" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <span class="modal-title">Открыть «<span id="pv-name"></span>» в VS Code</span>
+        <button class="modal-close" data-close="modal-proj-vscode" aria-label="Закрыть">✕</button>
+      </div>
+      <p class="form-hint" style="margin:0 0 12px">
+        Десктопный VS Code по SSH. Если ещё не настроил доступ — сначала кнопка
+        <b>«💻 Десктоп VS Code»</b> вверху (скачать ключ + конфиг).
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn btn-primary" id="pv-open">Открыть в VS Code локально</button>
+        <button class="btn" id="pv-copy">Скопировать адрес папки</button>
+      </div>
+      <div class="form-hint">Адрес папки (вставить в VS Code → <code>File → Open Folder</code>):</div>
+      <pre id="pv-path" style="font-family:monospace;font-size:13px;background:#0002;padding:8px;border-radius:4px;margin:6px 0 0;white-space:pre-wrap;user-select:all"></pre>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-close="modal-proj-vscode">Готово</button>
       </div>
     </div>
   </div>
