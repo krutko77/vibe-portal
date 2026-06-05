@@ -371,6 +371,9 @@ body.has-right-chat .vscode-recent {
   display: flex; flex-direction: column;
   overflow: hidden;
 }
+/* Инструкционные модалки могут быть высокими → ограничиваем высоту,
+   тело (.modal-body) скроллится, шапка/футер на месте. */
+#modal-ssh > .modal, #modal-proj-vscode > .modal { max-height: calc(100vh - 32px); }
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 18px;
@@ -425,6 +428,34 @@ body.has-right-chat .vscode-recent {
   font-size: 11px;
   color: hsl(var(--muted-foreground));
   font-family: var(--font-mono);
+}
+
+/* Тело инструкционных модалок (SSH-доступ, открыть проект): боковые отступы
+   как у form-group + вертикальный скролл, если контент высокий. */
+.modal > .modal-body {
+  padding: 14px 18px 4px;
+  overflow-y: auto; min-height: 0;
+}
+.modal-body > p { margin: 0 0 10px; }
+.modal-body .form-hint { line-height: 1.6; }
+.modal-body .note-steps { margin: 4px 0 10px; }
+.modal-body .note-steps li { font-size: 13px; line-height: 1.6; padding-top: 9px; padding-bottom: 9px; }
+.modal-body .note-steps li b { color: hsl(var(--foreground)); font-weight: 600; }
+/* Блок кода/команды и конфиг-textarea внутри шага */
+.step-code, .modal-body textarea.step-code {
+  display: block; width: 100%; box-sizing: border-box;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.5;
+  background: hsl(var(--secondary)); border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  padding: 8px 10px; margin: 8px 0 0;
+  white-space: pre-wrap; overflow-x: auto; resize: vertical; outline: none;
+}
+.step-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 2px; }
+.modal-body .path-row {
+  font-family: var(--font-mono); font-size: 13px;
+  background: hsl(var(--secondary)); border: 1px solid hsl(var(--border));
+  color: hsl(var(--foreground));
+  padding: 9px 11px; margin: 6px 0 0; word-break: break-all; user-select: all;
 }
 .form-error {
   font-size: 11px;
