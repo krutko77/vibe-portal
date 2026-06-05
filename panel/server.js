@@ -152,6 +152,9 @@ app.get('/api/ssh-config', requireAuth, (req, res) => {
   const u = req.session.user;
   try {
     const sshPort = provisionSsh(u);
+    // Пробуждаем контейнер (SSH-вход сам уснувший не будит — порт не опубликован).
+    // Fire-and-forget: пока ученик читает инструкцию/копирует ключ, контейнер встаёт.
+    dockerStart(u).catch(() => {});
     res.json(sshConfig(u, sshPort));
   } catch (e) {
     res.status(500).json({ error: e.message });

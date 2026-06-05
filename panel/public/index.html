@@ -1228,10 +1228,13 @@ description: Объясняет каждый шаг простыми слова�
       </div>
       <ol style="padding-left:18px;line-height:1.7;margin:4px 0">
         <li>Установи <b>VS Code</b> и расширение <b>«Remote - SSH»</b> (один раз).</li>
-        <li>Скачай свой ключ и положи файл в папку <code>~/.ssh/</code>:
+        <li>Скачай свой ключ:
           <div style="margin:6px 0">
             <button class="btn btn-sm btn-primary" id="ssh-dl-key">↓ Скачать ключ</button>
           </div>
+          Перенеси его в <code>~/.ssh/</code> и поставь права (в Terminal на Mac/Linux):
+          <pre id="ssh-mv-cmd" style="font-family:monospace;font-size:12px;background:#0002;padding:6px;border-radius:4px;margin:4px 0;white-space:pre-wrap"></pre>
+          <span class="form-hint">Без <code>chmod 600</code> SSH отвергнет ключ («bad permissions»).</span>
         </li>
         <li>Добавь это в файл <code>~/.ssh/config</code>:
           <textarea id="ssh-config-text" class="form-input" readonly rows="6"

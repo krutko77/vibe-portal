@@ -57,6 +57,9 @@ async function openSshModal() {
   try {
     const cfg = await loadSshCfg();
     $('#ssh-config-text').value = cfg.configSnippet;
+    const k = cfg.keyFileName;
+    const mv = $('#ssh-mv-cmd');
+    if (mv) mv.textContent = `mv ~/Downloads/${k} ~/.ssh/${k}\nchmod 600 ~/.ssh/${k}`;
     openModal('modal-ssh');
   } catch (e) { alert('SSH: ' + e.message); }
 }
@@ -71,6 +74,10 @@ async function doRegenSshKey() {
 async function openDesktopVsCode(projectName) {
   try {
     const cfg = await loadSshCfg();
+    // Будим контейнер (SSH сам уснувший не поднимает); даём пару секунд встать,
+    // дальше VS Code сам поретраит коннект.
+    api('/api/container/start', { method: 'POST' }).catch(() => {});
+    await new Promise(r => setTimeout(r, 1500));
     window.location.href = cfg.projectUriBase + encodeURIComponent(projectName);
   } catch (e) { alert('SSH: ' + e.message); }
 }
