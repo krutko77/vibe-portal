@@ -1226,27 +1226,47 @@ description: Объясняет каждый шаг простыми слова�
         <span class="modal-title">Подключение по SSH · десктопный VS Code</span>
         <button class="modal-close" data-close="modal-ssh" aria-label="Закрыть">✕</button>
       </div>
+      <p class="form-hint" style="margin:0 0 10px">
+        Работай в обычном VS Code на своём компьютере — он подключается к твоей папке
+        на сервере. Настроить нужно один раз, дальше — в один клик.
+      </p>
       <ol style="padding-left:18px;line-height:1.7;margin:4px 0">
-        <li>Установи <b>VS Code</b> и расширение <b>«Remote - SSH»</b> (один раз).</li>
-        <li>Скачай свой ключ:
+        <li><b>Установи VS Code</b> (<code>code.visualstudio.com</code>) и в нём расширение
+          <b>«Remote - SSH»</b> (вкладка Extensions слева → найди «Remote - SSH» → Install).
+          Это один раз.</li>
+
+        <li><b>Скачай свой ключ доступа:</b>
           <div style="margin:6px 0">
             <button class="btn btn-sm btn-primary" id="ssh-dl-key">↓ Скачать ключ</button>
           </div>
-          Перенеси его в <code>~/.ssh/</code> и поставь права (в Terminal на Mac/Linux):
+          Положи файл в папку <code>.ssh</code> и поставь права. В <b>Terminal</b> (Mac/Linux):
           <pre id="ssh-mv-cmd" style="font-family:monospace;font-size:12px;background:#0002;padding:6px;border-radius:4px;margin:4px 0;white-space:pre-wrap"></pre>
-          <span class="form-hint">Без <code>chmod 600</code> SSH отвергнет ключ («bad permissions»).</span>
+          <span class="form-hint">⚠️ Без <code>chmod 600</code> SSH отвергнет ключ («bad permissions»).
+          Windows: положи файл в <code>C:\Users\Имя\.ssh\</code> (права обычно ставить не нужно).</span>
         </li>
-        <li>Добавь это в файл <code>~/.ssh/config</code>:
+
+        <li><b>Добавь это в файл</b> <code>~/.ssh/config</code> (создай, если его нет;
+          вставляй с самого начала строки, без отступа перед <code>Host</code>):
           <textarea id="ssh-config-text" class="form-input" readonly rows="6"
                     style="font-family:monospace;font-size:12px;margin-top:6px"></textarea>
           <button class="btn btn-sm" id="ssh-copy-config" style="margin-top:4px">Копировать конфиг</button>
         </li>
-        <li>В VS Code: <code>F1 → Remote-SSH: Connect to Host</code> → выбери <b>vibe-…</b>.
-          Откроется без пароля. На карточке проекта кнопка <b>💻</b> сразу откроет нужную папку.</li>
+
+        <li><b>Подключись в VS Code:</b> нажми <code>F1</code> → набери
+          <b>«Remote-SSH: Connect to Host»</b> → выбери <b id="ssh-alias-hint">vibe-…</b>.
+          Откроется новое окно и зайдёт <b>по ключу, без пароля</b>. Если спросит тип
+          системы — выбери <b>Linux</b>. Первый раз ставится мини-сервер (~минуту).</li>
+
+        <li><b>Открой папку:</b> <code>File → Open Folder</code> →
+          <code>/home/student/workspace</code> (вся твоя рабочая папка). Или просто жми
+          кнопку <b>💻</b> на нужном проекте в списке — она сразу откроет его папку
+          (и скопирует ссылку).</li>
       </ol>
       <div class="form-hint" style="margin-top:8px">
-        Ключ — твой личный доступ, никому не передавай. Если потерял или скомпрометирован —
-        перевыпусти (старый перестанет работать).
+        💤 Если контейнер «спал» — при заходе по SSH он сам просыпается (~10 сек). Если первый
+        коннект отвалился — нажми <b>Retry</b>.<br>
+        🔑 Ключ — твой личный доступ, никому не передавай. Потерял или утёк — перевыпусти
+        (старый сразу перестанет работать).
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" id="ssh-regen">Перевыпустить ключ</button>

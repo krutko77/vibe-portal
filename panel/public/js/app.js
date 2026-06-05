@@ -60,6 +60,8 @@ async function openSshModal() {
     const k = cfg.keyFileName;
     const mv = $('#ssh-mv-cmd');
     if (mv) mv.textContent = `mv ~/Downloads/${k} ~/.ssh/${k}\nchmod 600 ~/.ssh/${k}`;
+    const al = $('#ssh-alias-hint');
+    if (al) al.textContent = cfg.alias;
     openModal('modal-ssh');
   } catch (e) { alert('SSH: ' + e.message); }
 }
@@ -71,14 +73,18 @@ async function doRegenSshKey() {
     window.location.href = '/api/ssh-key'; // сразу отдать новый ключ на скачивание
   } catch (e) { alert(e.message); }
 }
-async function openDesktopVsCode(projectName) {
+async function openDesktopVsCode(projectName, btn) {
   try {
     const cfg = await loadSshCfg();
-    // Будим контейнер (SSH сам уснувший не поднимает); даём пару секунд встать,
+    const uri = cfg.projectUriBase + encodeURIComponent(projectName);
+    // Ссылку — в буфер (можно вставить вручную, если deep-link не сработал).
+    navigator.clipboard?.writeText(uri).catch(() => {});
+    if (btn) { const t = btn.textContent; btn.textContent = '✓'; setTimeout(() => { btn.textContent = t; }, 1200); }
+    // Будим контейнер (SSH сам уснувший не поднимает); пара секунд на старт,
     // дальше VS Code сам поретраит коннект.
     api('/api/container/start', { method: 'POST' }).catch(() => {});
     await new Promise(r => setTimeout(r, 1500));
-    window.location.href = cfg.projectUriBase + encodeURIComponent(projectName);
+    window.location.href = uri;
   } catch (e) { alert('SSH: ' + e.message); }
 }
 
@@ -721,7 +727,7 @@ async function refreshProjects() {
       $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
       $('[data-action="vscode"]', tr).onclick = () =>
         openVsCodeFor(ME.username, '/home/student/workspace/' + name);
-      $('[data-action="vscode-desktop"]', tr).onclick = () => openDesktopVsCode(name);
+      $('[data-action="vscode-desktop"]', tr).onclick = (e) => openDesktopVsCode(name, e.currentTarget);
       $('[data-action="download"]', tr).onclick = () => {
         window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
       };
