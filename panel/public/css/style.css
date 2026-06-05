@@ -451,6 +451,14 @@ body.has-right-chat .vscode-recent {
   white-space: pre-wrap; overflow-x: auto; resize: vertical; outline: none;
 }
 .step-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 2px; }
+/* Список расширений-ссылок внутри шага (div, не ul — чтобы не цеплять .note-steps li) */
+.modal-body .ext-list {
+  display: flex; flex-direction: column; gap: 3px;
+  margin: 7px 0 2px; padding-left: 2px;
+  font-family: var(--font-mono); font-size: 12.5px;
+}
+.modal-body .ext-list a { color: hsl(var(--primary)); text-decoration: underline; text-underline-offset: 2px; }
+.modal-body .ext-list a::before { content: "•\00a0"; color: hsl(var(--primary)); text-decoration: none; }
 .modal-body .path-row {
   font-family: var(--font-mono); font-size: 13px;
   background: hsl(var(--secondary)); border: 1px solid hsl(var(--border));
