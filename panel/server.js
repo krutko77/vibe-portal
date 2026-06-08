@@ -222,7 +222,8 @@ app.post('/api/projects/upload', requireAuth, projectUpload.array('files'), (req
   try {
     const ws = workspaceDir(req.session.user);
     fs.mkdirSync(ws, { recursive: true });
-    const files = (req.files || []).map(f => ({ relPath: f.originalname, buffer: f.buffer }));
+    const rawPaths = Array.isArray(req.body.paths) ? req.body.paths : [req.body.paths].filter(Boolean);
+    const files = (req.files || []).map((f, i) => ({ relPath: rawPaths[i] || f.originalname, buffer: f.buffer }));
     const out = createUploadedProject({ workspaceDir: ws, projectName: name, files });
     res.json({ ok: true, project: out });
   } catch (e) {
@@ -234,7 +235,7 @@ app.get('/api/projects', requireAuth, (req, res) => {
   const ws = workspaceDir(req.session.user);
   fs.mkdirSync(ws, { recursive: true });
   const projects = fs.readdirSync(ws, { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.startsWith('.'))
+    .filter(d => d.isDirectory() && !d.name.startsWith('.') && d.name !== '_vibe-setup')
     .map(d => {
       const dir = path.join(ws, d.name);
       let st;
@@ -395,6 +396,159 @@ app.delete('/api/project-chat/session/:id', requireAuth, requireOwnProject, asyn
   } catch (e) { res.status(409).json({ error: e.message }); }
 });
 
+// ---------- vibe-setup: скрытый проект-ассистент для настройки своего портала ----------
+
+const VIBE_SETUP_CLAUDE_MD = `# Vibe Portal Setup Assistant
+
+Ты — специализированный помощник, который помогает пользователю развернуть собственный Vibe Portal на его VPS-сервере.
+
+## Твоя роль
+
+Ты умеешь:
+- Подключаться к серверу по SSH и выполнять команды
+- Устанавливать Docker, nginx и все зависимости
+- Разворачивать Vibe Portal с нуля
+- Настраивать HTTP-прокси (Squid) для работы Claude API из России
+- Диагностировать проблемы и чинить конфигурацию
+
+Работай пошагово, жди подтверждения перед каждым следующим шагом.
+
+## Архитектура Vibe Portal
+
+\`\`\`
+vibe.example.com → nginx :80/:443 → vibe-panel :3020
+                                     ├── /              SPA (login → app)
+                                     ├── /api/*         JSON API
+                                     └── /code/<user>/* прокси → 127.0.0.1:820X
+                                                                  (контейнер vibe-<user>)
+Контейнер vibe-<user>:
+  image:   vibe-workspace:dev (Debian 12 + Node 22 + code-server + claude-cli + openssh)
+  user:    student (uid 1000), no sudo, --cap-drop=ALL
+  mounts:  /data/vibe-students/<user> → /home/student/workspace
+  env:     ANTHROPIC_BASE_URL=http://172.30.0.1:8190 (→ anthropic-shim)
+  ports:   127.0.0.1:820X→8080 (code-server), 0.0.0.0:84XX→2222 (sshd)
+\`\`\`
+
+## Ключевые файлы и директории
+
+| Путь | Назначение |
+|------|------------|
+| \`/opt/vibe-portal/\` | Корень проекта |
+| \`/opt/vibe-portal/panel/\` | Express-сервер (порт 3020) |
+| \`/opt/vibe-portal/shim/server.js\` | Anthropic-shim (порт 8190) |
+| \`/opt/vibe-portal/scripts/setup-iptables.sh\` | Изоляция сети |
+| \`/data/vibe-students/<user>/\` | Workspace каждого ученика |
+| \`/data/config/auth/.htpasswd-vibe\` | Пароли |
+| \`/data/config/auth/users-vibe.json\` | Роли и мета |
+| \`/data/config/env/vibe-panel.env\` | SESSION_SECRET и др. |
+| \`/data/config/env/proxy.env\` | HTTPS_PROXY для шима |
+
+## Системные сервисы
+
+\`\`\`bash
+systemctl status vibe-panel        # Express :3020
+systemctl status anthropic-shim    # OAuth proxy :8190
+systemctl status vibe-iptables     # сетевая изоляция
+
+journalctl -u vibe-panel -f
+journalctl -u anthropic-shim -f
+curl http://127.0.0.1:8190/_shim/health
+\`\`\`
+
+## Установка с нуля (последовательность)
+
+1. apt update && apt install -y docker.io docker-compose-plugin nginx git
+2. git clone <repo> /opt/vibe-portal
+3. mkdir -p /data/{vibe-students,config/{auth,env,sessions-vibe,transcripts,ssh,vscode-server}}
+4. cp /opt/vibe-portal/systemd/*.service /etc/systemd/system/
+5. systemctl daemon-reload
+6. Создать /data/config/env/vibe-panel.env (SESSION_SECRET)
+7. systemctl enable --now vibe-panel anthropic-shim
+8. /opt/vibe-portal/scripts/setup-iptables.sh
+9. /opt/vibe-portal/scripts/create-admin.sh admin ПАРОЛЬ
+10. nginx -t && nginx -s reload
+
+## Настройка прокси для Claude из России
+
+\`\`\`bash
+# На EU-VPS установить Squid:
+apt install -y squid apache2-utils
+htpasswd -cb /etc/squid/passwd vibeuser ПАРОЛЬ
+
+# /etc/squid/squid.conf:
+auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+auth_param basic realm proxy
+acl authenticated proxy_auth REQUIRED
+http_access allow authenticated
+http_access deny all
+http_port 3128
+
+systemctl restart squid
+
+# На основном сервере в /data/config/env/proxy.env:
+HTTPS_PROXY=http://vibeuser:ПАРОЛЬ@EU_IP:3128
+
+systemctl restart anthropic-shim
+\`\`\`
+
+## Частые проблемы
+
+- **Claude не работает** → проверь \`curl http://127.0.0.1:8190/_shim/health\` и логи шима
+- **Контейнер не стартует** → \`docker logs vibe-<user>\`, проверь docker network \`vibe-net\`
+- **Порт уже занят** → \`ss -tlnp | grep 3020\`
+- **nginx 502** → vibe-panel не запущен, \`systemctl start vibe-panel\`
+- **Ученик не может зайти** → проверь \`/data/config/auth/users-vibe.json\` и .htpasswd-vibe
+`;
+
+// Скачать исходный код Vibe Portal (без секретов и node_modules).
+app.get('/api/vibe-setup/download-portal', requireAuth, (req, res) => {
+  const portalDir = '/opt/vibe-portal';
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="vibe-portal-src.zip"');
+  const zip = spawn('zip', [
+    '-r', '-q', '-', '.',
+    '-x', '*/node_modules/*', '*/.git/*', '*/.env*', '*.credentials.json',
+    '*/sessions-vibe/*', '*.log', '*/.portal-meta.json', '*/.claude/settings.local.json',
+    '*/transcripts/*', '*/ssh/*', '*/vscode-server/*',
+  ], { cwd: portalDir });
+  zip.stdout.pipe(res);
+  zip.stderr.on('data', d => console.error('[zip-portal]', d.toString().slice(0, 200)));
+  zip.on('error', e => { if (!res.headersSent) res.status(500); res.end(); });
+  res.on('close', () => { try { zip.kill(); } catch {} });
+});
+
+// Скачать базу знаний: контент уроков + шаблоны курса.
+app.get('/api/vibe-setup/download-kb', requireAuth, (req, res) => {
+  const portalDir = '/opt/vibe-portal';
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="vibe-kb.zip"');
+  const zip = spawn('zip', [
+    '-r', '-q', '-',
+    'content',
+    'templates',
+    'panel/public/js/lessons-m1.js',
+    'panel/public/js/kb.js',
+  ], { cwd: portalDir });
+  zip.stdout.pipe(res);
+  zip.stderr.on('data', d => console.error('[zip-kb]', d.toString().slice(0, 200)));
+  zip.on('error', e => { if (!res.headersSent) res.status(500); res.end(); });
+  res.on('close', () => { try { zip.kill(); } catch {} });
+});
+
+app.post('/api/vibe-setup/ensure', requireAuth, (req, res) => {
+  const ws = workspaceDir(req.session.user);
+  const dir = path.join(ws, '_vibe-setup');
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const claudeMd = path.join(dir, 'CLAUDE.md');
+    // Обновляем CLAUDE.md при каждом вызове — контент актуализируется
+    fs.writeFileSync(claudeMd, VIBE_SETUP_CLAUDE_MD, 'utf8');
+    res.json({ ok: true, project: '_vibe-setup' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ---------- user-chat (общий помощник в /data/vibe-students/<user>/) ----------
 
 app.post('/api/chat', requireAuth, (req, res) => userChat.send(req, res));
@@ -477,6 +631,15 @@ app.get('/api/projects/:name/download', requireAuth, (req, res) => {
     return res.status(404).json({ error: 'no such project' });
   }
   streamZip(res, ws, name, `${name}.zip`);
+});
+
+// Скачать весь workspace zip'ом.
+app.get('/api/workspace/download', requireAuth, (req, res) => {
+  const user = req.session.user;
+  const ws = workspaceDir(user);
+  if (!fs.existsSync(ws)) return res.status(404).json({ error: 'workspace not found' });
+  const wsParent = path.dirname(ws);
+  streamZip(res, wsParent, path.basename(ws), `workspace-${user}.zip`);
 });
 
 // Скачать базовый шаблон zip'ом (whitelisted). Доступно любому залогиненному.

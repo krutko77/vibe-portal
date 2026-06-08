@@ -509,7 +509,7 @@ function renderCourseContent() {
 
 // ── View tab switcher (VS CODE / Проекты / Курс / Материалы) ──
 function setActiveView(view) {
-  const allowed = ['vscode', 'projects', 'kb'];
+  const allowed = ['vscode', 'projects', 'kb', 'myvibe', 'claude-pay'];
   if (!allowed.includes(view)) view = 'vscode';
   localStorage.setItem('vibe.view', view);
   $$('.btn-nav').forEach(b => b.classList.toggle('active', b.dataset.view === view));
@@ -1154,7 +1154,11 @@ async function doUploadProject() {
   try {
     const fd = new FormData();
     fd.append('name', name);
-    for (const f of files) fd.append('files', f, f.webkitRelativePath || f.name);
+    // Путь передаём отдельным полем — браузеры срезают слеши из filename в Content-Disposition.
+    for (const f of files) {
+      fd.append('files', f);
+      fd.append('paths', f.webkitRelativePath || f.name);
+    }
     const r = await fetch('/api/projects/upload', { method: 'POST', credentials: 'same-origin', body: fd });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
