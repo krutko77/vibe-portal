@@ -1416,6 +1416,18 @@ body.has-right-chat .nav-btn-claude {
   transition: border-color .15s;
 }
 .course-module:hover { border-color: hsl(var(--primary)); }
+.course-module--recommended {
+  border-color: hsl(var(--smui-green) / 0.5);
+}
+.course-module--recommended:hover { border-color: hsl(var(--smui-green)); }
+.course-module--recommended .course-module-no {
+  background: hsl(var(--smui-green) / 0.15);
+  color: hsl(var(--smui-green));
+  border-right-color: hsl(var(--smui-green) / 0.3);
+}
+.course-module--recommended .course-module-cta {
+  color: hsl(var(--smui-green));
+}
 .course-module-no {
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-mono); font-size: 13px; font-weight: 700;
