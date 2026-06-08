@@ -43,6 +43,18 @@
         </svg>
         <span class="btn-nav-text">База знаний</span>
       </button>
+      <button class="btn-nav" data-view="myvibe" title="Свой Vibe Portal — развернуть на своём сервере">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+        </svg>
+        <span class="btn-nav-text">Свой Vibe</span>
+      </button>
+      <button class="btn-nav" data-view="claude-pay" title="Оплата Claude из России">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+        </svg>
+        <span class="btn-nav-text">Оплата Claude</span>
+      </button>
     </div>
 
     <span class="navbar-spacer"></span>
@@ -239,6 +251,7 @@
             <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
             <button class="btn btn-primary" id="btn-create">+ Из шаблона</button>
             <button class="btn" id="btn-ssh" title="Работать в десктопном VS Code по SSH">💻 Десктоп VS Code</button>
+            <a class="btn" id="btn-workspace-dl" href="/api/workspace/download" title="Скачать все проекты одним архивом">↓ Все проекты</a>
           </div>
         </div>
         <div class="projects-table-wrap" id="projectsList"></div>
@@ -850,7 +863,73 @@ description: Объясняет каждый шаг простыми слова�
       <div class="materials-page hidden" data-sub="skills">
         <div class="page-meta">VIBE PORTAL · SKILLS</div>
         <h1 class="page-h1">Установленные <em>скиллы</em></h1>
-        <p class="page-lead">Скиллы — это переиспользуемые промпт-инструкции для Claude. Загружаются автоматически когда подходят по контексту.</p>
+        <p class="page-lead">Скиллы — переиспользуемые промпт-инструкции для Claude. Один раз описал процесс → навсегда упаковал в команду. Загружаются автоматически когда подходят по контексту.</p>
+
+        <div class="page-sect">
+          <div class="page-sect-no">ЧТО ТАКОЕ СКИЛЛ</div>
+          <p>Скилл — это <strong>markdown-файл</strong>, который превращает отлаженный промпт в вызываемую slash-команду. Вместо того чтобы вспоминать точную формулировку, пишешь одно имя: <code>/review-pr</code>, <code>/frontend-design</code>, <code>/mcp-builder</code>.</p>
+          <p>Claude подгружает скилл <strong>только когда он нужен</strong> (по полю <code>description</code>), а не держит в контексте постоянно — это экономит токены.</p>
+        </div>
+
+        <div class="page-sect">
+          <div class="page-sect-no">СТРУКТУРА ФАЙЛОВ</div>
+          <div class="note-quote">
+            <span class="note-quote-label">проект/.claude/</span>
+            <pre>проект/
+└── .claude/
+    ├── settings.json        # права, хуки, env
+    ├── commands/            # slash-команды (/имя.md)
+    │   ├── review-pr.md
+    │   └── deploy.md
+    └── skills/              # навыки (SKILL.md)
+        ├── superpowers/
+        │   └── SKILL.md
+        └── my-skill/
+            └── SKILL.md</pre>
+          </div>
+          <table class="page-table" style="margin-top:12px">
+            <thead><tr><th>Тип</th><th>Путь</th><th>Вызов</th><th>Назначение</th></tr></thead>
+            <tbody>
+              <tr><td><code>commands</code></td><td><code>.claude/commands/имя.md</code></td><td><code>/имя аргументы</code></td><td>Шаблон запроса — запускается вручную</td></tr>
+              <tr><td><code>skills</code></td><td><code>.claude/skills/имя/SKILL.md</code></td><td>авто по смыслу или <code>/имя</code></td><td>Рецепт процесса — как делать X</td></tr>
+              <tr><td><code>agents</code></td><td><code>.claude/agents/имя.md</code></td><td>Claude сам выбирает</td><td>Субагент со своим набором инструментов</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="page-sect">
+          <div class="page-sect-no">АНАТОМИЯ ФАЙЛА СКИЛЛА</div>
+          <div class="note-quote">
+            <span class="note-quote-label">.claude/commands/review-pr.md</span>
+            <pre>---
+name: review-pr
+description: Use when reviewing a pull request
+argument-hint: "&lt;pr-number&gt;"
+allowed-tools: Read, Bash(gh pr:*)
+---
+
+Просмотри PR #$ARGUMENTS.
+Проверь: логика, edge cases, безопасность, читаемость.
+Дай структурированный отчёт: Critical / Warning / Suggestion.</pre>
+          </div>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:4px 0 0"><strong>Совет:</strong> Скиллы версионируются в git вместе с кодом — это инфраструктура команды, а не одноразовые заметки.</p>
+        </div>
+
+        <div class="page-sect">
+          <div class="page-sect-no">КАК СОЗДАТЬ СВОЙ СКИЛЛ</div>
+          <ol class="page-list">
+            <li>Открой Claude Code в папке проекта, напиши и отладь промпт.</li>
+            <li>Скажи: <em>«Преврати эту логику в переиспользуемый скилл /review-pr, принимающий номер PR как аргумент»</em>.</li>
+            <li>Claude сохранит файл в <code>.claude/commands/</code> или <code>.claude/skills/</code>.</li>
+            <li>Добавь файл в git — теперь он у всей команды.</li>
+          </ol>
+        </div>
+
+        <div class="page-sect">
+          <div class="page-sect-no">УСТАНОВЛЕННЫЕ СКИЛЛЫ</div>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:0 0 12px">Установлены в контейнере каждого ученика. Кликни на карточку — откроется репозиторий для установки.</p>
+        </div>
+
         <div class="course-modules">
           <a class="course-module" href="https://github.com/obra/superpowers" target="_blank">
             <div class="course-module-no">SP</div>
@@ -873,6 +952,78 @@ description: Объясняет каждый шаг простыми слова�
             <div class="course-module-body">
               <div class="course-module-title">claude-memory</div>
               <div class="course-module-desc">Структурная память по проекту в одном .md файле. Учится от исправлений, ловит противоречия, чистит дубли.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">SK</div>
+            <div class="course-module-body">
+              <div class="course-module-title">skill-creator</div>
+              <div class="course-module-desc">Превращает любой готовый промпт в переиспользуемую команду /имя. Один раз отладил — навсегда упаковал.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">FD</div>
+            <div class="course-module-body">
+              <div class="course-module-title">frontend-design</div>
+              <div class="course-module-desc">Берёт описание экрана → возвращает production-ready UI на HTML/CSS или React/Tailwind.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">CA</div>
+            <div class="course-module-body">
+              <div class="course-module-title">claude-api</div>
+              <div class="course-module-desc">Генерирует минимальный клиент Claude API на нужном языке: TypeScript, Python. С обработкой ошибок и примерами.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">MB</div>
+            <div class="course-module-body">
+              <div class="course-module-title">mcp-builder</div>
+              <div class="course-module-desc">Создаёт MCP-серверы: Claude вызывает ваши API, БД или SaaS (Postgres, Notion, Stripe) как инструменты.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">WS</div>
+            <div class="course-module-body">
+              <div class="course-module-title">firecrawl</div>
+              <div class="course-module-desc">Обходит сайты, следует по ссылкам, возвращает чистый контент. Конкурентный анализ и ресёрч. Нужен FIRECRAWL_API_KEY.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">WT</div>
+            <div class="course-module-body">
+              <div class="course-module-title">playwright</div>
+              <div class="course-module-desc">Превращает сценарии на естественном языке в запускаемые Playwright-тесты на TypeScript.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">GH</div>
+            <div class="course-module-body">
+              <div class="course-module-title">github-repo</div>
+              <div class="course-module-desc">Claude читает репо, строит карту зависимостей, предлагает рефакторинги и открывает PR. Нужен GITHUB_TOKEN.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">MK</div>
+            <div class="course-module-body">
+              <div class="course-module-title">marketing</div>
+              <div class="course-module-desc">Исследование аудитории, позиционирование, копирайтинг. /offer, /audience-research, /campaign-brief.</div>
+            </div>
+            <div class="course-module-cta">github →</div>
+          </a>
+          <a class="course-module" href="https://github.com/wshobson/commands" target="_blank">
+            <div class="course-module-no">NB</div>
+            <div class="course-module-body">
+              <div class="course-module-title">notebook</div>
+              <div class="course-module-desc">Claude читает и пишет в Google Docs, Notion или Obsidian. Из чат-игрушки — в непрерывного исследователя.</div>
             </div>
             <div class="course-module-cta">github →</div>
           </a>
@@ -1078,6 +1229,597 @@ description: Объясняет каждый шаг простыми слова�
         </details>
       </div>
         </main>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         СВОЙ VIBE — инструкция по развёртыванию собственного портала
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="view view-myvibe hidden" data-view="myvibe">
+      <div class="section-block" style="max-width:760px">
+
+        <div class="page-meta">VIBE PORTAL · СВОЙ СЕРВЕР</div>
+        <h1 class="page-h1">Свой <em>Vibe Portal</em></h1>
+        <p class="page-lead">Полная копия Vibe Portal на твоём VPS — свой workspace, свои правила, полный контроль.</p>
+
+        <!-- Блок действий -->
+        <div style="display:grid;gap:10px;margin:24px 0 32px">
+
+          <!-- Чат Claude — широкая карточка -->
+          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:10px;padding:16px 20px;background:hsl(var(--primary)/.05);display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <div style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">💬 Чат с Claude — помощник по установке</div>
+              <div style="font-size:12px;color:hsl(var(--muted-foreground))">Знает всю архитектуру портала. Подключится по SSH и настроит сервер за тебя.</div>
+            </div>
+            <button class="btn btn-primary" id="btn-open-vibe-chat-top" style="white-space:nowrap;flex-shrink:0">Открыть чат →</button>
+          </div>
+
+          <!-- Три кнопки скачивания -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+
+            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">↓ Весь Vibe Portal</div>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:12px;line-height:1.5">Исходный код — для развёртывания на своём сервере</div>
+              <a class="btn btn-sm btn-primary" href="/api/vibe-setup/download-portal" style="width:100%">Скачать .zip</a>
+            </div>
+
+            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">↓ Мои проекты</div>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:12px;line-height:1.5">Весь твой workspace — все проекты одним архивом</div>
+              <a class="btn btn-sm btn-primary" href="/api/workspace/download" style="width:100%">Скачать .zip</a>
+            </div>
+
+            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">↓ База знаний</div>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:12px;line-height:1.5">Уроки и шаблоны курса — для переноса на свой портал</div>
+              <a class="btn btn-sm btn-primary" href="/api/vibe-setup/download-kb" style="width:100%">Скачать .zip</a>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── 1. Что ты получишь ── -->
+        <div class="page-sect" id="mv-what">
+          <div class="page-sect-no">1. ЧТО ТЫ ПОЛУЧИШЬ</div>
+          <p>Полная копия Vibe Portal на твоём VPS: VS Code в браузере, изолированные Docker-контейнеры, чат с Claude, публикация приложений. Ты — администратор.</p>
+          <p>Данные нашего портала никуда не утекают — ты получаешь чистую программу без чужих файлов и паролей.</p>
+        </div>
+
+        <!-- ── 2. Требования к серверу ── -->
+        <div class="page-sect" id="mv-vps">
+          <div class="page-sect-no">2. СЕРВЕР</div>
+          <table class="page-table">
+            <tbody>
+              <tr><td><strong>ОС</strong></td><td>Ubuntu 22.04 или 24.04 LTS</td></tr>
+              <tr><td><strong>CPU</strong></td><td>от 2 vCPU</td></tr>
+              <tr><td><strong>RAM</strong></td><td>от 4 GB</td></tr>
+              <tr><td><strong>Диск</strong></td><td>от 40 GB SSD</td></tr>
+              <tr><td><strong>Доступ</strong></td><td>SSH root или sudo</td></tr>
+              <tr><td><strong>Домен</strong></td><td>желательно (можно работать по IP)</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:14px"><strong>Где арендовать:</strong> мы сами используем <strong>NetAngels</strong> — самый простой интерфейс, быстрая поддержка, цена средняя по рынку.</p>
+          <div style="margin-top:10px">
+            <a class="btn btn-primary" href="https://netangels.ru/?p_ref=u72641" target="_blank" rel="noopener">Перейти на NetAngels →</a>
+          </div>
+        </div>
+
+        <!-- ── 3. Установка ── -->
+        <div class="page-sect" id="mv-download">
+          <div class="page-sect-no">3. УСТАНОВКА</div>
+          <p>Выбери способ — оба приводят к одному результату:</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:16px">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--muted-foreground));margin-bottom:8px">ВАРИАНТ А — САМИ</div>
+              <p style="font-size:12px;line-height:1.55;margin-bottom:12px">Зайди на сервер по SSH и запусти одну команду. Скрипт установит Docker, nginx и поднимет портал.</p>
+              <pre class="step-code" style="font-size:11px">curl -fsSL https://vibe.kiselevgroup.com/install.sh | bash</pre>
+              <p style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:8px">⚠ Скрипт готовится — появится здесь скоро.</p>
+            </div>
+            <div style="border:1px solid hsl(var(--primary)/.4);border-radius:8px;padding:16px;background:hsl(var(--primary)/.04)">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--primary));margin-bottom:8px">ВАРИАНТ Б — ЧЕРЕЗ CLAUDE ↓</div>
+              <p style="font-size:12px;line-height:1.55;margin-bottom:12px">Создай проект, открой чат с Claude и вставь готовый промпт из шага 4. Claude подключится по SSH и всё настроит сам.</p>
+              <a href="#mv-deploy" class="btn btn-primary" style="font-size:12px">Перейти к промпту →</a>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid hsl(var(--border))">
+            <p style="font-size:12px;color:hsl(var(--muted-foreground));margin-bottom:8px">Также можно скачать свои проекты и перенести их на новый сервер вручную:</p>
+            <a class="btn btn-sm" href="/api/workspace/download">↓ Все мои проекты (.zip)</a>
+          </div>
+        </div>
+
+        <!-- ── 4. Деплой через Claude ── -->
+        <div class="page-sect" id="mv-deploy">
+          <div class="page-sect-no">4. ДЕПЛОЙ ЧЕРЕЗ CLAUDE</div>
+          <p>Создай новый проект, нажми <strong>CLAUDE</strong> и вставь этот промпт — подставь свои данные сервера:</p>
+
+          <pre class="step-code" id="deploy-prompt" style="white-space:pre-wrap;margin-top:12px">Привет! Помоги мне установить Vibe Portal на мой сервер.
+
+Данные сервера:
+- IP / хост: [ВСТАВЬ IP]
+- Пользователь: root
+- Пароль: [ВСТАВЬ ПАРОЛЬ]
+
+Задачи по порядку:
+1. Подключись по SSH, проверь ОС (Ubuntu 22.04/24.04)
+2. Установи Docker и docker-compose plugin (если нет)
+3. Склонируй репозиторий Vibe Portal в /opt/vibe-portal
+4. Настрой .env (SESSION_SECRET, домен)
+5. Запусти: docker compose up -d
+6. Настрой nginx как reverse-proxy → порт 3020
+7. Создай первого admin: ./scripts/create-admin.sh admin ПАРОЛЬ
+8. Проверь что портал открывается по http://[IP]
+
+После каждого шага — пауза, жди моего ОК.</pre>
+
+          <button class="btn btn-sm" style="margin-top:8px" onclick="
+            navigator.clipboard.writeText(document.getElementById('deploy-prompt').innerText);
+            this.textContent='Скопировано ✓';setTimeout(()=>this.textContent='Копировать промпт',2000)
+          ">Копировать промпт</button>
+        </div>
+
+        <!-- ── 5. Прокси для Claude из РФ ── -->
+        <div class="page-sect" id="mv-second">
+          <div class="page-sect-no">5. ПРОКСИ ДЛЯ CLAUDE ИЗ РОССИИ</div>
+          <p>Claude API недоступен напрямую из РФ. Решение — арендовать дешёвый VPS в Европе (Амстердам/Германия) и поднять на нём HTTP-прокси. Все запросы к Claude пойдут через него.</p>
+
+          <pre class="step-code" style="margin-top:12px;white-space:pre-wrap;font-size:11px">Твой сервер (РФ)
+  └── anthropic-shim
+        └── HTTPS_PROXY → EU-VPS :3128 (Squid)
+              └── api.anthropic.com</pre>
+
+          <p style="margin-top:14px">Достаточно минимального EU-VPS: 1 vCPU, 1 GB RAM (~€3–5/мес).</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;margin-bottom:4px">
+            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:3px">Vultr</div>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:10px;line-height:1.5">Мы используем для EU-сервера. Амстердам, от $2.5/мес. Оплата иностранной картой.</div>
+              <a class="btn btn-sm" href="https://vultr.com" target="_blank" rel="noopener" style="width:100%">vultr.com →</a>
+            </div>
+            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:3px">Timeweb Cloud</div>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:10px;line-height:1.5">Карта РФ, есть EU-локации. Чуть дороже, зато без иностранной карты.</div>
+              <a class="btn btn-sm" href="https://timeweb.cloud/" target="_blank" rel="noopener" style="width:100%">timeweb.cloud →</a>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:16px">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--muted-foreground));margin-bottom:10px">ВАРИАНТ А — САМИ</div>
+
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:6px">На EU-VPS:</div>
+              <pre class="step-code" id="proxy-setup" style="white-space:pre-wrap;font-size:10.5px">apt update && apt install -y squid apache2-utils
+htpasswd -cb /etc/squid/passwd vibeuser ПАРОЛЬ
+
+cat > /etc/squid/squid.conf &lt;&lt;'EOF'
+auth_param basic program /usr/lib/squid/basic_ncsa_auth /etc/squid/passwd
+auth_param basic realm proxy
+acl authenticated proxy_auth REQUIRED
+http_access allow authenticated
+http_access deny all
+http_port 3128
+EOF
+systemctl restart squid && systemctl enable squid</pre>
+              <button class="btn btn-sm" style="margin-top:6px" onclick="
+                navigator.clipboard.writeText(document.getElementById('proxy-setup').innerText);
+                this.textContent='✓';setTimeout(()=>this.textContent='Копировать',2000)
+              ">Копировать</button>
+
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin:12px 0 6px">На основном сервере (Vibe Portal):</div>
+              <pre class="step-code" id="proxy-connect" style="font-size:10.5px"># /data/config/env/proxy.env
+HTTPS_PROXY=http://vibeuser:ПАРОЛЬ@EU_IP:3128
+
+systemctl restart anthropic-shim
+curl http://127.0.0.1:8190/_shim/health</pre>
+              <button class="btn btn-sm" style="margin-top:6px" onclick="
+                navigator.clipboard.writeText(document.getElementById('proxy-connect').innerText);
+                this.textContent='✓';setTimeout(()=>this.textContent='Копировать',2000)
+              ">Копировать</button>
+            </div>
+
+            <div style="border:1px solid hsl(var(--primary)/.4);border-radius:8px;padding:16px;background:hsl(var(--primary)/.04)">
+              <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--primary));margin-bottom:10px">ВАРИАНТ Б — ЧЕРЕЗ CLAUDE</div>
+              <p style="font-size:12px;line-height:1.55;margin-bottom:12px">Открой чат с Claude на этой странице и вставь промпт — он подключится к обоим серверам и настроит всё:</p>
+              <pre class="step-code" id="proxy-prompt" style="white-space:pre-wrap;font-size:10.5px">Помоги настроить HTTP-прокси для Claude.
+
+EU-VPS (для прокси):
+- IP: [EU_IP]
+- user: root, пароль: [ПАРОЛЬ]
+
+Основной сервер (Vibe Portal):
+- IP: [MAIN_IP]
+- user: root, пароль: [ПАРОЛЬ]
+
+Задачи:
+1. На EU-VPS установить Squid с паролём
+2. На основном сервере прописать HTTPS_PROXY
+   в /data/config/env/proxy.env
+3. Перезапустить anthropic-shim
+4. Проверить health-endpoint шима</pre>
+              <button class="btn btn-sm" style="margin-top:6px" onclick="
+                navigator.clipboard.writeText(document.getElementById('proxy-prompt').innerText);
+                this.textContent='✓';setTimeout(()=>this.textContent='Копировать промпт',2000)
+              ">Копировать промпт</button>
+              <div style="margin-top:10px">
+                <button class="btn btn-primary" style="font-size:12px;width:100%" id="btn-open-vibe-chat">💬 Открыть чат Claude →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 6. База знаний ── -->
+        <div class="page-sect" id="mv-kb">
+          <div class="page-sect-no">6. ПЕРЕНОС БАЗЫ ЗНАНИЙ</div>
+          <p>Материалы курса (шпаргалки, уроки, шаблоны) можно перенести на свой портал. Попроси Claude скопировать папку <code>/opt/vibe-portal/panel/public/content/</code> и <code>/panel/public/js/lessons-*.js</code> на твой сервер по SSH.</p>
+          <p style="margin-top:10px">Шаблоны проектов можно скачать в разделе <strong>База знаний → Шаблоны</strong> и распаковать в <code>/opt/vibe-portal/templates/</code> на своём сервере.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ОПЛАТА CLAUDE — регистрация и оплата Claude из России
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="view view-claude-pay hidden" data-view="claude-pay">
+      <div class="section-block" style="max-width:720px">
+
+        <div class="page-meta">CLAUDE · ИЗ РОССИИ</div>
+        <h1 class="page-h1"><em>Оплата Claude</em> из России</h1>
+        <p class="page-lead">Пошаговый гайд: как зарегистрироваться и оплатить Claude Pro из РФ без бана. Главное правило — <strong>VPN, почта, номер телефона и карта должны быть из одной страны.</strong></p>
+
+        <!-- ══ СХЕМА ПОСЛЕДОВАТЕЛЬНОСТИ ══ -->
+        <div style="margin:24px 0 32px">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:10px;padding:20px;overflow-x:auto">
+  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+  │  1. VPN  │──▶│ 2. Почта │──▶│ 3. Карта │──▶│ 4. Номер │──▶│ 5. Клод  │
+  │          │   │          │   │          │   │          │   │          │
+  │  Страна  │   │  Gmail   │   │  Вирт.   │   │  SMS из  │   │ claude.ai│
+  │  не РФ   │   │  не РФ   │   │  карта   │   │  той же  │   │  регист- │
+  │          │   │  (с VPN) │   │  EU/USA  │   │  страны  │   │  рация   │
+  └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
+       │              │              │              │              │
+       └──────────────┴──────────────┴──────────────┴──────────────┘
+         ВСЁ из ОДНОЙ страны: VPN = почта = карта = номер
+         Пример: карта Испания 🇪🇸 → всё остальное тоже Испания
+          </pre>
+        </div>
+
+        <!-- ══ ШАГ 1: VPN ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">1. VPN — ФУНДАМЕНТ ВСЕГО</div>
+          <p>Anthropic блокирует аккаунты из РФ, Белоруссии и ряда других стран. VPN — обязательное условие. Важно: IP-адрес VPN должен совпадать со страной твоей карты и номера телефона.</p>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.6;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  Твой ПК (РФ)
+    │
+    └──▶ VPN-сервер (например, Нидерланды, Германия, США)
+              │
+              └──▶ claude.ai — видит IP из Нидерландов ✓</pre>
+
+          <table class="page-table" style="margin-top:4px">
+            <thead><tr><th>Страна</th><th>Работает</th><th>Примечание</th></tr></thead>
+            <tbody>
+              <tr><td>Нидерланды 🇳🇱</td><td style="color:hsl(142 60% 45%)">✓ Хорошо</td><td>Проверено, стабильно</td></tr>
+              <tr><td>Германия 🇩🇪</td><td style="color:hsl(142 60% 45%)">✓ Хорошо</td><td>Wise выдаёт EU-карты</td></tr>
+              <tr><td>США 🇺🇸</td><td style="color:hsl(142 60% 45%)">✓ Хорошо</td><td>Много сервисов карт</td></tr>
+              <tr><td>Великобритания 🇬🇧</td><td style="color:hsl(142 60% 45%)">✓ Хорошо</td><td>Revolut, Wise</td></tr>
+              <tr><td>Россия 🇷🇺</td><td style="color:hsl(0 70% 50%)">✗ Заблок.</td><td>Бан при регистрации</td></tr>
+              <tr><td>Беларусь, Иран</td><td style="color:hsl(0 70% 50%)">✗ Заблок.</td><td>Санкционные страны</td></tr>
+            </tbody>
+          </table>
+
+          <p style="margin-top:14px"><strong>Стандартные VPN-сервисы:</strong> Mullvad, ProtonVPN, Windscribe — поддерживают оплату без привязки аккаунта.</p>
+
+          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:12px">
+            ⚠ Включи VPN до открытия браузера, используй режим инкогнито, не переключай страну в процессе регистрации.
+          </div>
+
+          <!-- 1A: Amnezia -->
+          <div style="border:1px solid hsl(var(--primary)/.4);border-radius:10px;padding:20px;margin-top:20px;background:hsl(var(--primary)/.04)">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:6px">1А — ЛУЧШИЙ ВАРИАНТ: СВОЙ VPN НА AMNEZIA</div>
+            <p style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">Вместо чужого VPN — поднять свой на купленном сервере</p>
+            <p style="font-size:12px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:14px">Amnezia — приложение, которое само настраивает VPN на твоём EU-сервере. Вводишь IP, логин и пароль сервера — Amnezia сама ставит все протоколы и выдаёт конфиг. Итог: VPN с твоим личным IP, который никто не банит, потому что он известен только тебе.</p>
+
+            <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:8px;padding:14px;margin-bottom:14px">
+  ┌──────────────────────┐         ┌──────────────────────┐
+  │   Твой ПК (Россия)   │         │   EU-VPS (твой сервер)│
+  │                      │         │                       │
+  │  Amnezia App         │◀──VPN──▶│  AmneziaWG / OpenVPN  │
+  │  (клиент)            │         │  (поставила Amnezia)  │
+  │                      │         │                       │
+  └──────────────────────┘         └──────────┬────────────┘
+                                              │
+                                              ▼
+                                       api.anthropic.com
+                                       claude.ai</pre>
+
+            <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">Как настроить:</div>
+            <ol style="font-size:12px;line-height:1.9;color:hsl(var(--foreground));padding-left:18px;margin-bottom:14px">
+              <li>Арендуй EU-VPS (Vultr или Timeweb Cloud — см. раздел «Свой Vibe»), минимальный тариф: 1 vCPU, 1 GB RAM</li>
+              <li>Скачай Amnezia на свой компьютер/телефон (ссылки ниже)</li>
+              <li>В приложении нажми «Настроить свой сервер» → введи IP, логин и пароль VPS</li>
+              <li>Amnezia сама устанавливает AmneziaWG и настраивает конфиг — занимает 2–3 минуты</li>
+              <li>Готово — VPN работает, IP сервера = страна VPS</li>
+            </ol>
+
+            <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">Ссылки на Amnezia:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div style="background:hsl(var(--muted)/.6);border:1px solid hsl(var(--border));border-radius:8px;padding:12px">
+                <div style="font-size:11px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">Если сайт открывается</div>
+                <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:8px;line-height:1.5">Официальная инструкция (без VPN, иногда блокируют в РФ)</div>
+                <a class="btn btn-sm btn-primary" href="https://amnezia.org/ru/starter-guide" target="_blank" rel="noopener" style="width:100%">amnezia.org →</a>
+              </div>
+              <div style="background:hsl(var(--muted)/.6);border:1px solid hsl(var(--border));border-radius:8px;padding:12px">
+                <div style="font-size:11px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">Зеркало (всегда работает)</div>
+                <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:8px;line-height:1.5">Google Cloud Storage — открывается из РФ без VPN</div>
+                <a class="btn btn-sm btn-primary" href="https://storage.googleapis.com/amnezia/amnezia.org" target="_blank" rel="noopener" style="width:100%">Зеркало →</a>
+              </div>
+            </div>
+
+            <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6">
+              ⚠ <strong>Важно:</strong> сам сайт amnezia.org периодически блокируют в РФ. Используй зеркало. При этом сам VPN, поднятый через Amnezia, работает стабильно — протокол AmneziaWG специально разработан против DPI-блокировок. Мы сами работаем через него и рекомендуем.
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ ШАГ 2: GOOGLE ПОЧТА ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">2. GOOGLE ПОЧТА — РЕГИОН НЕ РОССИЯ</div>
+          <p>Для регистрации Claude используй Gmail, созданный с включённым VPN. Google привяжет аккаунт к стране по твоему IP — получится почта с EU/US-регионом, а не российским.</p>
+
+          <div style="background:hsl(0 70% 50%/.08);border:1px solid hsl(0 70% 50%/.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:12px;line-height:1.6">
+            ✗ Не используй Яндекс, Mail.ru — они сразу ассоциируются с Россией. Не используй существующий Gmail, который создавался без VPN из РФ.
+          </div>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  Как создать Gmail с EU/US-регионом:
+  ────────────────────────────────────────────────────────
+  [ ] VPN включён (та же страна, что карта и номер)
+  [ ] Браузер в режиме инкогнито
+
+  1. Открой accounts.google.com/signup
+  2. Заполни имя, придумай адрес вида name.work2025@gmail.com
+  3. Телефон для подтверждения — виртуальный номер из шага 4
+     (или пропусти, если Google предложит альтернативу)
+  4. Дата рождения и пол → Next
+  5. Регион Google автоматически определит по VPN-IP ✓
+  6. Аккаунт готов — этот email используешь при регистрации Claude</pre>
+
+          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6">
+            💡 Можно создать почту на ProtonMail (proton.me) — изначально анонимная, не требует телефона, EU-сервера. Тоже хороший вариант.
+          </div>
+        </div>
+
+        <!-- ══ ШАГ 3: КАРТА ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">3. ВИРТУАЛЬНАЯ КАРТА — ОПЛАТА</div>
+          <p>Российские карты (Visa/MC/Мир) не принимаются. Нужна зарубежная виртуальная карта. <strong>Страна карты = страна VPN = страна номера = страна почты.</strong></p>
+
+          <!-- Главная рекомендация -->
+          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:10px;padding:18px;margin:14px 0;background:hsl(var(--primary)/.05)">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:6px">РЕКОМЕНДУЕМ — ПРОВЕРЕНО НАМИ</div>
+            <div style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">Platipomiru — виртуальная карта для подписок</div>
+            <p style="font-size:12px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:10px">При оформлении выбирай тариф <strong>«для подписок»</strong> — он предназначен именно для регулярных платежей (Claude Pro $20/мес). Карта выпускается испанским банком, регион — <strong>Испания 🇪🇸</strong>.</p>
+            <div style="background:hsl(45 90% 50%/.12);border:1px solid hsl(45 90% 50%/.5);border-radius:7px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6">
+              ⚠ <strong>Важно:</strong> раз карта испанская — все остальные шаги тоже делай через Испанию. VPN = Испания, виртуальный номер = испанский, Gmail создавай с испанским IP, при регистрации Claude выбирай Испанию.
+            </div>
+            <a class="btn btn-primary" href="https://platipomiru.com/" target="_blank" rel="noopener">Открыть Platipomiru →</a>
+          </div>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  Если Platipomiru не подошёл — другие сервисы:
+  ┌──────────────┬─────────────┬───────────────┬───────────────────┐
+  │   Сервис     │   Страна    │  Пополнение   │  Сложность        │
+  ├──────────────┼─────────────┼───────────────┼───────────────────┤
+  │ Wise         │ EU / UK     │  SWIFT/крипто │  Средняя (KYC)    │
+  │ Revolut      │ EU / UK     │  SWIFT/крипто │  Средняя (KYC)    │
+  │ Capitalist   │ EU          │  Крипто/карта │  Простая          │
+  │ Paysera      │ EU (Литва)  │  SWIFT        │  Средняя          │
+  └──────────────┴─────────────┴───────────────┴───────────────────┘</pre>
+
+          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6">
+            💡 Какую бы карту ты ни выбрал — запомни её страну выпуска. Именно эту страну используй во всех остальных шагах: VPN, номер, почта, и при выборе страны в форме регистрации Claude.
+          </div>
+
+          <!-- Адрес и Stripe — важный блок -->
+          <div style="border:2px solid hsl(0 70% 50%/.5);border-radius:10px;padding:18px;margin-top:16px;background:hsl(0 70% 50%/.05)">
+            <div style="font-size:12px;font-weight:700;letter-spacing:.05em;color:hsl(0 70% 45%);margin-bottom:10px">⚠ ВАЖНО — АДРЕС И IP ПРИ ОПЛАТЕ</div>
+
+            <p style="font-size:12px;line-height:1.7;margin-bottom:12px">Anthropic использует платёжную систему <strong>Stripe</strong>, которая проверяет сразу три вещи: страну карты, IP-адрес в момент транзакции и платёжный адрес. Все три должны совпадать или хотя бы не противоречить друг другу.</p>
+
+            <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:8px;padding:14px;margin-bottom:14px">
+  Что Stripe проверяет при оплате:
+  ─────────────────────────────────────────────────────
+  ✓ Страна карты           → Испания (Platipomiru)
+  ✓ IP в момент оплаты     → VPN = Испания
+  ✓ Платёжный адрес        → адрес в Испании (не РФ!)
+
+  ✗ Российский адрес + испанская карта  → отказ
+  ✗ Российский IP + любая карта         → отказ</pre>
+
+            <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">Как получить адрес нужной страны:</div>
+            <p style="font-size:12px;line-height:1.6;margin-bottom:10px">Используй генератор случайных адресов — он создаёт реалистичный адрес для любой страны: улица, город, индекс.</p>
+            <a class="btn btn-primary" href="https://bestrandoms.com" target="_blank" rel="noopener">Открыть bestrandoms.com →</a>
+            <p style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:8px;line-height:1.5">Выбери страну карты (например, Spain), скопируй адрес и вставь его в форму оплаты Claude. Такой адрес проходит проверку Stripe.</p>
+          </div>
+        </div>
+
+        <!-- ══ ШАГ 4: НОМЕР ТЕЛЕФОНА ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">4. ВИРТУАЛЬНЫЙ НОМЕР ТЕЛЕФОНА</div>
+          <p>Claude требует подтверждение по SMS. Российские номера (+7) заблокированы. Нужен виртуальный номер из той же страны, что VPN, почта и карта.</p>
+
+          <!-- Рекомендуемые сервисы -->
+          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:10px;padding:18px;margin:14px 0;background:hsl(var(--primary)/.05)">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:12px">РЕКОМЕНДУЕМ — ПРОВЕРЕНО НАМИ</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+              <div style="background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+                <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">SMSFast</div>
+                <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:10px">Прямая ссылка на страницу Claude. Выбираешь страну, покупаешь номер, получаешь SMS.</p>
+                <a class="btn btn-sm btn-primary" href="https://smsfast.cc/service/claude" target="_blank" rel="noopener" style="width:100%">Открыть SMSFast →</a>
+              </div>
+
+              <div style="background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+                <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">Hero SMS <span style="font-size:10px;font-weight:400;color:hsl(142 60% 45%)">● есть Испания 🇪🇸</span></div>
+                <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:10px">Пополнение через российскую карту. Есть испанские номера — удобно если карта Platipomiru.</p>
+                <a class="btn btn-sm btn-primary" href="https://hero-sms.com/ru" target="_blank" rel="noopener" style="width:100%">Открыть Hero SMS →</a>
+              </div>
+
+            </div>
+          </div>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  Другие сервисы (если SMSFast не подошёл):
+  ┌─────────────────┬──────────────┬─────────────────────┐
+  │    Сервис       │  Оплата      │  Примечание          │
+  ├─────────────────┼──────────────┼─────────────────────┤
+  │ onlinesim.io    │  Крипто/карта│  Много стран         │
+  │ sms-activate.ru │  Крипто/карта│  Большой выбор       │
+  │ 5sim.net        │  Крипто/карта│  EU-номера           │
+  └─────────────────┴──────────────┴─────────────────────┘</pre>
+
+          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6">
+            ⚠ Страна номера = страна VPN = страна карты = страна почты. Все четыре должны совпадать. Не бери +7 (Россия), +375 (Беларусь), бесплатные онлайн-номера — Anthropic их блокирует.
+          </div>
+        </div>
+
+        <!-- ══ ШАГ 5: РЕГИСТРАЦИЯ ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">5. РЕГИСТРАЦИЯ CLAUDE</div>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  Подготовка (до открытия браузера):
+  ─────────────────────────────────────────────────────────
+  [ ] VPN включён → страна совпадает с картой и номером
+  [ ] Браузер в режиме инкогнито / очищены куки
+  [ ] Gmail (EU-регион) из шага 2 готов
+  [ ] Виртуальная карта пополнена (≥$20 для Pro)
+  [ ] Виртуальный номер куплен на SMSFast, ждёт SMS
+
+  Шаг 1. Открой claude.ai → «Sign up»
+  Шаг 2. Email — вводи Gmail из шага 2 (EU-регион, не Яндекс)
+  Шаг 3. Подтверди email → перейди по ссылке из письма
+  Шаг 4. Введи виртуальный номер → получи SMS → введи код
+  Шаг 5. Выбери страну — ТУ ЖЕ, что VPN + карта + номер
+  Шаг 6. Claude готов к использованию (бесплатный план)
+
+  Оплата Pro ($20/мес):
+  ─────────────────────────────────────────────────────────
+  Шаг 7. Настройки → «Upgrade to Pro»
+  Шаг 8. Введи данные виртуальной карты
+  Шаг 9. Страна выставления счёта = страна карты
+  Шаг 10. Оплата прошла → Pro активирован ✓</pre>
+
+          <div style="background:hsl(142 60% 45%/.1);border:1px solid hsl(142 60% 45%/.4);border-radius:8px;padding:12px 16px;margin-top:4px;font-size:12px;line-height:1.6">
+            ✓ Проверь: после регистрации зайди в настройки и убедись, что страна аккаунта не определилась как Россия. Если да — напиши в поддержку или пересоздай аккаунт.
+          </div>
+        </div>
+
+        <!-- ══ ЧТО НЕ ДЕЛАТЬ ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">ЧТО НЕ ДЕЛАТЬ</div>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  ┌────────────────────────────────────┬────────────────────────────┐
+  │  Не делай                          │  Почему                    │
+  ├────────────────────────────────────┼────────────────────────────┤
+  │ Регистрация без VPN                │  Блок по IP-адресу         │
+  │ Российский номер (+7)              │  Блок по коду страны       │
+  │ Российская карта                   │  Отказ при оплате          │
+  │ Смена страны VPN во время сессии   │  Подозрительная активность │
+  │ Один IP → несколько аккаунтов      │  Массовый бан аккаунтов    │
+  │ Бесплатные онлайн-номера SMS       │  Заблоклированы Anthropic  │
+  │ VPN ≠ страна карты                 │  Отказ при оплате          │
+  │ Яндекс/Mail.ru / старый Gmail из РФ│  Ассоциация с РФ           │
+  │ Реальный адрес РФ при оплате       │  Блок по адресу            │
+  └────────────────────────────────────┴────────────────────────────┘</pre>
+        </div>
+
+        <!-- ══ ПОСЛЕ РЕГИСТРАЦИИ ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">ПОСЛЕ РЕГИСТРАЦИИ — КАК НЕ ПОЛУЧИТЬ БАН</div>
+          <p>Аккаунт создан. Чтобы не потерять его:</p>
+          <ul class="page-list" style="margin-top:10px">
+            <li>Всегда заходи через тот же VPN (или хотя бы ту же страну)</li>
+            <li>Не давай доступ к аккаунту десяткам людей с разных IP</li>
+            <li>Не пытайся обойти политику использования (контент-фильтры)</li>
+            <li>Продление подписки — тоже с включённым VPN</li>
+            <li>Если используешь API — запросы через прокси той же страны (как в разделе «Свой Vibe»)</li>
+          </ul>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  Ежедневное использование:
+
+  Личный Claude (браузер):
+    VPN вкл. → claude.ai → работаешь
+
+  Claude API (свой сервер / Vibe Portal):
+    Сервер в РФ → anthropic-shim → EU-прокси → api.anthropic.com
+    (см. раздел «Свой Vibe → Прокси для Claude из РФ»)</pre>
+        </div>
+
+        <!-- ══ СТРАТЕГИЯ ПОДПИСКИ ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">РЕКОМЕНДУЕМАЯ СТРАТЕГИЯ ПОДПИСКИ</div>
+          <p>Не торопись сразу покупать дорогой план. Вот проверенная последовательность:</p>
+
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:2;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+  1. Регистрируешься → пользуешься бесплатно
+     Посмотри на возможности, пойми как работать с Клодом
+
+  2. Упёрся в лимиты → покупаешь Pro $20/мес
+     Этого хватает большинству для работы
+
+  3. Работаешь 3–5 дней … 1–2 недели
+     Пока не почувствуешь, что Pro реально тесен
+
+  4. Только если очень нужно → MAX $100/мес
+     Для интенсивной профессиональной работы</pre>
+
+          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.7">
+            💡 Большинство останавливается на Pro $20. На MAX переходят те, кто работает с Claude по 8+ часов в день и каждый день упирается в контекст или лимиты сообщений.
+          </div>
+        </div>
+
+        <!-- ══ РАЗДЕЛИТЕЛЬ: АЛЬТЕРНАТИВА ══ -->
+        <div style="margin:40px 0 32px;display:flex;align-items:center;gap:16px">
+          <div style="flex:1;height:1px;background:hsl(var(--border))"></div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:.1em;color:hsl(var(--muted-foreground));white-space:nowrap">ИЛИ — АЛЬТЕРНАТИВНЫЙ ПУТЬ</div>
+          <div style="flex:1;height:1px;background:hsl(var(--border))"></div>
+        </div>
+
+        <!-- ══ ГОТОВЫЕ АККАУНТЫ ══ -->
+        <div class="page-sect">
+          <div class="page-sect-no">КУПИТЬ ГОТОВЫЙ АККАУНТ</div>
+          <p>Самый быстрый способ — без карты, без верификации и лишних шагов. Но со своими рисками и ограничениями.</p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0">
+            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">GGSEL</div>
+              <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:12px">Крупный агрегатор цифровых товаров. Широкий выбор: базовые аккаунты, Pro, Max. Автовыдача, гарантия от магазина.</p>
+              <a class="btn btn-sm btn-primary" href="https://ggsel.com" target="_blank" rel="noopener" style="width:100%">Перейти на GGSEL →</a>
+            </div>
+            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+              <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">Plati.Market</div>
+              <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:12px">Маркетплейс с десятками продавцов. Рейтинговая система и история продаж — выбирай проверенных.</p>
+              <a class="btn btn-sm btn-primary" href="https://plati.market" target="_blank" rel="noopener" style="width:100%">Перейти на Plati.Market →</a>
+            </div>
+          </div>
+
+          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.5);border-radius:10px;padding:16px;font-size:12px;line-height:1.75">
+            <div style="font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">⚠ На что смотреть</div>
+            <ul style="padding-left:16px;margin:0;color:hsl(var(--foreground))">
+              <li><strong>Рейтинг продавца</strong> — только с высоким рейтингом и большим числом продаж. Новые без истории — риск.</li>
+              <li><strong>Цена</strong> — не должна быть в несколько раз ниже рыночной ($20). Аномально низкая цена — тревожный сигнал.</li>
+              <li><strong>Продление</strong> — главная проблема готовых аккаунтов. Привязан к чужой карте → продлить самому не выйдет. Уточняй у продавца заранее.</li>
+              <li><strong>Стратегия смены</strong> — если устраивает покупать новый аккаунт раз в месяц вместо продления, такие сервисы вполне подходят. Опыт есть, люди так работают.</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1509,5 +2251,25 @@ description: Объясняет каждый шаг простыми слова�
   <script src="/content/reference.js"></script>
   <script src="/js/kb.js"></script>
   <script src="/js/app.js"></script>
+  <script>
+  // Кнопки «Чат Claude» на странице «Свой Vibe» — открывают скрытый проект _vibe-setup
+  async function openVibeSetupChat() {
+    const btn = document.getElementById('btn-open-vibe-chat-top');
+    if (btn) { btn.disabled = true; btn.textContent = 'Подготовка…'; }
+    try {
+      const r = await fetch('/api/vibe-setup/ensure', { method: 'POST' });
+      if (!r.ok) throw new Error('ошибка сервера');
+      openProjectChat('_vibe-setup');
+    } catch (e) {
+      alert('Не удалось открыть чат: ' + e.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '💬 Чат Claude — помощник по установке'; }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-open-vibe-chat-top')?.addEventListener('click', openVibeSetupChat);
+    document.getElementById('btn-open-vibe-chat')?.addEventListener('click', openVibeSetupChat);
+  });
+  </script>
 </body>
 </html>
