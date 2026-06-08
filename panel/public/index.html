@@ -1518,75 +1518,242 @@ allowed-tools: Read, Bash(gh pr:*)
 
         <div class="page-sect" id="vb-arch">
           <div class="page-sect-no">10. АРХИТЕКТУРА ПЛАТФОРМЫ</div>
-          <p>Как все части платформы связаны между собой. Путь запроса — от тебя до данных Битрикс24.</p>
-          <pre style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:18px 20px;font-size:11.5px;line-height:1.9;overflow-x:auto;margin:14px 0;font-family:'IBM Plex Mono',monospace"> ТЫ (ученик)
- │
- ├── Claude Code / Cursor / любой AI-инструмент
- │    └── читает документацию → пишет код → деплоит
- │
- ▼
- VIBECODE PLATFORM  (vibecode.bitrix24.tech)
- │
- ├── 🔑  API-ключ  (vibe_api_... / vibe_app_...)
- │         аутентификация всех запросов
- │
- ├── 🤖  AI Router  /v1/chat/completions
- │         ├── BitrixGPT — бесплатно «из коробки»
- │         ├── OpenAI / Anthropic / DeepSeek — BYOK
- │         └── ЯндексGPT / GigaChat / OpenRouter — BYOK
- │
- ├── 📊  Entity API  /v1/deals, /v1/contacts, ...
- │         читает и пишет данные → БИТРИКС24
- │              CRM · Задачи · Файлы · Календарь
- │
- ├── 💬  Bot API  /v1/bots/...
- │         чат-боты в мессенджере Битрикс24
- │              регистрация → polling событий → ответ
- │
- ├── 🌐  Apps API  /v1/apps/...
- │         OAuth-приложения встраиваются в UI Битрикс24
- │              PRIVATE → PUBLISHED
- │
- └── 🖥  Infra API  /v1/infra/...
-           СЕРВЕРЫ BLACK HOLE (Ubuntu 24.04)
-           │   нет IP · нет портов · невидимы снаружи
-           │
-           ├── сервер → WebSocket → Gateway
-           └── Gateway → туннель
-                └── app-{id}.vibecode.bitrix24.tech</pre>
+          <p>Полная карта компонентов и потоков данных. Читай диаграммы последовательно — от общего к частному.</p>
 
-          <h2 class="page-h2">Как работает запрос к данным</h2>
-          <table class="page-table">
-            <tbody>
-              <tr><td>1</td><td>Приложение отправляет <code>GET /v1/deals</code> с заголовком <code>X-Api-Key</code></td></tr>
-              <tr><td>2</td><td>Платформа проверяет ключ и права доступа</td></tr>
-              <tr><td>3</td><td>Entity API переводит запрос в нативные методы Битрикс24 REST API</td></tr>
-              <tr><td>4</td><td>Битрикс24 возвращает данные</td></tr>
-              <tr><td>5</td><td>Entity API нормализует ответ в единый JSON-формат</td></tr>
-              <tr><td>6</td><td>Приложение получает данные и отображает их</td></tr>
-            </tbody>
-          </table>
+          <!-- ══ ДИАГРАММА 1: Полная карта платформы ══════════════════════ -->
+          <h2 class="page-h2" style="margin-top:20px">① Полная карта платформы</h2>
+          <div style="border:1px solid hsl(var(--border));border-radius:12px;overflow:hidden;margin:14px 0;font-family:'IBM Plex Mono',monospace">
+            <div style="background:hsl(var(--accent));border-bottom:1px solid hsl(var(--border));padding:14px 20px;text-align:center">
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:3px">Точка входа</div>
+              <strong style="font-size:14px">ТЫ + ИИ-ИНСТРУМЕНТ</strong>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:3px">Claude Code &nbsp;·&nbsp; Cursor &nbsp;·&nbsp; любой AI-агент</div>
+            </div>
+            <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:7px 20px;text-align:center;font-size:11px;color:hsl(var(--muted-foreground))">
+              ↓ &ensp; каждый запрос несёт заголовок &ensp; <code style="background:transparent;font-size:11px">X-Api-Key: vibe_api_…</code>
+            </div>
+            <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:12px 20px;text-align:center">
+              <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:3px">Платформа</div>
+              <strong style="font-size:14px">VIBECODE PLATFORM</strong>
+              <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:2px">vibecode.bitrix24.tech / v1</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid hsl(var(--border))">
+              <div style="border-right:1px solid hsl(var(--border));padding:10px 6px;text-align:center"><div style="font-size:16px">🤖</div><div style="font-weight:600;font-size:11px;margin-top:2px">AI Router</div><div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">/v1/chat/completions</div></div>
+              <div style="border-right:1px solid hsl(var(--border));padding:10px 6px;text-align:center"><div style="font-size:16px">📊</div><div style="font-weight:600;font-size:11px;margin-top:2px">Entity API</div><div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">/v1/deals, contacts…</div></div>
+              <div style="border-right:1px solid hsl(var(--border));padding:10px 6px;text-align:center"><div style="font-size:16px">💬</div><div style="font-weight:600;font-size:11px;margin-top:2px">Bot API</div><div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">/v1/bots/…</div></div>
+              <div style="border-right:1px solid hsl(var(--border));padding:10px 6px;text-align:center"><div style="font-size:16px">🌐</div><div style="font-weight:600;font-size:11px;margin-top:2px">Apps API</div><div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">/v1/apps/…</div></div>
+              <div style="padding:10px 6px;text-align:center"><div style="font-size:16px">🖥</div><div style="font-weight:600;font-size:11px;margin-top:2px">Infra API</div><div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">/v1/infra/…</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr)">
+              <div style="border-right:1px solid hsl(var(--border));padding:9px 6px;text-align:center;font-size:9px;color:hsl(var(--muted-foreground));line-height:1.6">BitrixGPT<br>OpenAI · Claude<br>DeepSeek<br>ЯндексGPT · GigaChat</div>
+              <div style="border-right:1px solid hsl(var(--border));padding:9px 6px;text-align:center;font-size:9px;color:hsl(var(--muted-foreground));line-height:1.6">БИТРИКС24<br>CRM · Задачи<br>Файлы<br>Календарь</div>
+              <div style="border-right:1px solid hsl(var(--border));padding:9px 6px;text-align:center;font-size:9px;color:hsl(var(--muted-foreground));line-height:1.6">Мессенджер<br>Битрикс24<br>чаты<br>slash-команды</div>
+              <div style="border-right:1px solid hsl(var(--border));padding:9px 6px;text-align:center;font-size:9px;color:hsl(var(--muted-foreground));line-height:1.6">UI Битрикс24<br>карточки CRM<br>боковые<br>панели</div>
+              <div style="padding:9px 6px;text-align:center;font-size:9px;color:hsl(var(--muted-foreground));line-height:1.6">Black Hole<br>Серверы<br>Ubuntu 24.04<br>порт :3000</div>
+            </div>
+          </div>
 
-          <h2 class="page-h2" style="margin-top:20px">Как работает чат-бот</h2>
-          <table class="page-table">
-            <tbody>
-              <tr><td>1</td><td>Регистрируешь бота: <code>POST /v1/bots</code> — платформа создаёт его в Битрикс24</td></tr>
-              <tr><td>2</td><td>Код на сервере раз в N секунд опрашивает: <code>GET /v1/bots/:id/events</code></td></tr>
-              <tr><td>3</td><td>Пришло сообщение → обрабатываешь (можно спросить AI Router)</td></tr>
-              <tr><td>4</td><td>Отправляешь ответ: <code>POST /v1/bots/:id/messages</code></td></tr>
-            </tbody>
-          </table>
+          <!-- ══ ДИАГРАММА 2: Путь запроса к данным ═══════════════════════ -->
+          <h2 class="page-h2" style="margin-top:28px">② Путь запроса к данным Битрикс24 — шаг за шагом</h2>
+          <div style="margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
+            <div style="display:flex;align-items:stretch">
+              <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">1</div>
+                <div style="width:2px;background:hsl(var(--border));flex:1;margin:3px 0"></div>
+              </div>
+              <div style="flex:1;padding:2px 0 14px 10px"><strong>Твой код</strong> отправляет HTTP-запрос с ключом<br><pre style="display:inline-block;background:hsl(var(--muted));border:1px solid hsl(var(--border));padding:5px 10px;border-radius:5px;font-size:11px;margin:5px 0 0">GET /v1/deals &nbsp;&nbsp; X-Api-Key: vibe_api_xxx</pre></div>
+            </div>
+            <div style="display:flex;align-items:stretch">
+              <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">2</div>
+                <div style="width:2px;background:hsl(var(--border));flex:1;margin:3px 0"></div>
+              </div>
+              <div style="flex:1;padding:2px 0 14px 10px"><strong>Vibecode проверяет ключ</strong> — действителен и скоуп совпадает → дальше. Иначе — ошибка <code>403 Forbidden</code>.</div>
+            </div>
+            <div style="display:flex;align-items:stretch">
+              <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">3</div>
+                <div style="width:2px;background:hsl(var(--border));flex:1;margin:3px 0"></div>
+              </div>
+              <div style="flex:1;padding:2px 0 14px 10px"><strong>Entity API транслирует</strong> твой простой запрос в нативный метод Битрикс24 (<code>crm.deal.list</code> и т.п.).</div>
+            </div>
+            <div style="display:flex;align-items:stretch">
+              <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">4</div>
+                <div style="width:2px;background:hsl(var(--border));flex:1;margin:3px 0"></div>
+              </div>
+              <div style="flex:1;padding:2px 0 14px 10px"><strong>Битрикс24</strong> возвращает данные в своём формате (UPPER_CASE поля, своя пагинация, вложенные объекты).</div>
+            </div>
+            <div style="display:flex;align-items:stretch">
+              <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">5</div>
+                <div style="width:2px;background:hsl(var(--border));flex:1;margin:3px 0"></div>
+              </div>
+              <div style="flex:1;padding:2px 0 14px 10px"><strong>Entity API нормализует</strong> ответ — camelCase поля, единая структура и пагинация для всех 300+ методов.</div>
+            </div>
+            <div style="display:flex;align-items:stretch">
+              <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+                <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">6</div>
+              </div>
+              <div style="flex:1;padding:2px 0 0 10px"><strong>Твой код</strong> получает чистый JSON и рендерит его<br><pre style="display:inline-block;background:hsl(var(--muted));border:1px solid hsl(var(--border));padding:5px 10px;border-radius:5px;font-size:11px;margin:5px 0 0">{"success":true,"data":[{"id":1,"title":"Сделка #1",...}]}</pre></div>
+            </div>
+          </div>
 
-          <h2 class="page-h2" style="margin-top:20px">Как работает Black Hole туннель</h2>
-          <table class="page-table">
-            <tbody>
-              <tr><td>1</td><td>Сервер стартует — сам устанавливает исходящий WebSocket на Gateway</td></tr>
-              <tr><td>2</td><td>Снаружи невидим: нет IP, нет портов, не пингуется</td></tr>
-              <tr><td>3</td><td>Пользователь открывает <code>app-xxx.vibecode.bitrix24.tech</code></td></tr>
-              <tr><td>4</td><td>Gateway принимает запрос и перенаправляет через туннель на сервер</td></tr>
-              <tr><td>5</td><td>Сервер отвечает через тот же WebSocket-канал</td></tr>
-            </tbody>
-          </table>
+          <!-- ══ ДИАГРАММА 3: Black Hole Tunnel ═══════════════════════════ -->
+          <h2 class="page-h2" style="margin-top:28px">③ Туннель Black Hole — как невидимый сервер принимает запросы</h2>
+          <div style="border:1px solid hsl(var(--border));border-radius:10px;overflow:hidden;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
+            <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:7px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--muted-foreground))">Фаза А — Старт сервера (один раз при запуске)</div>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;border-bottom:1px solid hsl(var(--border))">
+              <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:8px 14px;text-align:center;min-width:100px">
+                <div style="font-size:10px;color:hsl(var(--muted-foreground))">🖥 твой сервер</div>
+                <div style="font-weight:700;font-size:12px;margin-top:2px">Black Hole</div>
+                <div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">Ubuntu 24.04<br>нет IP · нет портов</div>
+              </div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center">устанавливает<br>исходящий<br>WebSocket</div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:8px 14px;text-align:center;min-width:100px">
+                <div style="font-size:10px;color:hsl(var(--muted-foreground))">🌐 Vibecode</div>
+                <div style="font-weight:700;font-size:12px;margin-top:2px">Gateway</div>
+                <div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">принимает канал<br>выдаёт поддомен</div>
+              </div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center"><code style="background:transparent">app-xxx<br>.vibecode<br>.bitrix24.tech</code></div>
+            </div>
+            <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:7px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--muted-foreground))">Фаза Б — Входящий запрос пользователя</div>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px">
+              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+                <div style="font-size:10px;color:hsl(var(--muted-foreground))">👤 браузер</div>
+                <div style="font-weight:700;font-size:12px;margin-top:2px">Пользователь</div>
+              </div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center"><code style="background:transparent">GET app-xxx<br>.vibecode…</code></div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+                <div style="font-size:10px;color:hsl(var(--muted-foreground))">🌐</div>
+                <div style="font-weight:700;font-size:12px;margin-top:2px">Gateway</div>
+              </div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center">через открытый<br>WebSocket-канал</div>
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
+              <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+                <div style="font-size:10px;color:hsl(var(--muted-foreground))">🖥</div>
+                <div style="font-weight:700;font-size:12px;margin-top:2px">Black Hole<br>:3000</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ══ ДИАГРАММА 4: Bot Polling Loop ════════════════════════════ -->
+          <h2 class="page-h2" style="margin-top:28px">④ Жизненный цикл чат-бота (polling loop)</h2>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:11px;font-family:'IBM Plex Mono',monospace">
+            <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+              <div style="font-weight:700;color:hsl(var(--primary))">① СТАРТ</div>
+              <div style="margin-top:4px">POST /v1/bots<br><span style="color:hsl(var(--muted-foreground));font-size:10px">регистрация в Битрикс24</span></div>
+            </div>
+            <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+              <div style="font-weight:700">② ОПРОС</div>
+              <div style="margin-top:4px;color:hsl(var(--muted-foreground));font-size:10px">GET /v1/bots/:id/events<br>раз в N секунд</div>
+            </div>
+            <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+              <div style="font-weight:700">③ СОБЫТИЕ?</div>
+              <div style="margin-top:5px;text-align:left;font-size:10px;color:hsl(var(--muted-foreground))">Да → обработка<br>Нет → ждать → ②</div>
+            </div>
+            <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+              <div style="font-weight:700">④ ОБРАБОТКА</div>
+              <div style="margin-top:4px;color:hsl(var(--muted-foreground));font-size:10px">AI Router (опц.)<br>Entity API</div>
+            </div>
+            <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+              <div style="font-weight:700">⑤ ОТВЕТ</div>
+              <div style="margin-top:4px;color:hsl(var(--muted-foreground));font-size:10px">POST /v1/bots/:id<br>/messages → в чат</div>
+            </div>
+          </div>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:0;font-family:'IBM Plex Mono',monospace">После шага ⑤ — снова ②. Цикл работает, пока сервер запущен.</p>
+
+          <!-- ══ ДИАГРАММА 5: AI Router ════════════════════════════════════ -->
+          <h2 class="page-h2" style="margin-top:28px">⑤ AI Router — маршрутизация к нужной модели</h2>
+          <div style="border:1px solid hsl(var(--border));border-radius:10px;overflow:hidden;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
+            <div style="background:hsl(var(--accent));border-bottom:1px solid hsl(var(--border));padding:12px 16px;text-align:center">
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-bottom:3px">Твой запрос</div>
+              <code style="font-size:11px">POST /v1/chat/completions &nbsp; {"model":"…","messages":[…]}</code>
+            </div>
+            <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:6px;text-align:center;font-size:11px;color:hsl(var(--muted-foreground))">↓ поле <code style="background:transparent">model</code> определяет, куда идёт запрос</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr)">
+              <div style="border-right:1px solid hsl(var(--border));border-bottom:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
+                <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:6px;padding:6px 8px">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--primary))">🆓 Бесплатно</div>
+                  <div style="font-weight:700;font-size:12px;margin-top:3px">BitrixGPT</div>
+                  <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">bitrix/bitrixgpt-5.5</code>
+                </div>
+              </div>
+              <div style="border-right:1px solid hsl(var(--border));border-bottom:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
+                  <div style="font-weight:700;font-size:12px;margin-top:3px">OpenAI</div>
+                  <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">gpt-4o, gpt-4o-mini</code>
+                </div>
+              </div>
+              <div style="border-bottom:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
+                  <div style="font-weight:700;font-size:12px;margin-top:3px">Anthropic Claude</div>
+                  <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">claude-sonnet-4-6</code>
+                </div>
+              </div>
+              <div style="border-right:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
+                  <div style="font-weight:700;font-size:12px;margin-top:3px">DeepSeek</div>
+                  <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">deepseek-chat</code>
+                </div>
+              </div>
+              <div style="border-right:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
+                  <div style="font-weight:700;font-size:12px;margin-top:3px">ЯндексGPT</div>
+                  <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">yandexgpt/latest</code>
+                </div>
+              </div>
+              <div style="padding:10px 8px;text-align:center">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                  <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
+                  <div style="font-weight:700;font-size:12px;margin-top:3px">GigaChat</div>
+                  <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">GigaChat-Max</code>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));font-family:'IBM Plex Mono',monospace">BYOK = Bring Your Own Keys — подключаешь свой аккаунт у провайдера, платишь напрямую ему.</p>
+
+          <!-- ══ ДИАГРАММА 6: Жизненный цикл приложения ═══════════════════ -->
+          <h2 class="page-h2" style="margin-top:28px">⑥ Жизненный цикл OAuth-приложения</h2>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:14px 18px;text-align:center;min-width:110px">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground));margin-bottom:4px">① создание</div>
+              <div style="font-weight:700;font-size:14px">PRIVATE</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-top:4px">видит только автор<br>этап разработки</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
+              <div style="font-size:9px;color:hsl(var(--muted-foreground))">задеплоить<br>настроить URL</div>
+            </div>
+            <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:14px 18px;text-align:center;min-width:110px">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--primary));margin-bottom:4px">② живой</div>
+              <div style="font-weight:700;font-size:14px">PUBLISHED</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-top:4px">видят все сотрудники<br>с интеграциями</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">⇄</div>
+              <div style="font-size:9px;color:hsl(var(--muted-foreground))">снять / вернуть</div>
+            </div>
+            <div style="background:hsl(var(--muted));border:1px dashed hsl(var(--border));border-radius:8px;padding:14px 18px;text-align:center;min-width:110px">
+              <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground));margin-bottom:4px">③ пауза</div>
+              <div style="font-weight:700;font-size:14px">UNPUBLISHED</div>
+              <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-top:4px">данные сохранены<br>можно вернуть</div>
+            </div>
+          </div>
         </div>
 
         <div class="page-sect" id="vb-projects">
