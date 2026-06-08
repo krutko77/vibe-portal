@@ -350,6 +350,19 @@
           <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:6px 0 0"><code>--dangerously-skip-permissions</code> — Claude не будет спрашивать «разрешить?» на каждое действие. Удобно для быстрой работы, но давай только в своём проекте.</p>
         </div>
 
+        <div class="page-sect" style="margin-bottom:0">
+          <div class="page-sect-no">СТАТУС СЕРВЕРА (БЕЗ КЛОДА)</div>
+          <div class="note-quote" style="margin:0">
+            <span class="note-quote-label">terminal</span>
+            <pre><span style="color:hsl(var(--primary))">free -h && df -h / && ps aux --sort=-%mem | head -10</span></pre>
+          </div>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:6px 0 0">
+            <code>free -h</code> — оперативная память (всего / занято / свободно) ·
+            <code>df -h /</code> — диск ·
+            <code>ps aux --sort=-%mem | head -10</code> — топ-10 процессов по RAM
+          </p>
+        </div>
+
         <div class="anchor-chips" style="margin-top:16px">
           <a href="#ch-input" class="anchor-chip">Поле ввода</a>
           <a href="#ch-slash" class="anchor-chip">Slash-команды</a>
