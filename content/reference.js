@@ -14,10 +14,9 @@ window.KB_REFERENCE = [
   { id:'claude-md',     group:'reference', kind:'example',    icon:'📝', sub:'claude-md',     title:'.md и CLAUDE.md — что это',   desc:'Учебная мини-страница про Markdown и CLAUDE.md.' },
   { id:'claude-folder', group:'reference', kind:'example',    icon:'🧩', sub:'claude-folder', title:'Структура папки .claude',     desc:'Из чего состоит .claude и за что отвечает.' },
   { id:'templates-dl',  group:'reference', kind:'template',   icon:'📦', sub:'templates-dl',  title:'Шаблоны проектов',            desc:'Скачать _base и _b24-single-php.' },
-  { id:'skills',        group:'reference', kind:'skill',      icon:'✨', sub:'skills',        title:'Установленные скиллы',        desc:'superpowers, ui-ux-pro-max, claude-memory.' },
+  { id:'skills',        group:'reference', kind:'skill',      icon:'✨', sub:'skills',        title:'Шпаргалка по Skills',         desc:'superpowers, ui-ux-pro-max, claude-memory и другие.' },
   { id:'software',      group:'reference', kind:'software',   icon:'💿', sub:'software',      title:'Полезный софт',               desc:'Редактор, AI-альтернативы, голосовой ввод, скриншоты, буфер обмена.' },
   { id:'links',         group:'reference', kind:'link',       icon:'🔗', sub:'links',         title:'Полезные ссылки',             desc:'claude.ai, Vibecode и документация.' },
-  { id:'vibe-portal',   group:'reference', kind:'guide',      icon:'🏗', sub:'vibe-portal',   title:'VIBE. Портал',                desc:'Материалы по созданию портала (скоро).' },
   { id:'faq',           group:'reference', kind:'faq',        icon:'⚠',  sub:'faq',           title:'FAQ — частые проблемы',       desc:'«Вылетает / не пускает» и другое.' },
   { id:'vibecode-b24',  group:'platforms', kind:'guide',      icon:'🏄', sub:'vibecode-b24',  title:'Битрикс24 Вайбкод',           desc:'Полный конспект: AI Router, Entity API, боты, деплой, архитектура.' },
 ];
