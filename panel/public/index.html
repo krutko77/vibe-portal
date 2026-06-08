@@ -338,7 +338,19 @@
         <div class="page-meta">VIBE PORTAL · CLAUDE CODE</div>
         <h1 class="page-h1"><em>Шпаргалка</em> по Claude Code</h1>
         <p class="page-lead">Горячие клавиши, slash-команды и флаги CLI. Подходит для печати на A4.</p>
-        <div class="anchor-chips">
+
+        <div class="page-sect" style="margin-bottom:0">
+          <div class="page-sect-no">ЗАПУСК В ТЕРМИНАЛЕ</div>
+          <div class="note-quote" style="margin:0">
+            <span class="note-quote-label">terminal</span>
+            <pre><span style="color:hsl(var(--smui-green))">claude</span>                                  # открыть Claude Code
+
+<span style="color:hsl(39 80% 60%)">claude --dangerously-skip-permissions</span>   # без запросов разрешений</pre>
+          </div>
+          <p style="font-size:11px;color:hsl(var(--muted-foreground));margin:6px 0 0"><code>--dangerously-skip-permissions</code> — Claude не будет спрашивать «разрешить?» на каждое действие. Удобно для быстрой работы, но давай только в своём проекте.</p>
+        </div>
+
+        <div class="anchor-chips" style="margin-top:16px">
           <a href="#ch-input" class="anchor-chip">Поле ввода</a>
           <a href="#ch-slash" class="anchor-chip">Slash-команды</a>
           <a href="#ch-agent" class="anchor-chip">Agent View</a>
