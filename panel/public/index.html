@@ -936,6 +936,101 @@ description: Объясняет каждый шаг простыми слова�
         </div>
 
         <div class="page-sect">
+          <div class="page-sect-no">КОМАНДА vs СКИЛЛ vs АГЕНТ</div>
+          <p style="font-size:12px;color:hsl(var(--muted-foreground));margin:0 0 14px">Три разных механизма. Главное отличие — <strong style="color:hsl(var(--foreground))">кто и когда запускает</strong>.</p>
+
+          <!-- Диаграмма потока -->
+          <div class="sca-flow">
+            <div class="sca-flow-actor">
+              <div class="sca-flow-actor-icon">👤</div>
+              <div class="sca-flow-actor-label">Ты</div>
+            </div>
+            <div class="sca-flow-msg sca-flow-msg--cmd">
+              <span class="sca-flow-msg-text">пишет <code>/deploy main</code></span>
+              <span class="sca-flow-msg-arrow">──────►</span>
+            </div>
+            <div class="sca-flow-actor">
+              <div class="sca-flow-actor-icon">🤖</div>
+              <div class="sca-flow-actor-label">Claude</div>
+            </div>
+            <div class="sca-flow-result sca-flow-result--cmd">
+              <span class="sca-flow-tag">КОМАНДА</span>
+              шаблон подставляется и выполняется
+            </div>
+
+            <div class="sca-flow-actor">
+              <div class="sca-flow-actor-icon">👤</div>
+              <div class="sca-flow-actor-label">Ты</div>
+            </div>
+            <div class="sca-flow-msg sca-flow-msg--skill">
+              <span class="sca-flow-msg-text">пишет «проревьюй этот PR»</span>
+              <span class="sca-flow-msg-arrow">──────►</span>
+            </div>
+            <div class="sca-flow-actor">
+              <div class="sca-flow-actor-icon">🤖</div>
+              <div class="sca-flow-actor-label">Claude</div>
+            </div>
+            <div class="sca-flow-result sca-flow-result--skill">
+              <span class="sca-flow-tag">СКИЛЛ</span>
+              находит подходящий рецепт <em>сам</em> по description
+            </div>
+
+            <div class="sca-flow-actor">
+              <div class="sca-flow-actor-icon">👤</div>
+              <div class="sca-flow-actor-label">Ты</div>
+            </div>
+            <div class="sca-flow-msg sca-flow-msg--agent">
+              <span class="sca-flow-msg-text">пишет «протести весь проект»</span>
+              <span class="sca-flow-msg-arrow">──────►</span>
+            </div>
+            <div class="sca-flow-actor">
+              <div class="sca-flow-actor-icon">🤖</div>
+              <div class="sca-flow-actor-label">Claude</div>
+            </div>
+            <div class="sca-flow-result sca-flow-result--agent">
+              <span class="sca-flow-tag">АГЕНТ</span>
+              сам решает делегировать — запускает субагента с инструментами
+            </div>
+          </div>
+
+          <!-- Три карточки сравнения -->
+          <div class="sca-cards">
+            <div class="sca-card sca-card--cmd">
+              <div class="sca-card-header">
+                <span class="sca-card-icon">⌨️</span>
+                <span class="sca-card-name">КОМАНДА</span>
+                <code class="sca-card-path">commands/имя.md</code>
+              </div>
+              <div class="sca-card-who"><strong>Кто запускает:</strong> ТЫ явно — <code>/имя&nbsp;аргументы</code></div>
+              <div class="sca-card-what">Шаблон запроса. Ты знаешь что хочешь и говоришь Claude «сделай вот это по этому рецепту». Аргументы подставляются через <code>$ARGUMENTS</code>.</div>
+              <div class="sca-card-when"><strong>Когда:</strong> повторяющиеся задачи с чёткими параметрами — /deploy, /review-pr 123, /create-component Button</div>
+            </div>
+
+            <div class="sca-card sca-card--skill">
+              <div class="sca-card-header">
+                <span class="sca-card-icon">🧠</span>
+                <span class="sca-card-name">СКИЛЛ</span>
+                <code class="sca-card-path">skills/имя/SKILL.md</code>
+              </div>
+              <div class="sca-card-who"><strong>Кто запускает:</strong> CLAUDE сам — по совпадению с <code>description</code></div>
+              <div class="sca-card-what">Рецепт процесса. Claude читает description скилла и сам решает «это похоже на мою задачу» — подгружает инструкцию. Ты можешь и не знать, что он работает.</div>
+              <div class="sca-card-when"><strong>Когда:</strong> процессы и стандарты — «как писать коммиты», «стиль кода», «как делать review»</div>
+            </div>
+
+            <div class="sca-card sca-card--agent">
+              <div class="sca-card-header">
+                <span class="sca-card-icon">🤖</span>
+                <span class="sca-card-name">АГЕНТ</span>
+                <code class="sca-card-path">agents/имя.md</code>
+              </div>
+              <div class="sca-card-who"><strong>Кто запускает:</strong> CLAUDE сам — когда решает делегировать</div>
+              <div class="sca-card-what">Субагент со своим набором инструментов и ролью. Claude-оркестратор видит задачу и понимает «здесь нужен специалист» — спавнит отдельный контекст.</div>
+              <div class="sca-card-when"><strong>Когда:</strong> параллельные задачи, специализированные роли — «тестировщик», «ревьюер безопасности», «генератор документации»</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="page-sect">
           <div class="page-sect-no">АНАТОМИЯ ФАЙЛА СКИЛЛА</div>
           <div class="note-quote">
             <span class="note-quote-label">.claude/commands/review-pr.md</span>

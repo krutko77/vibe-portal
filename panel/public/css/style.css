@@ -1529,6 +1529,105 @@ body.has-right-chat .nav-btn-claude {
   .skills-scope-arrow-line::after { content: '↓'; right: auto; left: 50%; top: -9px; }
 }
 
+/* ── Skills: команда vs скилл vs агент ─────────────────── */
+/* Диаграмма потока */
+.sca-flow {
+  display: grid;
+  grid-template-columns: 52px 1fr 52px 1fr;
+  gap: 6px 0;
+  align-items: center;
+  max-width: 680px;
+  margin: 0 0 20px;
+  background: hsl(var(--smui-surface-0));
+  border: 1px solid hsl(var(--border));
+  padding: 14px 16px;
+}
+.sca-flow-actor {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.sca-flow-actor-icon { font-size: 20px; line-height: 1; }
+.sca-flow-actor-label {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  color: hsl(var(--muted-foreground)); letter-spacing: .06em; text-transform: uppercase;
+}
+.sca-flow-msg {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px;
+  font-size: 11px; font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+}
+.sca-flow-msg code { font-size: 11px; }
+.sca-flow-msg-arrow { opacity: .4; white-space: nowrap; }
+.sca-flow-msg--cmd   { border-left: 2px solid hsl(var(--primary) / .5); }
+.sca-flow-msg--skill { border-left: 2px solid hsl(var(--smui-green) / .5); }
+.sca-flow-msg--agent { border-left: 2px solid hsl(39 80% 55% / .5); }
+.sca-flow-result {
+  grid-column: 4;
+  font-size: 11px; line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+  padding: 4px 8px;
+  border-left: 1px dashed hsl(var(--border));
+}
+.sca-flow-result em { font-style: normal; color: hsl(var(--foreground)); }
+.sca-flow-tag {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .08em; padding: 1px 5px;
+  margin-right: 6px; vertical-align: middle;
+}
+.sca-flow-result--cmd   .sca-flow-tag { background: hsl(var(--primary) / .15);   color: hsl(var(--primary)); }
+.sca-flow-result--skill .sca-flow-tag { background: hsl(var(--smui-green) / .15); color: hsl(var(--smui-green)); }
+.sca-flow-result--agent .sca-flow-tag { background: hsl(39 80% 55% / .15);        color: hsl(39 80% 60%); }
+
+/* Три карточки */
+.sca-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  max-width: 760px; margin: 0;
+}
+.sca-card {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--smui-surface-1));
+  padding: 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.sca-card--cmd   { border-top: 2px solid hsl(var(--primary)); }
+.sca-card--skill { border-top: 2px solid hsl(var(--smui-green)); }
+.sca-card--agent { border-top: 2px solid hsl(39 80% 55%); }
+.sca-card-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.sca-card-icon { font-size: 16px; }
+.sca-card-name {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; color: hsl(var(--foreground));
+}
+.sca-card-path {
+  font-size: 10px; color: hsl(var(--muted-foreground));
+  background: hsl(var(--smui-surface-0)); padding: 1px 5px;
+  border: 1px solid hsl(var(--border));
+}
+.sca-card-who {
+  font-size: 11px; color: hsl(var(--foreground));
+  background: hsl(var(--smui-surface-0)); padding: 6px 8px;
+  border-left: 2px solid hsl(var(--border));
+}
+.sca-card--cmd   .sca-card-who { border-color: hsl(var(--primary)); }
+.sca-card--skill .sca-card-who { border-color: hsl(var(--smui-green)); }
+.sca-card--agent .sca-card-who { border-color: hsl(39 80% 55%); }
+.sca-card-who code { font-size: 10px; }
+.sca-card-what {
+  font-size: 11px; line-height: 1.6; color: hsl(var(--muted-foreground));
+}
+.sca-card-when {
+  font-size: 10px; line-height: 1.5; color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border)); padding-top: 7px;
+  font-style: italic;
+}
+@media (max-width: 640px) {
+  .sca-cards { grid-template-columns: 1fr; }
+  .sca-flow  { grid-template-columns: 44px 1fr 44px; }
+  .sca-flow-result { grid-column: 1 / -1; border-left: none; border-top: 1px dashed hsl(var(--border)); }
+}
+
 /* ── MATERIALS view: sub-tabs + якорные чипы + page-* ──── */
 .materials-subnav {
   display: flex; gap: 6px; flex-wrap: wrap;
