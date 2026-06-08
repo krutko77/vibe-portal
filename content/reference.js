@@ -19,4 +19,5 @@ window.KB_REFERENCE = [
   { id:'links',         group:'reference', kind:'link',       icon:'🔗', sub:'links',         title:'Полезные ссылки',             desc:'claude.ai, Vibecode и документация.' },
   { id:'vibe-portal',   group:'reference', kind:'guide',      icon:'🏗', sub:'vibe-portal',   title:'VIBE. Портал',                desc:'Материалы по созданию портала (скоро).' },
   { id:'faq',           group:'reference', kind:'faq',        icon:'⚠',  sub:'faq',           title:'FAQ — частые проблемы',       desc:'«Вылетает / не пускает» и другое.' },
+  { id:'vibecode-b24',  group:'platforms', kind:'guide',      icon:'🏄', sub:'vibecode-b24',  title:'Битрикс24 Вайбкод',           desc:'Полный конспект: AI Router, Entity API, боты, деплой, архитектура.' },
 ];

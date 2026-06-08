@@ -1178,6 +1178,345 @@ allowed-tools: Read, Bash(gh pr:*)
         </div>
       </div>
 
+      <!-- materials > Битрикс24 Вайбкод -->
+      <div class="materials-page hidden" data-sub="vibecode-b24">
+        <div class="page-meta">VIBE PORTAL · ПЛАТФОРМЫ</div>
+        <h1 class="page-h1">Битрикс24 <em>Вайбкод</em></h1>
+        <p class="page-lead">Полный конспект платформы: что это, как работает, какие проекты строить. Для тех, кто не программист, но хочет разобраться в архитектуре и возможностях.</p>
+        <div class="anchor-chips">
+          <a href="#vb-what" class="anchor-chip">Что это</a>
+          <a href="#vb-price" class="anchor-chip">Цены</a>
+          <a href="#vb-keys" class="anchor-chip">Ключи</a>
+          <a href="#vb-ai" class="anchor-chip">AI Router</a>
+          <a href="#vb-data" class="anchor-chip">Данные</a>
+          <a href="#vb-servers" class="anchor-chip">Серверы</a>
+          <a href="#vb-bots" class="anchor-chip">Боты</a>
+          <a href="#vb-apps" class="anchor-chip">Приложения</a>
+          <a href="#vb-arch" class="anchor-chip">Архитектура</a>
+          <a href="#vb-projects" class="anchor-chip">Проекты</a>
+        </div>
+
+        <div class="page-sect" id="vb-what">
+          <div class="page-sect-no">1. ЧТО ТАКОЕ ВАЙБКОД</div>
+          <p><strong>Битрикс24 Вайбкод</strong> — платформа для создания приложений, чат-ботов и автоматизаций поверх Битрикс24 с помощью ИИ. Запущена в апреле 2026 года.</p>
+          <p style="margin-top:10px"><strong>Главная идея:</strong> ты описываешь задачу на человеческом языке → ИИ-инструмент (Claude Code, Cursor) читает документацию, пишет код и сам разворачивает готовое приложение на сервере. Знать программирование при этом не обязательно.</p>
+          <ul class="page-list" style="margin-top:10px">
+            <li>Приложения-надстройки поверх Битрикс24 (дашборды, аналитика, формы)</li>
+            <li>Чат-боты в мессенджере Битрикс24</li>
+            <li>Автоматизации: синхронизация данных, обработка сделок, рассылки</li>
+            <li>Интеграции с внешними системами и AI-моделями</li>
+          </ul>
+        </div>
+
+        <div class="page-sect" id="vb-price">
+          <div class="page-sect-no">2. ТРЕБОВАНИЯ И ЦЕНЫ</div>
+          <p>Для работы нужны <strong>два</strong> платных компонента:</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td>1</td><td>Платный тариф Битрикс24 (Базовый, Стандартный, Профессиональный или Энтерпрайз)</td></tr>
+              <tr><td>2</td><td>Подписка BitrixGPT + Маркетплейс — ИИ-инструменты + каталог 5 300+ приложений</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:12px"><strong>Система вайбов:</strong> <code>1 вайб = 1 рубль</code> — внутренняя валюта платформы.</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td>Бесплатно</td><td>API, боты, создание приложений, бесплатные AI-модели</td></tr>
+              <tr><td>Тратят вайбы</td><td>Серверы Black Hole, платные AI-модели, AI-поиск в интернете</td></tr>
+              <tr><td>Бонус</td><td>1 000 вайбов при первом подключении (до 12 месяцев)</td></tr>
+              <tr><td>Пополнение</td><td>1 000 вайбов = 1 000 ₽ · 5 000 = 5 000 ₽ · 25 000 = 25 000 ₽</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="page-sect" id="vb-keys">
+          <div class="page-sect-no">3. API-КЛЮЧИ — ВОРОТА К ПЛАТФОРМЕ</div>
+          <p>Ключ — пропуск, который позволяет ИИ-инструменту работать с платформой от твоего имени. Создаётся в личном кабинете Вайбкод.</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td><code>vibe_api_…</code></td><td><strong>Личный ключ</strong> — для своих инструментов, своего портала</td></tr>
+              <tr><td><code>vibe_app_…</code></td><td><strong>Командный ключ</strong> — для приложений других сотрудников; для публикации в каталог. Выдаётся <em>один раз</em> — сохрани сразу</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:12px">Ключ передаётся в заголовке каждого запроса:</p>
+          <pre style="background:hsl(var(--muted));padding:10px 14px;border-radius:6px;font-size:12px;overflow-x:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace">X-Api-Key: vibe_api_твой_ключ</pre>
+          <p style="margin-top:12px"><strong>Пример промпта для ИИ:</strong></p>
+          <pre style="background:hsl(var(--muted));padding:10px 14px;border-radius:6px;font-size:12px;overflow-x:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace">Мой Вайбкод ключ: vibe_api_xxx
+Документация: https://vibecode.bitrix24.tech/docs
+Задача: создай дашборд со статистикой открытых сделок по стадиям</pre>
+          <p style="margin-top:8px;font-size:12px;color:hsl(var(--muted-foreground))">ИИ сам прочитает документацию, напишет код и задеплоит приложение.</p>
+        </div>
+
+        <div class="page-sect" id="vb-ai">
+          <div class="page-sect-no">4. AI ROUTER — ЯЗЫКОВЫЕ МОДЕЛИ</div>
+          <p><strong>AI Router</strong> — маршрутизатор AI-моделей с единым интерфейсом, совместимым с OpenAI. Любой инструмент для OpenAI заработает и здесь.</p>
+          <p style="margin-top:8px">Базовый адрес: <code>https://vibecode.bitrix24.tech/v1</code></p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td><code>POST /v1/chat/completions</code></td><td>Запрос к модели, ответ синхронно или потоком</td></tr>
+              <tr><td><code>GET /v1/models</code></td><td>Список доступных моделей</td></tr>
+              <tr><td><code>POST /v1/audio/transcriptions</code></td><td>Распознать речь в текст (Whisper)</td></tr>
+              <tr><td><code>GET /v1/ai/usage</code></td><td>Статистика использования токенов</td></tr>
+              <tr><td><code>GET /v1/ai/providers</code></td><td>Список провайдеров для подключения своих ключей</td></tr>
+            </tbody>
+          </table>
+          <table class="page-table" style="margin-top:12px">
+            <tbody>
+              <tr><td>Бесплатно</td><td>Модели BitrixGPT — доступны сразу, без настройки</td></tr>
+              <tr><td>BYOK</td><td>OpenAI, Anthropic (Claude), DeepSeek, ЯндексGPT, GigaChat, OpenRouter — платишь напрямую провайдеру</td></tr>
+            </tbody>
+          </table>
+          <ul class="page-list" style="margin-top:12px">
+            <li>Классификация лидов и сделок по тексту переписки</li>
+            <li>Генерация описаний товаров и коммерческих предложений</li>
+            <li>Суммаризация переписок, извлечение данных из комментариев</li>
+            <li>Генерация отчётов по данным CRM</li>
+            <li>Распознавание речи из записей звонков</li>
+          </ul>
+        </div>
+
+        <div class="page-sect" id="vb-data">
+          <div class="page-sect-no">5. ENTITY API — ДАННЫЕ БИТРИКС24</div>
+          <p><strong>Entity API</strong> — универсальный интерфейс для чтения и изменения любых данных Битрикс24. <strong>300+ методов</strong> для всех сущностей системы.</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td>CRM</td><td>Сделки, контакты, компании, лиды</td></tr>
+              <tr><td>Задачи</td><td>Задачи, проекты, рабочие группы</td></tr>
+              <tr><td>Пользователи</td><td>Сотрудники, отделы</td></tr>
+              <tr><td>Файлы</td><td>Хранилище, папки, документы</td></tr>
+              <tr><td>Календарь</td><td>События, встречи, активности</td></tr>
+              <tr><td>Смарт-процессы</td><td>Кастомные процессы через <code>entityTypeId</code></td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:12px"><strong>Шесть стандартных операций</strong> — одинаковые для каждой сущности (пример на сделках):</p>
+          <table class="page-table">
+            <tbody>
+              <tr><td><code>GET /v1/deals</code></td><td>Список с фильтрами и пагинацией</td></tr>
+              <tr><td><code>GET /v1/deals/42</code></td><td>Получить одну запись по ID</td></tr>
+              <tr><td><code>POST /v1/deals</code></td><td>Создать новую</td></tr>
+              <tr><td><code>PATCH /v1/deals/42</code></td><td>Изменить поля</td></tr>
+              <tr><td><code>DELETE /v1/deals/42</code></td><td>Удалить</td></tr>
+              <tr><td><code>POST /v1/deals/search</code></td><td>Поиск по сложному фильтру</td></tr>
+            </tbody>
+          </table>
+          <ul class="page-list" style="margin-top:10px">
+            <li>Агрегация: сумма, среднее, min/max — например, общая сумма сделок за месяц</li>
+            <li>Пакетные операции: до 500 записей одним запросом</li>
+            <li>Лимит: 10 запросов в секунду на портал</li>
+          </ul>
+        </div>
+
+        <div class="page-sect" id="vb-servers">
+          <div class="page-sect-no">6. СЕРВЕРЫ BLACK HOLE</div>
+          <p>Когда приложению нужна серверная логика (фоновые задачи, боты), оно запускается на <strong>сервере Black Hole</strong> — изолированном облачном сервере, невидимом снаружи.</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td>Публичный IP</td><td>Нет — невидим снаружи</td></tr>
+              <tr><td>Открытые порты</td><td>Нет (iptables DROP ALL)</td></tr>
+              <tr><td>Доступ к приложению</td><td>Через зашифрованный WebSocket-туннель</td></tr>
+              <tr><td>URL приложения</td><td><code>https://app-{id}.vibecode.bitrix24.tech</code></td></tr>
+              <tr><td>ОС</td><td>Ubuntu 24.04, root-доступ</td></tr>
+              <tr><td>Порт приложения</td><td>3000 (фиксированный)</td></tr>
+              <tr><td>Лимит на ключ</td><td>3 сервера</td></tr>
+              <tr><td>Автосон</td><td>При неактивности → экономия до 80%</td></tr>
+              <tr><td>Деплой</td><td>ИИ разворачивает за 1–2 мин через Deploy API</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:12px"><strong>Управление доступом:</strong> одним кликом — только ты, конкретные сотрудники, отдел, весь портал или публично.</p>
+        </div>
+
+        <div class="page-sect" id="vb-bots">
+          <div class="page-sect-no">7. ЧАТ-БОТЫ</div>
+          <p>Боты живут в мессенджере Битрикс24: отвечают на сообщения, выполняют slash-команды, участвуют в чатах. Публичного сервера не нужно — бот сам периодически опрашивает платформу о новых событиях.</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td>Зарегистрировать</td><td><code>POST /v1/bots</code></td></tr>
+              <tr><td>Получить события</td><td><code>GET /v1/bots/:botId/events</code></td></tr>
+              <tr><td>Отправить ответ</td><td><code>POST /v1/bots/:botId/messages</code></td></tr>
+            </tbody>
+          </table>
+          <table class="page-table" style="margin-top:12px">
+            <tbody>
+              <tr><td><code>ONIMBOTV2MESSAGEADD</code></td><td>Новое сообщение</td></tr>
+              <tr><td><code>ONIMBOTV2COMMANDADD</code></td><td>Пользователь написал команду (<code>/report</code>)</td></tr>
+              <tr><td><code>ONIMBOTV2REACTIONCHANGE</code></td><td>Поставили emoji-реакцию</td></tr>
+              <tr><td><code>ONIMBOTV2JOINCHAT</code></td><td>Бота добавили в групповой чат</td></tr>
+            </tbody>
+          </table>
+          <ul class="page-list" style="margin-top:12px">
+            <li>Отправлять, редактировать, удалять сообщения</li>
+            <li>Форматировать текст: <code>[B]жирный[/B]</code>, <code>[I]курсив[/I]</code></li>
+            <li>Кнопки-действия прямо в сообщении</li>
+            <li>Индикатор «печатает…», создавать чаты, управлять участниками</li>
+            <li>Slash-команды: <code>/report</code>, <code>/help</code> и любые другие</li>
+            <li>Прикреплять файлы</li>
+          </ul>
+          <p style="font-size:12px;color:hsl(var(--muted-foreground));margin-top:6px">33 эндпоинта: боты (5), сообщения (9), чаты (10), интерфейс (5), команды (5), файлы (2).</p>
+        </div>
+
+        <div class="page-sect" id="vb-apps">
+          <div class="page-sect-no">8. ПРИЛОЖЕНИЯ (OAUTH)</div>
+          <p><strong>Приложение Вайбкод</strong> — надстройка над Битрикс24, встраивается прямо в его интерфейс: боковая панель, карточка сделки, страница CRM.</p>
+          <p style="margin-top:8px"><strong>Цикл:</strong> Создать → Задеплоить код → Задать адрес → Опубликовать</p>
+          <table class="page-table" style="margin-top:10px">
+            <tbody>
+              <tr><td><strong>PRIVATE</strong></td><td>По умолчанию. Видит только автор — режим разработки</td></tr>
+              <tr><td><strong>PUBLISHED</strong></td><td>Опубликовано. Доступно всем сотрудникам с активными интеграциями</td></tr>
+              <tr><td><strong>UNPUBLISHED</strong></td><td>Снято. Данные сохранены для повторной публикации</td></tr>
+            </tbody>
+          </table>
+          <ul class="page-list" style="margin-top:10px">
+            <li>Командный ключ (<code>vibe_app_…</code>) выдаётся <strong>один раз</strong> — сохрани сразу</li>
+            <li>Скоуп <code>placement</code> нужно добавить <em>при создании</em> — после нельзя, нужно пересоздать</li>
+            <li>Статичные HTML/JS-приложения не требуют сервера вообще</li>
+          </ul>
+        </div>
+
+        <div class="page-sect" id="vb-mcp">
+          <div class="page-sect-no">9. MCP-СЕРВЕР — ВНЕШНИЙ ИИ + БИТРИКС24</div>
+          <p><strong>MCP (Model Context Protocol)</strong> — стандартный протокол, через который внешние AI-инструменты могут читать и изменять данные Битрикс24.</p>
+          <p style="margin-top:8px">Адрес: <code>https://mcp.bitrix24.tech/mcp/</code></p>
+          <ul class="page-list" style="margin-top:8px">
+            <li><strong>ChatGPT</strong> — данные Битрикс24 как источник в диалоге</li>
+            <li><strong>Yandex AI Studio</strong> — интеграция с ЯндексGPT</li>
+            <li><strong>Cursor</strong> — IDE с AI, которая видит данные CRM</li>
+            <li><strong>n8n</strong> — автоматизация между Битрикс24 и другими системами</li>
+          </ul>
+        </div>
+
+        <div class="page-sect" id="vb-arch">
+          <div class="page-sect-no">10. АРХИТЕКТУРА ПЛАТФОРМЫ</div>
+          <p>Как все части платформы связаны между собой. Путь запроса — от тебя до данных Битрикс24.</p>
+          <pre style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:18px 20px;font-size:11.5px;line-height:1.9;overflow-x:auto;margin:14px 0;font-family:'IBM Plex Mono',monospace"> ТЫ (ученик)
+ │
+ ├── Claude Code / Cursor / любой AI-инструмент
+ │    └── читает документацию → пишет код → деплоит
+ │
+ ▼
+ VIBECODE PLATFORM  (vibecode.bitrix24.tech)
+ │
+ ├── 🔑  API-ключ  (vibe_api_... / vibe_app_...)
+ │         аутентификация всех запросов
+ │
+ ├── 🤖  AI Router  /v1/chat/completions
+ │         ├── BitrixGPT — бесплатно «из коробки»
+ │         ├── OpenAI / Anthropic / DeepSeek — BYOK
+ │         └── ЯндексGPT / GigaChat / OpenRouter — BYOK
+ │
+ ├── 📊  Entity API  /v1/deals, /v1/contacts, ...
+ │         читает и пишет данные → БИТРИКС24
+ │              CRM · Задачи · Файлы · Календарь
+ │
+ ├── 💬  Bot API  /v1/bots/...
+ │         чат-боты в мессенджере Битрикс24
+ │              регистрация → polling событий → ответ
+ │
+ ├── 🌐  Apps API  /v1/apps/...
+ │         OAuth-приложения встраиваются в UI Битрикс24
+ │              PRIVATE → PUBLISHED
+ │
+ └── 🖥  Infra API  /v1/infra/...
+           СЕРВЕРЫ BLACK HOLE (Ubuntu 24.04)
+           │   нет IP · нет портов · невидимы снаружи
+           │
+           ├── сервер → WebSocket → Gateway
+           └── Gateway → туннель
+                └── app-{id}.vibecode.bitrix24.tech</pre>
+
+          <h2 class="page-h2">Как работает запрос к данным</h2>
+          <table class="page-table">
+            <tbody>
+              <tr><td>1</td><td>Приложение отправляет <code>GET /v1/deals</code> с заголовком <code>X-Api-Key</code></td></tr>
+              <tr><td>2</td><td>Платформа проверяет ключ и права доступа</td></tr>
+              <tr><td>3</td><td>Entity API переводит запрос в нативные методы Битрикс24 REST API</td></tr>
+              <tr><td>4</td><td>Битрикс24 возвращает данные</td></tr>
+              <tr><td>5</td><td>Entity API нормализует ответ в единый JSON-формат</td></tr>
+              <tr><td>6</td><td>Приложение получает данные и отображает их</td></tr>
+            </tbody>
+          </table>
+
+          <h2 class="page-h2" style="margin-top:20px">Как работает чат-бот</h2>
+          <table class="page-table">
+            <tbody>
+              <tr><td>1</td><td>Регистрируешь бота: <code>POST /v1/bots</code> — платформа создаёт его в Битрикс24</td></tr>
+              <tr><td>2</td><td>Код на сервере раз в N секунд опрашивает: <code>GET /v1/bots/:id/events</code></td></tr>
+              <tr><td>3</td><td>Пришло сообщение → обрабатываешь (можно спросить AI Router)</td></tr>
+              <tr><td>4</td><td>Отправляешь ответ: <code>POST /v1/bots/:id/messages</code></td></tr>
+            </tbody>
+          </table>
+
+          <h2 class="page-h2" style="margin-top:20px">Как работает Black Hole туннель</h2>
+          <table class="page-table">
+            <tbody>
+              <tr><td>1</td><td>Сервер стартует — сам устанавливает исходящий WebSocket на Gateway</td></tr>
+              <tr><td>2</td><td>Снаружи невидим: нет IP, нет портов, не пингуется</td></tr>
+              <tr><td>3</td><td>Пользователь открывает <code>app-xxx.vibecode.bitrix24.tech</code></td></tr>
+              <tr><td>4</td><td>Gateway принимает запрос и перенаправляет через туннель на сервер</td></tr>
+              <tr><td>5</td><td>Сервер отвечает через тот же WebSocket-канал</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="page-sect" id="vb-projects">
+          <div class="page-sect-no">11. ПРИМЕРЫ ПРОЕКТОВ</div>
+
+          <h2 class="page-h2">Без сервера (только HTML/JS)</h2>
+          <ul class="page-list">
+            <li><strong>Дашборд по сделкам</strong> — графики и статистика CRM в интерфейсе Битрикс24</li>
+            <li><strong>Расширенная карточка клиента</strong> — дополнительные поля и визуализация</li>
+            <li><strong>Кастомная форма создания</strong> — только нужные поля, без лишнего</li>
+          </ul>
+
+          <h2 class="page-h2">С сервером (Black Hole)</h2>
+          <ul class="page-list">
+            <li><strong>Ночная синхронизация</strong> — каждую ночь обновляет данные из 1С или Google Sheets в CRM</li>
+            <li><strong>AI-классификатор лидов</strong> — при создании нового лида автоматически определяет приоритет</li>
+            <li><strong>Напоминалка по задачам</strong> — каждое утро пишет сотруднику список задач на день</li>
+          </ul>
+
+          <h2 class="page-h2">Чат-боты</h2>
+          <ul class="page-list">
+            <li><strong>HR-бот</strong> — отвечает на вопросы об отпусках, льготах и политике компании</li>
+            <li><strong>Бот-аналитик</strong> — по команде <code>/report</code> присылает сводку продаж за день</li>
+            <li><strong>Бот для заявок</strong> — принимает заявку через чат и создаёт задачу в CRM</li>
+          </ul>
+
+          <h2 class="page-h2">AI-интеграции</h2>
+          <ul class="page-list">
+            <li><strong>Суммаризатор встреч</strong> — берёт текст активности из CRM, делает краткое резюме</li>
+            <li><strong>Генератор КП</strong> — по данным клиента из CRM генерирует коммерческое предложение</li>
+            <li><strong>Анализатор переписки</strong> — определяет тональность общения с клиентом, ставит метку</li>
+          </ul>
+        </div>
+
+        <div class="page-sect">
+          <div class="page-sect-no">12. БЫСТРЫЙ СТАРТ</div>
+          <table class="page-table">
+            <tbody>
+              <tr><td>1</td><td>Платный тариф Битрикс24 + подписка BitrixGPT + Маркетплейс</td></tr>
+              <tr><td>2</td><td>Создать личный ключ <code>vibe_api_…</code> в личном кабинете Вайбкод</td></tr>
+              <tr><td>3</td><td>Открыть Claude Code, вставить промпт с ключом и описанием задачи</td></tr>
+              <tr><td>4</td><td>ИИ прочитает документацию, напишет код, задеплоит приложение</td></tr>
+              <tr><td>5</td><td>Опубликовать приложение для сотрудников</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="page-sect">
+          <div class="page-sect-no">ССЫЛКИ</div>
+          <ul class="page-list">
+            <li><a href="https://vibecode.bitrix24.tech/docs/quickstart" target="_blank">Quickstart</a> — официальный старт</li>
+            <li><a href="https://vibecode.bitrix24.tech/docs/ai" target="_blank">AI Router</a> — модели и эндпоинты</li>
+            <li><a href="https://vibecode.bitrix24.tech/docs/bots" target="_blank">Bot API</a> — 33 эндпоинта для чат-ботов</li>
+            <li><a href="https://vibecode.bitrix24.tech/docs/entity-api" target="_blank">Entity API</a> — данные Битрикс24</li>
+            <li><a href="https://vibecode.bitrix24.tech/docs/infra" target="_blank">Infra API</a> — серверы и деплой</li>
+            <li><a href="https://vibecode.bitrix24.tech/docs/apps" target="_blank">Apps API</a> — OAuth-приложения</li>
+            <li><a href="https://vibecode.bitrix24.tech/blackhole" target="_blank">Black Hole</a> — про серверы</li>
+            <li><a href="https://vibecode.bitrix24.tech/pricing" target="_blank">Pricing</a> — тарифы и вайбы</li>
+            <li><a href="https://vibecode.bitrix24.tech/llms-full.txt" target="_blank">llms-full.txt</a> — справочник для AI (дать Claude Code)</li>
+          </ul>
+        </div>
+      </div>
+
       <!-- materials > FAQ -->
       <div class="materials-page hidden" data-sub="faq">
         <div class="page-meta">VIBE PORTAL · FAQ</div>

@@ -29,6 +29,8 @@
     refByGroup('start').forEach(r => h += item('ref:' + r.id, r.icon, r.title, null));
     h += '<div class="kb-group-h">Справочник</div>';
     refByGroup('reference').forEach(r => h += item('ref:' + r.id, r.icon, r.title, null));
+    h += '<div class="kb-group-h">Платформы</div>';
+    refByGroup('platforms').forEach(r => h += item('ref:' + r.id, r.icon, r.title, null));
     h += '<div class="kb-group-h">Материалы уроков</div>';
     h += item('all:materials', '📚', 'Все материалы', COURSE().filter(m => m.materials).length);
     h += item('all:homework',  '📝', 'Все домашние задания', COURSE().filter(m => m.homework).length);
