@@ -872,22 +872,60 @@ description: Объясняет каждый шаг простыми слова�
         </div>
 
         <div class="page-sect">
-          <div class="page-sect-no">СТРУКТУРА ФАЙЛОВ</div>
-          <div class="note-quote">
-            <span class="note-quote-label">проект/.claude/</span>
-            <pre>проект/
+          <div class="page-sect-no">УРОВНИ УСТАНОВКИ</div>
+          <div class="skills-scope-diagram">
+
+            <div class="skills-scope-card skills-scope-global">
+              <div class="skills-scope-badge">🌍 ГЛОБАЛЬНЫЙ</div>
+              <div class="skills-scope-path">~/.claude/</div>
+              <div class="skills-scope-tree">
+<pre>~/.claude/
+├── commands/        ← /slash-команды
+│   └── my-cmd.md
+└── skills/          ← авто-навыки
+    └── superpowers/
+        └── SKILL.md</pre>
+              </div>
+              <ul class="skills-scope-props">
+                <li>✓ Работает во <strong>всех проектах</strong></li>
+                <li>✓ Только на твоём компьютере</li>
+                <li>✗ Не попадает в git</li>
+                <li>✗ Команда не видит</li>
+              </ul>
+              <div class="skills-scope-note">Личные инструменты — стиль кода, рабочие шаблоны</div>
+            </div>
+
+            <div class="skills-scope-arrow">
+              <div class="skills-scope-arrow-line"></div>
+              <div class="skills-scope-arrow-label">Проект<br>перекрывает<br>глобальное</div>
+            </div>
+
+            <div class="skills-scope-card skills-scope-project">
+              <div class="skills-scope-badge">📁 ПРОЕКТНЫЙ</div>
+              <div class="skills-scope-path">project/.claude/</div>
+              <div class="skills-scope-tree">
+<pre>project/
 └── .claude/
-    ├── settings.json        # права, хуки, env
-    ├── commands/            # slash-команды (/имя.md)
-    │   ├── review-pr.md
+    ├── commands/    ← /slash-команды
     │   └── deploy.md
-    └── skills/              # навыки (SKILL.md)
-        ├── superpowers/
-        │   └── SKILL.md
-        └── my-skill/
-            └── SKILL.md</pre>
+    ├── skills/      ← авто-навыки
+    │   └── review/
+    │       └── SKILL.md
+    └── agents/      ← субагенты
+        └── tester.md</pre>
+              </div>
+              <ul class="skills-scope-props">
+                <li>✓ Только в <strong>этом репозитории</strong></li>
+                <li>✓ Версионируется в <strong>git</strong></li>
+                <li>✓ Вся команда использует</li>
+                <li>✗ Другие проекты не видят</li>
+              </ul>
+              <div class="skills-scope-note skills-scope-note--highlight">Рекомендуется — скиллы как часть кодовой базы</div>
+            </div>
+
           </div>
-          <table class="page-table" style="margin-top:12px">
+
+          <table class="page-table" style="margin-top:16px">
             <thead><tr><th>Тип</th><th>Путь</th><th>Вызов</th><th>Назначение</th></tr></thead>
             <tbody>
               <tr><td><code>commands</code></td><td><code>.claude/commands/имя.md</code></td><td><code>/имя аргументы</code></td><td>Шаблон запроса — запускается вручную</td></tr>

@@ -1454,6 +1454,81 @@ body.has-right-chat .nav-btn-claude {
   border-left: 1px solid hsl(var(--border));
 }
 
+/* ── Skills: диаграмма уровней установки ───────────────── */
+.skills-scope-diagram {
+  display: grid;
+  grid-template-columns: 1fr 48px 1fr;
+  gap: 0;
+  align-items: center;
+  max-width: 720px;
+  margin: 12px 0 0;
+}
+.skills-scope-card {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--smui-surface-1));
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.skills-scope-global { border-color: hsl(var(--primary) / 0.4); }
+.skills-scope-project { border-color: hsl(var(--smui-green) / 0.5); }
+.skills-scope-badge {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; color: hsl(var(--muted-foreground));
+}
+.skills-scope-path {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  color: hsl(var(--foreground));
+}
+.skills-scope-tree pre {
+  margin: 0; font-size: 11px; line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--smui-surface-0)); padding: 10px 12px;
+  border: 1px solid hsl(var(--border));
+  overflow-x: auto;
+}
+.skills-scope-props {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.skills-scope-props li {
+  font-size: 11px; color: hsl(var(--muted-foreground)); line-height: 1.4;
+}
+.skills-scope-props li strong { color: hsl(var(--foreground)); }
+.skills-scope-note {
+  font-size: 11px; color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border)); padding-top: 8px;
+  font-style: italic;
+}
+.skills-scope-note--highlight {
+  color: hsl(var(--smui-green));
+  border-top-color: hsl(var(--smui-green) / 0.3);
+}
+.skills-scope-arrow {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 0 4px;
+}
+.skills-scope-arrow-line {
+  width: 100%; height: 1px; background: hsl(var(--border));
+  position: relative;
+}
+.skills-scope-arrow-line::after {
+  content: '→'; position: absolute; right: -6px; top: -9px;
+  font-size: 14px; color: hsl(var(--muted-foreground));
+}
+.skills-scope-arrow-label {
+  font-size: 9px; font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground)); text-align: center;
+  line-height: 1.4; letter-spacing: .03em; text-transform: uppercase;
+}
+@media (max-width: 640px) {
+  .skills-scope-diagram {
+    grid-template-columns: 1fr;
+  }
+  .skills-scope-arrow { flex-direction: row; padding: 8px 0; }
+  .skills-scope-arrow-line { width: 40px; }
+  .skills-scope-arrow-line::after { content: '↓'; right: auto; left: 50%; top: -9px; }
+}
+
 /* ── MATERIALS view: sub-tabs + якорные чипы + page-* ──── */
 .materials-subnav {
   display: flex; gap: 6px; flex-wrap: wrap;
