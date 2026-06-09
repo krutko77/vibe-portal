@@ -1491,6 +1491,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ta = $('#pc-input'); ta.style.height = '';
     ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
   });
+  // Вставка картинки/файла из буфера обмена (Ctrl/Cmd+V)
+  $('#pc-input').addEventListener('paste', (e) => {
+    for (const item of e.clipboardData?.items || []) {
+      if (item.kind === 'file') {
+        const f = item.getAsFile();
+        if (f) { pcUploadFile(f); e.preventDefault(); break; }
+      }
+    }
+  });
 
   // Resizers — тяни чтобы изменить ширину левой/правой панелей
   initResizer('#resizer-left', 'left');
@@ -1513,6 +1522,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   $('#chat-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+  // Вставка картинки/файла из буфера обмена (Ctrl/Cmd+V)
+  $('#chat-input').addEventListener('paste', (e) => {
+    for (const item of e.clipboardData?.items || []) {
+      if (item.kind === 'file') {
+        const f = item.getAsFile();
+        if (f) { ucUploadFile(f); e.preventDefault(); break; }
+      }
+    }
   });
   $('#chat-input').addEventListener('input', () => {
     const ta = $('#chat-input'); ta.style.height = '';
@@ -1874,7 +1892,7 @@ async function pcUploadFile(file) {
   if (!pcState.slug) return;
   if (file.size > 10 * 1024 * 1024) { alert('Файл слишком большой (>10MB)'); return; }
   const placeholder = { path: '', size: file.size, mime: file.type || 'application/octet-stream',
-                        name: file.name, _uploading: true };
+                        name: file.name || 'paste.png', _uploading: true };
   pcState.attachments.push(placeholder);
   pcRenderAttachments();
   try {
@@ -1951,7 +1969,7 @@ function ucRenderAttachments() {
 async function ucUploadFile(file) {
   if (file.size > 10 * 1024 * 1024) { alert('Файл слишком большой (>10MB)'); return; }
   const placeholder = { path: '', size: file.size, mime: file.type || 'application/octet-stream',
-                        name: file.name, _uploading: true };
+                        name: file.name || 'paste.png', _uploading: true };
   ucState.attachments.push(placeholder);
   ucRenderAttachments();
   try {

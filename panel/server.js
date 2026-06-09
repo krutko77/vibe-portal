@@ -368,14 +368,27 @@ const chatUpload = multer({
   storage: multer.memoryStorage(),
 });
 
+// Картинки из буфера обмена приходят без имени/расширения (originalname='blob'),
+// а Read у claude-cli распознаёт изображение по расширению. Достраиваем его из MIME.
+const MIME_EXT = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/gif': 'gif',
+  'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/bmp': 'bmp',
+  'application/pdf': 'pdf', 'text/plain': 'txt',
+};
+function safeUploadName(originalname, mime) {
+  let safe = (originalname || 'file').split(/[/\\]/).pop()
+    .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'file';
+  if (!/\.[a-zA-Z0-9]{1,8}$/.test(safe) && MIME_EXT[mime]) safe += '.' + MIME_EXT[mime];
+  return safe;
+}
+
 app.post('/api/project-chat/upload', requireAuth, requireOwnProject, chatUpload.single('file'),
   async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'file required' });
     const ws = workspaceDir(req.pc.username);
     const sid = (req.body?.sessionId && /^[a-f0-9-]{8,}$/i.test(req.body.sessionId))
       ? req.body.sessionId : 'pending';
-    const safe = (req.file.originalname || 'file').split(/[/\\]/).pop()
-      .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'file';
+    const safe = safeUploadName(req.file.originalname, req.file.mimetype);
     const name = `${Date.now()}-${safe}`;
     const dir = path.join(ws, req.pc.slug, '.chat-uploads', sid);
     fs.mkdirSync(dir, { recursive: true });
@@ -466,8 +479,7 @@ app.delete('/api/chat', requireAuth, (req, res) => {
 app.post('/api/chat/upload', requireAuth, chatUpload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'file required' });
   const ws = workspaceDir(req.session.user);
-  const safe = (req.file.originalname || 'file').split(/[/\\]/).pop()
-    .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'file';
+  const safe = safeUploadName(req.file.originalname, req.file.mimetype);
   const name = `${Date.now()}-${safe}`;
   const dir = path.join(ws, '.chat-uploads');
   fs.mkdirSync(dir, { recursive: true });
