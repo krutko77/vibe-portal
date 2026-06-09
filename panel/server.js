@@ -460,6 +460,24 @@ app.delete('/api/chat', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// Upload файла для user-chat. Кладём в домашний `.chat-uploads/` ученика (не
+// в проект — user-chat работает на уровне всего workspace), чтобы claude-cli
+// мог прочитать его по абсолютному пути (Read включается, см. user-chat.js).
+app.post('/api/chat/upload', requireAuth, chatUpload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'file required' });
+  const ws = workspaceDir(req.session.user);
+  const safe = (req.file.originalname || 'file').split(/[/\\]/).pop()
+    .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80) || 'file';
+  const name = `${Date.now()}-${safe}`;
+  const dir = path.join(ws, '.chat-uploads');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.chownSync(dir, 1000, 1000);
+  const dst = path.join(dir, name);
+  fs.writeFileSync(dst, req.file.buffer);
+  fs.chownSync(dst, 1000, 1000);
+  res.json({ path: dst, size: req.file.size, mime: req.file.mimetype, name: safe });
+});
+
 // ---------- file explorer (user) ----------
 
 app.get('/api/explore/tree', requireAuth, (req, res) => {

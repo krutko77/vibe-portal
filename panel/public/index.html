@@ -2506,7 +2506,14 @@ EU-VPS (для прокси):
         </div>
       </div>
       <div class="chat-messages" id="chat-messages"></div>
+      <div class="pc-attachments hidden" id="uc-attachments"></div>
       <div class="chat-input-row">
+        <button class="pc-attach-btn" id="uc-attach" title="Прикрепить файл">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+        <input type="file" id="uc-file-input" style="display:none" />
         <textarea class="chat-textarea" id="chat-input"
                   placeholder="Спроси помощника о новом проекте..." rows="1"></textarea>
         <button class="chat-send" id="chat-send" title="Отправить (Enter)">

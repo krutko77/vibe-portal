@@ -31,7 +31,7 @@ export function clearHistory(username) {
 }
 
 export function send(req, res) {
-  const { message } = req.body || {};
+  const { message, attach } = req.body || {};
   if (!message?.trim()) return res.status(400).json({ error: 'Message required' });
   const username = req.session.user;
   if (!history.has(username)) history.set(username, []);
@@ -47,7 +47,10 @@ export function send(req, res) {
     '-p', prompt,
     '--system-prompt', SYSTEM_PROMPT,
     '--model', 'sonnet',
-    '--allowed-tools', '',
+    // Read включаем только когда ученик приложил файл (путь подставлен в prompt
+    // строкой «Прикреплён файл: …»). Без вложений — без инструментов: планирование
+    // отвечает быстро и не лазит по workspace.
+    '--allowed-tools', attach ? 'Read' : '',
     '--output-format', 'text',
   ], {
     cwd: homeFor(username),

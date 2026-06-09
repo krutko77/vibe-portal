@@ -1506,6 +1506,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch {}
   };
   $('#chat-send').onclick = sendChat;
+  $('#uc-attach').onclick = () => $('#uc-file-input').click();
+  $('#uc-file-input').addEventListener('change', (e) => {
+    for (const f of e.target.files) ucUploadFile(f);
+    e.target.value = '';
+  });
   $('#chat-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
   });
@@ -1926,6 +1931,44 @@ function handlePcSseEvent(raw, removeTyping) {
 
 // ── User chat (right pane, общий помощник) ──────────────────
 
+const ucState = { attachments: [] };  // [{ path, size, mime, name, _uploading? }]
+
+function ucRenderAttachments() {
+  const el = $('#uc-attachments');
+  if (!ucState.attachments.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  el.classList.remove('hidden');
+  el.innerHTML = ucState.attachments.map((a, i) => `
+    <span class="pc-attach-chip">
+      📎 ${escapeHtml(a.name)} <span class="pc-attach-size">${pcFmtSize(a.size)}</span>
+      ${a._uploading ? '<span class="pc-attach-up">…</span>' : `<button class="pc-attach-x" data-idx="${i}" title="Убрать">✕</button>`}
+    </span>
+  `).join('');
+  $$('.pc-attach-x', el).forEach(b => {
+    b.onclick = () => { ucState.attachments.splice(+b.dataset.idx, 1); ucRenderAttachments(); };
+  });
+}
+
+async function ucUploadFile(file) {
+  if (file.size > 10 * 1024 * 1024) { alert('Файл слишком большой (>10MB)'); return; }
+  const placeholder = { path: '', size: file.size, mime: file.type || 'application/octet-stream',
+                        name: file.name, _uploading: true };
+  ucState.attachments.push(placeholder);
+  ucRenderAttachments();
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch('/api/chat/upload', { method: 'POST', credentials: 'same-origin', body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'upload failed');
+    Object.assign(placeholder, d, { _uploading: false });
+    ucRenderAttachments();
+  } catch (e) {
+    ucState.attachments = ucState.attachments.filter(x => x !== placeholder);
+    ucRenderAttachments();
+    alert('Загрузка не удалась: ' + e.message);
+  }
+}
+
 function chatAppendBubble(type, text) {
   const div = document.createElement('div');
   if      (type === 'user')      div.className = 'chat-bubble chat-bubble-user';
@@ -1952,9 +1995,18 @@ async function loadChatHistory() {
 async function sendChat() {
   const input = $('#chat-input');
   const message = input.value.trim();
-  if (!message || $('#chat-send').disabled) return;
+  if ((!message && !ucState.attachments.length) || $('#chat-send').disabled) return;
+  if (ucState.attachments.some(a => a._uploading)) { alert('Дождись загрузки файла'); return; }
 
-  chatAppendBubble('user', message);
+  // Пути приложенных файлов уходят в начало сообщения (claude увидит их по абс. пути).
+  const attachLines = ucState.attachments.map(a => `Прикреплён файл: ${a.path}`).join('\n');
+  const fullMessage = attachLines ? (message ? `${attachLines}\n\n${message}` : attachLines) : message;
+  const hasAttach = ucState.attachments.length > 0;
+  const attachNames = ucState.attachments.map(a => `📎 ${a.name}`).join('  ');
+  ucState.attachments = [];
+  ucRenderAttachments();
+
+  chatAppendBubble('user', [attachNames, message].filter(Boolean).join('\n'));
   input.value = '';
   input.style.height = '';
   $('#chat-send').disabled = true;
@@ -1963,7 +2015,7 @@ async function sendChat() {
     const r = await fetch('/api/chat', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message: fullMessage, attach: hasAttach }),
     });
     const d = await r.json();
     thinkingEl.remove();
