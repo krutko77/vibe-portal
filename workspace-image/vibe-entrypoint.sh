@@ -38,7 +38,7 @@ X11Forwarding no
 PermitTunnel no
 AllowAgentForwarding no
 Subsystem sftp internal-sftp
-SetEnv ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-http://172.30.0.1:8190} ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-sk-vibe-shim-placeholder} CLAUDE_CODE_DISABLE_1M_CONTEXT=1
+SetEnv HOME=$HOME ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-http://172.30.0.1:8190} ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:-sk-vibe-shim-placeholder} CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 EOF
 
 # Поднять sshd (демонизируется сам); не валим контейнер, если не стартанул.
