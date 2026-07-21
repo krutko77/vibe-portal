@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ProxyAgent, Agent, fetch as undiciFetch } from 'undici';
 import * as transcript from './transcript.js';
+import { checkLimit, recordUsage } from './token-limits.js';
 
 const CREDENTIALS_PATH = process.env.CREDENTIALS_PATH
   || '/data/config/auth/claude-vibe.credentials.json';
@@ -184,6 +185,28 @@ async function forward(req, res, ip) {
   const hasBody = !['GET', 'HEAD'].includes(req.method);
   const loggable = hasBody && isLoggable(req);
 
+  // Для аудируемых запросов: определяем пользователя заранее и проверяем лимит.
+  let shimUser = null;
+  if (loggable) {
+    shimUser = await transcript.resolveUser(ip);
+    if (shimUser) {
+      const over = checkLimit(shimUser);
+      if (over) {
+        const label = over.period === 'day' ? 'сегодня' : 'всего';
+        res.writeHead(429, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({
+          type: 'error',
+          error: {
+            type: 'rate_limit_error',
+            message: `Лимит расходов исчерпан (${label}: $${over.spent.toFixed(4)} из $${over.limitUsd})`,
+          },
+        }));
+        log(`limit exceeded ${shimUser}: $${over.spent.toFixed(4)}/$${over.limitUsd} (${over.period})`);
+        return;
+      }
+    }
+  }
+
   // тело: для аудируемых запросов буферизуем целиком (нужно распарсить + всё
   // равно это завершённый JSON), иначе стримим как раньше. undici принимает и
   // Buffer, и async-generator.
@@ -239,20 +262,22 @@ async function forward(req, res, ip) {
   }
   res.end();
 
-  // Запись транскрипта — после ответа, чтобы не влиять на латентность.
+  // Запись транскрипта и учёт расходов — после ответа, чтобы не влиять на латентность.
   if (loggable) {
     try {
-      const user = await transcript.resolveUser(ip);
+      const user = shimUser || await transcript.resolveUser(ip);
       const reqInfo = reqBuf
         ? transcript.parseRequest(reqBuf)
         : { model: null, numMessages: 0, userText: '(request too large to log)', isToolContinuation: false };
       const out = acc.finalize();
+      const effectiveModel = out.model || reqInfo.model;
+      if (user) recordUsage(user, effectiveModel, out.usage.input, out.usage.output);
       transcript.write({
         ts: new Date().toISOString(),
         user: user || `unknown-${(ip || 'noip').replace(/[^a-zA-Z0-9]/g, '-')}`,
         ip,
         status: upstream.status,
-        model: out.model || reqInfo.model,
+        model: effectiveModel,
         numMessages: reqInfo.numMessages,
         userText: reqInfo.userText,
         isToolContinuation: reqInfo.isToolContinuation,

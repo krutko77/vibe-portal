@@ -10,6 +10,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { homeDirFor } from './home-dir.js';
 
 const SSH_ROOT = process.env.SSH_KEYS_DIR || '/data/config/ssh';
 const SSH_HOST = process.env.SSH_PUBLIC_HOST || 'vibe.kiselevgroup.com';
@@ -74,8 +75,9 @@ export function hostPublicKey(username) {
 }
 
 // Данные подключения для UI: ssh-config сниппет, known_hosts-строка, deep-links.
-export function sshConfig(username, sshPort) {
+export function sshConfig(username, sshPort, role = 'user') {
   const alias = `vibe-${username}`;
+  const home = homeDirFor(role);
   let knownHostsLine = '';
   try {
     knownHostsLine = `[${SSH_HOST}]:${sshPort} ${hostPublicKey(username)}`;
@@ -91,7 +93,7 @@ export function sshConfig(username, sshPort) {
       `Host ${alias}\n    HostName ${SSH_HOST}\n    Port ${sshPort}\n    User student\n    IdentityFile ~/.ssh/${alias}\n    StrictHostKeyChecking accept-new\n`,
     knownHostsLine,
     keyFileName: alias,
-    workspaceUri: `vscode://vscode-remote/ssh-remote+${alias}/home/student/workspace`,
-    projectUriBase: `vscode://vscode-remote/ssh-remote+${alias}/home/student/workspace/`,
+    workspaceUri: `vscode://vscode-remote/ssh-remote+${alias}${home}`,
+    projectUriBase: `vscode://vscode-remote/ssh-remote+${alias}${home}/`,
   };
 }

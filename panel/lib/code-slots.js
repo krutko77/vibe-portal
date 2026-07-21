@@ -15,7 +15,7 @@
 // лениво, через docker exec (тот же приём, что в publish.js).
 
 import { execFile } from 'node:child_process';
-import { containerName, dockerStart } from './students.js';
+import { containerName, dockerStart, homeDirForUser } from './students.js';
 import { containerIp, appAlive } from './publish.js';
 
 const MAX_SLOTS = parseInt(process.env.CODE_MAX_SLOTS || '3', 10);
@@ -65,6 +65,7 @@ function execP(args, timeout = 15_000) {
 }
 
 async function launchInstance(user, slot, port) {
+  const home = homeDirForUser(user);
   const dataDir = `/home/student/.cs-data/${slot}`;
   const cmd =
     `mkdir -p ${dataDir}; ` +
@@ -72,12 +73,11 @@ async function launchInstance(user, slot, port) {
     `--disable-telemetry --disable-update-check ` +
     `--user-data-dir ${dataDir} ` +
     `--extensions-dir /home/student/.local/share/code-server/extensions ` +
-    `/home/student/workspace`;
+    `"${home}"`;
   // -d: детач. Если порт уже занят (гонка двух одновременных запросов на слот) —
   // второй процесс не сможет забиндиться и тихо умрёт, первый останется живым.
-  // Поэтому отдельный lock не нужен: bind на порт сам сериализует. sh -lc — как
-  // в publish.js, чтобы login-shell выставил HOME (auth/конфиг + сидинг).
-  await execP(['exec', '-d', '-u', 'student', '-w', '/home/student/workspace',
+  // Поэтому отдельный lock не нужен: bind на порт сам сериализует.
+  await execP(['exec', '-d', '-u', 'student', '-w', home,
     containerName(user), 'sh', '-lc', cmd]);
 }
 

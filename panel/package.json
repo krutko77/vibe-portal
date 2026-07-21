@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Панель управления порталом vibe.kiselevgroup.com (платный курс)",
+  "description": "Панель управления Vibe Portal (собственная инсталляция)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

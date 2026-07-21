@@ -1,5 +1,5 @@
 [Unit]
-Description=vibe-panel — портал курса (vibe.kiselevgroup.com)
+Description=vibe-panel — портал курса
 After=network-online.target docker.service anthropic-shim.service
 Wants=network-online.target
 

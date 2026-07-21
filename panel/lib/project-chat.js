@@ -13,6 +13,18 @@ import { promisify } from 'node:util';
 import * as transcripts from './transcripts.js';
 const execFileP = promisify(execFile);
 
+// Claude CLI здесь спавнится от root (панель работает под root на хосте) —
+// поэтому его Bash-инструмент (git commit и т.п.) создаёт файлы владельцем
+// root, и потом ученик (uid 1000 внутри своего контейнера) не может их
+// трогать (типичный симптом: "insufficient permission for adding an object
+// to repository database .git/objects" при обычном коммите). Самоисцеляющий
+// фикс — после каждой сессии chat'а возвращаем владельца рабочей копии
+// обратно на 1000:1000 (root и так может писать в свои файлы независимо от
+// владельца, так что это ничего не ломает project-chat'у).
+function fixOwnership(cwd) {
+  execFile('chown', ['-R', '1000:1000', cwd], () => {});
+}
+
 const CLAUDE_BIN = process.env.CLAUDE_BIN || '/usr/bin/claude';
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
 const CLAUDE_PROJECTS_DIR = '/root/.claude/projects';
@@ -280,7 +292,7 @@ function runCompaction(sessionId, cwd, username) {
       }
     });
     child.stderr.on('data', () => {});
-    const finish = () => { clearTimeout(to); activeProcs.delete(sessionId); resolve({ ok, overage }); };
+    const finish = () => { clearTimeout(to); activeProcs.delete(sessionId); fixOwnership(cwd); resolve({ ok, overage }); };
     child.on('error', finish);
     child.on('close', finish);
   });
@@ -408,12 +420,14 @@ export async function sendMessage(res, opts) {
   });
   child.on('close', code => {
     clearTimeout(killTimer);
+    fixOwnership(cwd);
     send('done', { code });
     finalize();
   });
   res.on('close', () => {
     try { child.kill('SIGTERM'); } catch {}
     clearTimeout(killTimer);
+    fixOwnership(cwd);
     finalize();
   });
 

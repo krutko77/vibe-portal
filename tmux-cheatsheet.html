@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tmux — шпаргалка</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --line:#e4e7ec;
+    --txt:#1f2430; --dim:#6b7280; --accent:#4f46e5;
+    --cmd:#b45309; --keybg:#eef0ff; --keytxt:#3730a3; --keyborder:#c7cbf5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:-apple-system,"SF Pro Text",Segoe UI,Roboto,sans-serif;
+    padding:18px;
+  }
+  .wrap{max-width:720px; margin:0 auto}
+  h1{font-size:21px; font-weight:700; margin-bottom:2px; letter-spacing:.2px}
+  .sub{font-size:12.5px; color:var(--dim); margin-bottom:14px; line-height:1.45}
+  .sub b{color:var(--accent)}
+  .cols{column-count:2; column-gap:14px}
+  @media (max-width:520px){ .cols{column-count:1} }
+  .card{background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:11px 13px; margin:0 0 12px;
+    break-inside:avoid; box-shadow:0 1px 2px rgba(16,24,40,.05)}
+  .card h2{font-size:12.5px; color:var(--accent); text-transform:uppercase;
+    letter-spacing:.6px; margin-bottom:8px; font-weight:700}
+  .row{display:flex; align-items:baseline; gap:9px; padding:3px 0;
+    border-top:1px solid #f0f1f4}
+  .row:first-of-type{border-top:0}
+  .k{flex:0 0 auto; min-width:114px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12.5px; color:var(--cmd); white-space:nowrap; font-weight:600}
+  .k.key{color:var(--keytxt)}
+  .d{flex:1; font-size:12.5px; color:#374151; line-height:1.35}
+  kbd{font-family:ui-monospace,Menlo,monospace; font-size:11px;
+    background:var(--keybg); color:var(--keytxt); border:1px solid var(--keyborder);
+    border-radius:5px; padding:1px 5px}
+  .tip{font-size:11.5px; color:var(--dim); margin-top:8px; line-height:1.45}
+  .foot{text-align:center; font-size:11px; color:var(--dim); margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>tmux — шпаргалка</h1>
+  <div class="sub">Префикс = <b>Ctrl+b</b> &nbsp;(на Mac — клавиша <b>Control&nbsp;⌃</b>, не&nbsp;⌘). Нажать → отпустить → потом команду.</div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>Сессии</h2>
+      <div class="row"><div class="k">tmux</div><div class="d">запустить</div></div>
+      <div class="row"><div class="k">tmux new -s admin</div><div class="d">создать с именем</div></div>
+      <div class="row"><div class="k">tmux ls</div><div class="d">список сессий</div></div>
+      <div class="row"><div class="k">tmux attach</div><div class="d">вернуться (из обычной строки)</div></div>
+      <div class="row"><div class="k">tmux a -t admin</div><div class="d">вернуться в нужную</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;d</div><div class="d">свернуть (всё продолжит работать)</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;s</div><div class="d">переключить сессию <i>изнутри</i></div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;$</div><div class="d">переименовать сессию</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Удалить сессии</h2>
+      <div class="row"><div class="k">kill-session -t 0</div><div class="d">убить одну (tmux …)</div></div>
+      <div class="row"><div class="k">kill-session -a</div><div class="d">убить все, кроме текущей</div></div>
+      <div class="row"><div class="k">kill-server</div><div class="d">убить вообще все</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Окна (как вкладки)</h2>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;c</div><div class="d">новое окно</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;n / p</div><div class="d">следующее / предыдущее</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;0…9</div><div class="d">перейти к окну №</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;w</div><div class="d">список окон (выбор)</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;,</div><div class="d">переименовать окно</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;&amp;</div><div class="d">закрыть окно</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Панели (split)</h2>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;%</div><div class="d">разделить ↔ (Shift+5)</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;"</div><div class="d">разделить ↕ (Shift+')</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;←↑↓→</div><div class="d">перейти в панель</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;z</div><div class="d">панель на весь экран / обратно</div></div>
+      <div class="row"><div class="k key">Ctrl+b&nbsp;&nbsp;x</div><div class="d">закрыть панель (y)</div></div>
+    </div>
+
+    <div class="card">
+      <h2>mc / nnn — файлы</h2>
+      <div class="row"><div class="k">mc</div><div class="d">двухпанельный менеджер</div></div>
+      <div class="row"><div class="k">nnn</div><div class="d">однопанельный (q — выход)</div></div>
+      <div class="row"><div class="k key">↑ ↓ / Enter</div><div class="d">ходить / открыть папку</div></div>
+      <div class="row"><div class="k key">Tab</div><div class="d">сменить панель (mc)</div></div>
+      <div class="row"><div class="k key">F3 / F10</div><div class="d">смотреть файл / выйти (mc)</div></div>
+      <div class="tip">💡 Файлы <b>смотреть</b> в менеджере, <b>открывать/править</b> — словами через Claude в соседней панели.</div>
+    </div>
+  </div>
+
+  <div class="foot">Termius → Amsterdam · держи одну сессию «admin»</div>
+</div>
+</body>
+</html>

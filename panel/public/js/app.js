@@ -62,6 +62,8 @@ async function openSshModal() {
     if (mv) mv.textContent = `mv ~/Downloads/${k} ~/.ssh/${k}\nchmod 600 ~/.ssh/${k}`;
     const al = $('#ssh-alias-hint');
     if (al) al.textContent = cfg.alias;
+    const hh = $('#ssh-home-hint');
+    if (hh && ME?.homeDir) hh.textContent = ME.homeDir;
     openModal('modal-ssh');
   } catch (e) { alert('SSH: ' + e.message); }
 }
@@ -78,7 +80,7 @@ async function openDesktopVsCode(projectName) {
   try {
     const cfg = await loadSshCfg();
     _pvUri = cfg.projectUriBase + encodeURIComponent(projectName);
-    _pvPath = '/home/student/workspace/' + projectName;
+    _pvPath = ME.homeDir + '/' + projectName;
     $('#pv-name').textContent = projectName;
     $('#pv-path').textContent = _pvPath;
     // Заранее будим контейнер (SSH сам уснувший не поднимает).
@@ -164,9 +166,50 @@ function renderAuth() {
   $('#main-layout').classList.toggle('hidden', !isAuth);
   if (isAuth) {
     $('#authUsername').textContent = ME.username + (ME.isAdmin ? ' (admin)' : '');
+    if (ME.homeDir) $('#vscodeHeroPath').textContent = ME.homeDir + '/';
     setActiveView(localStorage.getItem('vibe.view') || 'vscode');
     refreshAll();
   }
+  renderBudget(ME);
+}
+
+function renderBudget(me) {
+  const el = $('#navbar-budget');
+  if (!me) { el.style.display = 'none'; return; }
+
+  const barWrap = el.querySelector('.nb-bar-wrap');
+  const { limitUsd, spentUsd, period, resetInMs } = me.budget || {};
+
+  if (limitUsd) {
+    const pct = Math.min(100, Math.round(spentUsd / limitUsd * 100));
+    const fill = $('#nb-bar-fill');
+    fill.style.width = pct + '%';
+    if (pct < 60) fill.style.background = 'hsl(142 70% 45%)';
+    else if (pct < 85) fill.style.background = 'hsl(45 90% 50%)';
+    else fill.style.background = 'hsl(0 72% 51%)';
+    let timeStr = '';
+    if (resetInMs > 0) {
+      const totalH = Math.floor(resetInMs / 3600000);
+      const days = Math.floor(totalH / 24);
+      const h = totalH % 24;
+      const m = Math.floor((resetInMs % 3600000) / 60000);
+      if (days > 0) timeStr = ` ${days}д ${h}ч`;
+      else if (h > 0) timeStr = ` ${h}ч ${m}м`;
+      else timeStr = ` ${m}м`;
+    }
+    $('#nb-info').textContent = `${pct}%${timeStr}`;
+    barWrap.style.display = '';
+    $('#nb-info').style.display = '';
+  } else {
+    barWrap.style.display = 'none';
+    $('#nb-info').style.display = 'none';
+  }
+
+  el.style.display = 'flex';
+
+  const sessEl = $('#nb-sessions');
+  $('#nb-sessions-count').textContent = me.sessionCount || 0;
+  sessEl.style.display = 'flex';
 }
 
 // ── COURSE: данные программы Vibecoding (M1-M6) ─────────────
@@ -629,7 +672,7 @@ async function refreshRecentProjects() {
       wrap.innerHTML = '<div class="empty">пока нет проектов — открой таб «Проекты» чтобы создать</div>';
       return;
     }
-    const folderInVs = (n) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent('/home/student/workspace/' + n)}`;
+    const folderInVs = (n) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent(ME.homeDir + '/' + n)}`;
     wrap.innerHTML = `
       <table class="projects-table">
         <thead><tr><th class="th-name">Название</th><th class="th-date">Изменён</th><th class="th-actions">Действия</th></tr></thead>
@@ -670,7 +713,7 @@ async function refreshProjects() {
     // Сортируем по дате создания (новые сверху).
     projects.sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
 
-    const folderInVs = (name) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent('/home/student/workspace/' + name)}`;
+    const folderInVs = (name) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent(ME.homeDir + '/' + name)}`;
     const statusClass = (s) => /боёвой/i.test(s) ? 'status-prod' : (s === 'НОВЫЙ' ? 'status-new' : 'status-other');
 
     wrap.innerHTML = `
@@ -725,7 +768,7 @@ async function refreshProjects() {
       $('[data-action="files"]', tr).onclick = () => openExplorer(name);
       $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
       $('[data-action="vscode"]', tr).onclick = () =>
-        openVsCodeFor(ME.username, '/home/student/workspace/' + name);
+        openVsCodeFor(ME.username, ME.homeDir + '/' + name);
       $('[data-action="vscode-desktop"]', tr).onclick = () => openDesktopVsCode(name);
       $('[data-action="download"]', tr).onclick = () => {
         window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
@@ -836,7 +879,7 @@ async function openExplorer(name, kind = 'project') {
   const isTpl = kind === 'template';
   const folderInside = isTpl
     ? `/home/student/templates/${name}`
-    : `/home/student/workspace/${name}`;
+    : `${ME.homeDir}/${name}`;
   $('#explorer-path').textContent = folderInside + '/';
   // VS Code открывает контейнер залогиненного юзера, для шаблонов — read-only mount.
   $('#explorer-open-vscode').href =
@@ -966,10 +1009,25 @@ async function refreshUsers() {
       list.innerHTML = '<div class="user-row-empty">учеников ещё нет — нажми «+ Добавить»</div>';
       return;
     }
-    list.innerHTML = students.map(s => `
+    list.innerHTML = students.map(s => {
+      const hasLimit   = s.spendLimitUsd > 0;
+      const totalUsed  = s.spendUsedUsd    || 0;
+      const dayUsed    = s.spendUsedDayUsd || 0;
+      const isDay      = s.tokenPeriod === 'day';
+      const usedForPeriod = isDay ? dayUsed : totalUsed;
+      const over       = hasLimit && usedForPeriod >= s.spendLimitUsd;
+      let spendChip    = '';
+      if (hasLimit) {
+        const pct   = Math.min(100, Math.round(usedForPeriod / s.spendLimitUsd * 100));
+        const color = over ? 'var(--destructive)' : '#3b82f6';
+        spendChip = `<span class="spend-chip" style="color:${color}" title="${isDay ? 'в день' : 'всего'}: $${usedForPeriod.toFixed(4)} / $${s.spendLimitUsd}">$${usedForPeriod.toFixed(2)}/$${s.spendLimitUsd} (${pct}%)</span>`;
+      } else if (totalUsed > 0) {
+        spendChip = `<span class="spend-chip" style="color:hsl(var(--muted-foreground))" title="нет лимита · потрачено всего: $${totalUsed.toFixed(4)}">$${totalUsed.toFixed(4)}</span>`;
+      }
+      return `
       <div class="user-row">
         <div class="user-row-name">
-          ${escapeHtml(s.username)}
+          ${escapeHtml(s.username)}${spendChip}
           <div class="user-row-meta">
             создан ${fmtDate(s.createdAt)} · порт ${s.containerPort || '—'}
             · активность ${fmtDate(s.lastActivityAt)}
@@ -977,18 +1035,31 @@ async function refreshUsers() {
         </div>
         <div class="user-row-actions">
           <span class="user-role-pill ${s.role === 'admin' ? 'role-admin' : ''}">${escapeHtml(s.role)}</span>
+          <button class="user-row-limit" data-limit="${escapeHtml(s.username)}"
+            data-limit-usd="${s.spendLimitUsd || ''}"
+            data-limit-period="${s.tokenPeriod || 'total'}"
+            data-limit-used="${totalUsed.toFixed(6)}"
+            data-limit-used-day="${dayUsed.toFixed(6)}">Лимит</button>
           <button class="user-row-pwd" data-pwd="${escapeHtml(s.username)}">Пароль</button>
           ${s.username !== ME.username
             ? `<button class="user-row-del" data-del="${escapeHtml(s.username)}">Удалить</button>`
             : ''}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
     $$('[data-del]', list).forEach(b => {
       b.onclick = () => openDeleteStudentModal(b.dataset.del);
     });
     $$('[data-pwd]', list).forEach(b => {
       b.onclick = () => openResetPasswordModal(b.dataset.pwd);
+    });
+    $$('[data-limit]', list).forEach(b => {
+      b.onclick = () => openSpendLimitModal(b.dataset.limit, {
+        limitUsd: b.dataset.limitUsd,
+        period:   b.dataset.limitPeriod,
+        usedTotal: parseFloat(b.dataset.limitUsed   || '0'),
+        usedDay:   parseFloat(b.dataset.limitUsedDay || '0'),
+      });
     });
   } catch {}
 }
@@ -1016,6 +1087,60 @@ async function doLogin() {
   } catch (e) {
     err.textContent = e.message === 'unauthorized' || /invalid/i.test(e.message)
       ? 'Неверный логин или пароль' : e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+function openSpendLimitModal(username, { limitUsd, period, usedTotal, usedDay }) {
+  $('#sl-student-name').textContent = username;
+  $('#sl-limit').value  = limitUsd || '';
+  $('#sl-period').value = period   || 'total';
+  const usedEl = $('#sl-used-info');
+  usedEl.textContent = `Потрачено: всего $${(usedTotal || 0).toFixed(4)} · сегодня $${(usedDay || 0).toFixed(4)}`;
+  $('#sl-error').classList.add('hidden');
+  $('#sl-success').classList.add('hidden');
+  $('#modal-spend-limit').dataset.target = username;
+  openModal('modal-spend-limit');
+}
+
+async function doSetSpendLimit() {
+  const username = $('#modal-spend-limit').dataset.target;
+  const err = $('#sl-error');
+  err.classList.add('hidden');
+  $('#sl-success').classList.add('hidden');
+  const limitVal  = $('#sl-limit').value.trim();
+  const periodVal = $('#sl-period').value;
+  const body = {
+    spendLimitUsd: limitVal === '' ? 0 : parseFloat(limitVal),
+    tokenPeriod:   periodVal,
+  };
+  if (limitVal !== '' && (isNaN(body.spendLimitUsd) || body.spendLimitUsd < 0)) {
+    err.textContent = 'Введите корректную сумму в $';
+    err.classList.remove('hidden');
+    return;
+  }
+  try {
+    await api('/api/students/' + encodeURIComponent(username), { method: 'PATCH', body });
+    $('#sl-success').classList.remove('hidden');
+    refreshUsers();
+  } catch (e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  }
+}
+
+async function doResetSpendLimit() {
+  const username = $('#modal-spend-limit').dataset.target;
+  const err = $('#sl-error');
+  err.classList.add('hidden');
+  try {
+    await api('/api/students/' + encodeURIComponent(username) + '/token-usage/reset', { method: 'POST' });
+    $('#sl-used-info').textContent = 'Потрачено: всего $0.0000 · сегодня $0.0000';
+    $('#sl-success').textContent = 'Счётчик сброшен.';
+    $('#sl-success').classList.remove('hidden');
+    refreshUsers();
+  } catch (e) {
+    err.textContent = e.message;
     err.classList.remove('hidden');
   }
 }
@@ -1324,6 +1449,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   $('#add-user-submit').onclick = doAddUser;
   $('#del-student-confirm').onclick = doDeleteStudent;
+  $('#sl-submit').onclick = doSetSpendLimit;
+  $('#sl-reset').onclick  = doResetSpendLimit;
   $('#rp-submit').onclick = doResetPassword;
   $('#rp-password').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); doResetPassword(); }

@@ -27,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import {
-  loadUsers, htpasswdCheck, requireAuth, requireAdmin,
+  loadUsers, saveUsers, htpasswdCheck, requireAuth, requireAdmin,
 } from './lib/auth.js';
 import {
   createStudent, deleteStudent, setStudentPassword, listStudents,
@@ -35,6 +35,7 @@ import {
   touchActivity, recordLogin, startReaper, provisionSsh,
 } from './lib/students.js';
 import { sshConfig, privateKey, regenerateKeys } from './lib/ssh-access.js';
+import { homeDirFor } from './lib/home-dir.js';
 import { leaderboard } from './lib/leaderboard.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
@@ -57,6 +58,16 @@ import {
 import * as userChat from './lib/user-chat.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const USAGE_FILE = process.env.TOKEN_USAGE_FILE || '/data/config/env/token-usage.json';
+
+function readTokenUsage() {
+  try { return JSON.parse(fs.readFileSync(USAGE_FILE, 'utf-8')); } catch { return {}; }
+}
+
+function saveTokenUsage(data) {
+  fs.writeFileSync(USAGE_FILE, JSON.stringify(data, null, 2));
+}
 
 const PORT = parseInt(process.env.PORT || '3020', 10);
 const HOST = process.env.HOST || '127.0.0.1';
@@ -115,20 +126,65 @@ app.get('/api/me', (req, res) => {
   const u = req.session.user;
   const state = loadUsers();
   const info = state.users[u] || {};
+
+  // бюджет
+  const usageData = readTokenUsage();
+  const today = new Date().toISOString().slice(0, 10);
+  const period = info.tokenPeriod || 'total';
+  const limitUsd = info.spendLimitUsd || null;
+  const monthKey = today.slice(0, 7);
+  const spentUsd = period === 'day'
+    ? (usageData[u]?.days?.[today] || 0)
+    : period === 'month'
+      ? Object.entries(usageData[u]?.days || {}).filter(([d]) => d.startsWith(monthKey)).reduce((s, [, v]) => s + v, 0)
+      : (usageData[u]?.totalUsd || 0);
+  let resetInMs = null;
+  if (period === 'day') {
+    const endOfDay = new Date(today + 'T00:00:00.000Z');
+    endOfDay.setUTCDate(endOfDay.getUTCDate() + 1);
+    resetInMs = endOfDay.getTime() - Date.now();
+  } else if (period === 'month') {
+    const [y, m] = today.split('-').map(Number);
+    const endOfMonth = new Date(Date.UTC(y, m, 1));
+    resetInMs = endOfMonth.getTime() - Date.now();
+  }
+  const budget = { limitUsd, spentUsd, period, resetInMs };
+
+  // количество сессий project-chat
+  let sessionCount = 0;
+  const prefix = `-data-vibe-students-${u}-`;
+  try {
+    const claudeProjects = '/root/.claude/projects';
+    const dirs = fs.readdirSync(claudeProjects, { withFileTypes: true })
+      .filter(d => d.isDirectory() && d.name.startsWith(prefix));
+    for (const d of dirs) {
+      const files = fs.readdirSync(path.join(claudeProjects, d.name))
+        .filter(f => f.endsWith('.jsonl'));
+      sessionCount += files.length;
+    }
+  } catch {}
+
+  const homeDir = homeDirFor(info.role || 'user');
   containerStatus(u).then(cs => {
     res.json({
       username: u,
       isAdmin: !!req.session.isAdmin,
       role: info.role || 'user',
+      homeDir,
       containerPort: info.containerPort || null,
       container: cs,
       lastActivityAt: info.lastActivityAt || null,
       idleStopMinutes: parseInt(process.env.IDLE_STOP_MIN || '30', 10),
+      budget,
+      sessionCount,
     });
   }).catch(e => res.json({
     username: u, isAdmin: !!req.session.isAdmin,
     role: info.role || 'user',
+    homeDir,
     container: { error: e.message },
+    budget,
+    sessionCount,
   }));
 });
 
@@ -155,7 +211,7 @@ app.get('/api/ssh-config', requireAuth, (req, res) => {
     // Пробуждаем контейнер (SSH-вход сам уснувший не будит — порт не опубликован).
     // Fire-and-forget: пока ученик читает инструкцию/копирует ключ, контейнер встаёт.
     dockerStart(u).catch(() => {});
-    res.json(sshConfig(u, sshPort));
+    res.json(sshConfig(u, sshPort, req.session.isAdmin ? 'admin' : 'user'));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -180,7 +236,7 @@ app.post('/api/ssh-key/regenerate', requireAuth, (req, res) => {
   try {
     const sshPort = provisionSsh(u);
     regenerateKeys(u);
-    res.json(sshConfig(u, sshPort));
+    res.json(sshConfig(u, sshPort, req.session.isAdmin ? 'admin' : 'user'));
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -691,7 +747,15 @@ app.post('/api/touch', requireAuth, (req, res) => {
 // ---------- admin ----------
 
 app.get('/api/students', requireAdmin, (req, res) => {
-  res.json({ students: listStudents() });
+  const students = listStudents();
+  const usage = readTokenUsage();
+  const today = new Date().toISOString().slice(0, 10);
+  const enriched = students.map(s => ({
+    ...s,
+    spendUsedUsd:    usage[s.username]?.totalUsd          || 0,
+    spendUsedDayUsd: usage[s.username]?.days?.[today]     || 0,
+  }));
+  res.json({ students: enriched });
 });
 
 app.post('/api/students', requireAdmin, async (req, res) => {
@@ -720,6 +784,41 @@ app.delete('/api/students/:u', requireAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
+  }
+});
+
+app.patch('/api/students/:u', requireAdmin, (req, res) => {
+  const u = req.params.u;
+  if (!/^[a-zA-Z0-9._-]+$/.test(u)) return res.status(400).json({ error: 'invalid user' });
+  const { spendLimitUsd, tokenPeriod } = req.body || {};
+  try {
+    const state = loadUsers();
+    const user  = state.users[u];
+    if (!user) return res.status(404).json({ error: 'user not found' });
+    if (spendLimitUsd !== undefined) {
+      const v = parseFloat(spendLimitUsd);
+      user.spendLimitUsd = (!v || v <= 0) ? null : v;
+    }
+    if (tokenPeriod !== undefined) {
+      user.tokenPeriod = ['day', 'total', 'month'].includes(tokenPeriod) ? tokenPeriod : 'total';
+    }
+    saveUsers(state);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/students/:u/token-usage/reset', requireAdmin, (req, res) => {
+  const u = req.params.u;
+  if (!/^[a-zA-Z0-9._-]+$/.test(u)) return res.status(400).json({ error: 'invalid user' });
+  try {
+    const usage = readTokenUsage();
+    delete usage[u];
+    saveTokenUsage(usage);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -769,8 +868,11 @@ const codeProxy = createProxyMiddleware({
   pathRewrite: (p) => p.replace(/^\/code\/[^/]+/, ''),
   on: {
     error: (err, req, res) => {
+      console.log('[codeProxy error]', err.message, 'url:', req?.url);
       if (res && !res.headersSent) {
         try { res.writeHead(502); res.end('container not ready'); } catch {}
+      } else if (res && res.destroy) {
+        try { res.destroy(); } catch {}
       }
     },
   },

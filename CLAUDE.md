@@ -40,7 +40,7 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
   limits:  mem 3G, cpu 1.5
   network: vibe-net (br-vibe, 172.30.0.0/24)
   mounts:
-    /data/vibe-students/<user>   → /home/student/workspace   rw
+    /data/vibe-students/<user>   → HOME ученика   rw   (см. HOME по роли ниже)
     /opt/vibe-portal/templates   → /home/student/templates   ro   (только курсовые app-*)
     /data/config/ssh/<user>/host → /home/student/.sshd        rw   (host-key + authorized_keys)
     /data/config/vscode-server/<user> → /home/student/.vscode-server rw (персист VS Code server)
@@ -50,6 +50,26 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
   ports наружу: 127.0.0.1:820X→8080 (code-server), 0.0.0.0:84XX→2222 (sshd, десктопный VS Code)
 ```
 
+**HOME по роли (`panel/lib/home-dir.js` → `homeDirFor(role)`).** Один и тот же
+образ `vibe-workspace:dev` обслуживает и admin'а, и учеников — их рабочий путь
+внутри контейнера **разный**: `role==='admin'` → `/home/my_workspace`, иначе
+(ученик) → `/home/student/workspace`. Это единственный источник истины,
+подключается везде, где путь раньше был захардкожен: `students.js` (`dockerCreate`
+— `WorkingDir`, основной Bind, `Env: HOME=...`; `homeDirForUser()` — lookup по
+логину для мест без `role` под рукой), `code-slots.js` (`launchInstance`),
+`ssh-access.js` (`sshConfig` → `workspaceUri`/`projectUriBase`), `publish.js`
+(`deployApp`/`stopApp` → `cdir`), фронтенд `app.js` (через новое поле `homeDir`
+в `/api/me`). **Почему нельзя обойтись одним `useradd -d`:** это атрибут
+`/etc/passwd`, общий для ВСЕХ контейнеров одного образа — не даёт развести роли.
+Вместо этого HOME передаётся явно через `Env: [\`HOME=${home}\`]` в
+`docker create`: `docker exec` **наследует** `Config.Env` контейнера (это
+задокументированное поведение Docker), поэтому и CMD-процесс
+(`vibe-entrypoint.sh`, использует `$HOME` вместо хардкода), и любой
+`docker exec` (панельные lifecycle-хуки) видят правильный путь без доп. флагов.
+`useradd -d /home/student/workspace` в Dockerfile — только пассивный
+дефолт/фолбэк на случай контейнера без явного `HOME` (не используется в
+нормальном потоке, т.к. `dockerCreate` всегда его проставляет).
+
 **Дефолтная модель claude-cli внутри контейнера = `sonnet`.** claude-code 2.1.x
 по умолчанию берёт **opus** (×5 дороже sonnet) — а claude в VS Code
 (терминал code-server / расширение / десктоп по SSH) запускается **без**
@@ -57,11 +77,12 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
 `--model sonnet` сами). Поэтому пиннимся через user-level
 `~/.claude/settings.json` → `{"model":"sonnet"}`: claude читает его при любом
 запуске независимо от cwd и способа входа. Это **дефолт, а не замок** — ученик
-при желании переключается через `/model`. Доставка в двух местах:
-`workspace-image/Dockerfile` (бейкается в образ для будущих пересборок) и
+при желании переключается через `/model`. Единственный источник —
 `panel/lib/students.js → ensureClaudeModelDefault()` (рантайм-хук в `dockerStart`:
-прописывает при каждом холодном старте, т.к. `~/.claude` **не персистится** между
-пересозданиями контейнера; идемпотентно, merge — тему не трогает). Значение
+прописывает при каждом холодном старте; идемпотентно, merge — тему не трогает).
+Раньше дублировалось бейком в `workspace-image/Dockerfile`, но с переездом HOME
+на `/home/my_workspace` (bind-mount) этот бейк стал невидим контейнеру — убран,
+рантайм-хук остался единственным источником. Значение
 переопределяется env `STUDENT_DEFAULT_MODEL`. Существующим контейнерам применять
 `docker exec -u student vibe-<u> node -e '…settings.json…'` (или они подхватят сами
 при следующем старте). Проверка: модель видна в транскрипте шима
@@ -246,7 +267,7 @@ CMD контейнера, порт 8080). Каждая конкурентная 
 slot 1, 2, … — **отдельный процесс `code-server` в том же контейнере** на порту
 `8080+slot`, поднимается лениво через `docker exec -d` (как в `publish.js`),
 со своим `--user-data-dir` (`~/.cs-data/<slot>` → независимые окна/терминалы),
-но общий `/home/student/workspace` и общий `--extensions-dir`. Панель проксирует
+но общий HOME (по роли, см. выше) и общий `--extensions-dir`. Панель проксирует
 `/code/<user>/` в нужный инстанс по vibe-net (`http://<containerIP>:<8080+slot>`),
 и HTTP, и WS — в один слот (`req._codeTarget`). Образ пересобирать не нужно —
 `code-server` уже в нём, доп.инстансы запускаются командой, bind на порт сам
@@ -452,3 +473,18 @@ docker rm -f vibe-<username>
 - **2026-05-26** — стартовал портал, E2E проверен:
   admin создаёт ученика → ученик из VS Code зовёт claude → шим подменяет
   токен → ответ приходит. Изоляция iptables проверена.
+- **2026-07-21** — HOME разведён по ролям: admin остаётся на
+  `/home/my_workspace`, ученики переведены на `/home/student/workspace`
+  (см. «HOME по роли» выше). Заодно найдены и починены два бага из вчерашней
+  миграции на `/home/my_workspace`: устаревший код `vibe-panel.service`
+  (не был перезапущен после правок `students.js`) и code-server, стартующий
+  с `auth: password`/`bind-addr 127.0.0.1` из-за bind-mount, перекрывающего
+  бейк-конфиг образа (конфиг перенесён из Dockerfile в `vibe-entrypoint.sh`,
+  пишется в рантайме через `$HOME`). Отдельно обнаружен и **не устранён**
+  (по решению пользователя) баг изоляции: bridge-интерфейс `vibe-net`
+  на деле называется `br-92be0fc90d9e`, а не `br-vibe`, который ожидает
+  `scripts/setup-iptables.sh` — правила `VIBE-FILTER`/`VIBE-INPUT` из
+  `DOCKER-USER`/`INPUT` ни разу не матчатся (0 pkts), т.е. изоляция между
+  контейнерами учеников и блок доступа к хосту сейчас **не работают**.
+  Фикс: переименовать bridge в `br-vibe` (`ip link set br-92be0fc90d9e name
+  br-vibe`) и перезапустить `vibe-iptables.service` — ждёт явного решения.

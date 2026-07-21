@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import Docker from 'dockerode';
-import { containerName, workspaceDir, dockerStart } from './students.js';
+import { containerName, workspaceDir, dockerStart, homeDirForUser } from './students.js';
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 const NETWORK = process.env.VIBE_NETWORK || 'vibe-net';
@@ -134,7 +134,7 @@ function dockerExecDetached(user, args) {
 // Запустить приложение в контейнере (детач). pid сервера → .publish/app.pid.
 export async function deployApp(user, project, port) {
   const cmd = detectCmd(user, project, port);
-  const cdir = `/home/student/workspace/${project}`;
+  const cdir = `${homeDirForUser(user)}/${project}`;
   const wrapper =
     `mkdir -p .publish; ` +
     `[ -f package.json ] && [ ! -d node_modules ] && npm install --no-audit --no-fund >> .publish/app.log 2>&1; ` +
@@ -145,7 +145,7 @@ export async function deployApp(user, project, port) {
 
 // Остановить приложение (kill pid из .publish/app.pid).
 export async function stopApp(user, project) {
-  const cdir = `/home/student/workspace/${project}`;
+  const cdir = `${homeDirForUser(user)}/${project}`;
   const kill = `kill $(cat .publish/app.pid) 2>/dev/null; rm -f .publish/app.pid`;
   try {
     await dockerExecDetached(user, ['exec', '-u', 'student', '-w', cdir, containerName(user), 'sh', '-lc', kill]);

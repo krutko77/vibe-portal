@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KG</title>
-  <link rel="icon" type="image/png" href="/KG_fi.png" />
+  <title>WEBKRUTKO</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/css/tokens.css" />
   <link rel="stylesheet" href="/css/style.css" />
   <script>
@@ -19,7 +19,18 @@
 
   <!-- ── Navbar ─────────────────────────────────────────────── -->
   <nav class="navbar">
-    <a href="/" class="navbar-kg">KG</a>
+    <a href="/" class="navbar-kg">WEBKRUTKO</a>
+
+    <div class="navbar-budget hidden-when-no-auth" id="navbar-budget" style="display:none">
+      <div class="nb-bar-wrap">
+        <div class="nb-bar-fill" id="nb-bar-fill"></div>
+      </div>
+      <span class="nb-info" id="nb-info"></span>
+      <div class="nb-sessions hidden-when-no-auth" id="nb-sessions" style="display:none">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <span id="nb-sessions-count">0</span>
+      </div>
+    </div>
 
     <span class="navbar-spacer"></span>
 
@@ -119,7 +130,7 @@
 
   <!-- ── Welcome (когда не залогинен) ──────────────────────── -->
   <div class="welcome" id="welcome">
-    <p class="welcome-domain">KG</p>
+    <p class="welcome-domain">WEBKRUTKO</p>
     <h1 class="welcome-heading">Добро пожаловать в волшебный мир! 🪄</h1>
     <button class="btn-welcome" id="welcomeLoginBtn">Войти →</button>
   </div>
@@ -209,7 +220,7 @@
       <div class="vscode-hero">
         <div class="vscode-hero-left">
           <div class="vscode-hero-label">Workspace</div>
-          <div class="vscode-hero-path">/home/student/workspace/</div>
+          <div class="vscode-hero-path" id="vscodeHeroPath">/home/my_workspace/</div>
         </div>
         <div class="vscode-hero-mid">
           <button class="nav-btn-container" id="containerToggleBtn" title="Запустить/Остановить контейнер">
@@ -301,11 +312,11 @@
 
         <div class="page-sect" id="a-login">
           <div class="page-sect-no">1. ВХОД В ПОРТАЛ</div>
-          <p>Портал живёт на <code>vibe.kiselevgroup.com</code>. Если ты уже зарегистрирован — нажми «Войти →», введи логин и пароль. Если ты новый ученик — попроси администратора создать тебе аккаунт.</p>
+          <p>Портал живёт на <code>201.51.4.183</code>. Если ты уже зарегистрирован — нажми «Войти →», введи логин и пароль. Если ты новый ученик — попроси администратора создать тебе аккаунт.</p>
         </div>
         <div class="page-sect" id="a-navbar">
           <div class="page-sect-no">2. НАВБАР</div>
-          <p>В шапке: <strong>KG</strong> — логотип, <strong>4 таба</strong> (VS Code, Проекты, Курс, Материалы), справа — кнопки <em>Claude</em>, тема, история, настройки.</p>
+          <p>В шапке: <strong>WEBKRUTKO</strong> — логотип, <strong>4 таба</strong> (VS Code, Проекты, Курс, Материалы), справа — кнопки <em>Claude</em>, тема, история, настройки.</p>
         </div>
         <div class="page-sect" id="a-vscode">
           <div class="page-sect-no">3. VS CODE</div>
@@ -867,7 +878,7 @@ description: Объясняет каждый шаг простыми слова�
             <li><strong>Авто-засыпание</strong> — если включено, приложение засыпает вместе с контейнером через 30 минут простоя и само поднимается при следующем заходе. Выключи, если приложение должно работать постоянно.</li>
           </ul>
           <p>Нажми <strong>Сохранить</strong>. Появится ссылка вида
-          <code>vibe.kiselevgroup.com/&lt;твой-логин&gt;/&lt;проект&gt;/</code> — её можно скопировать и открыть.</p>
+          <code>201.51.4.183/&lt;твой-логин&gt;/&lt;проект&gt;/</code> — её можно скопировать и открыть.</p>
         </div>
         <div class="page-sect">
           <div class="page-sect-no">3. КНОПКА «ДЕПЛОЙ»</div>
@@ -2639,7 +2650,7 @@ EU-VPS (для прокси):
   <div class="modal-overlay hidden" id="modal-login" role="dialog" aria-modal="true">
     <div class="modal" style="max-width:380px">
       <div class="modal-header">
-        <span class="modal-title">Вход в KG</span>
+        <span class="modal-title">Вход в WEBKRUTKO</span>
         <button class="modal-close" data-close="modal-login" aria-label="Закрыть">✕</button>
       </div>
       <div class="form-group">
@@ -2736,7 +2747,7 @@ EU-VPS (для прокси):
             Первый раз ~минуту ставится мини-сервер.</li>
 
           <li><b>Открой папку:</b> <code>File → Open Folder</code> →
-            <code>/home/student/workspace</code>. Или жми <b>💻</b> на нужном проекте —
+            <code id="ssh-home-hint">/home/my_workspace</code>. Или жми <b>💻</b> на нужном проекте —
             откроется окошко со ссылкой и адресом его папки.</li>
         </ol>
         <div class="form-hint">
@@ -2962,6 +2973,39 @@ EU-VPS (для прокси):
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-reset-password">Закрыть</button>
         <button class="btn btn-primary" id="rp-submit">Сменить пароль</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Лимит расходов ученика (admin) ───────────────── -->
+  <div class="modal-overlay hidden" id="modal-spend-limit" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <span class="modal-title">Лимит расходов — <span id="sl-student-name">—</span></span>
+        <button class="modal-close" data-close="modal-spend-limit" aria-label="Закрыть">✕</button>
+      </div>
+      <p id="sl-used-info" style="font-size:12px;color:hsl(var(--muted-foreground));padding:10px 18px 0;margin:0"></p>
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label" for="sl-limit">Лимит, $ (0 или пусто = без лимита)</label>
+        <input id="sl-limit" type="number" min="0" step="0.01" class="form-input"
+               placeholder="например: 10" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="sl-period">Период</label>
+        <select id="sl-period" class="form-input kg-skip">
+          <option value="total">Всего (накопительно)</option>
+          <option value="day">В день</option>
+        </select>
+        <span class="form-hint">«В день» — счётчик сбрасывается автоматически каждые сутки.</span>
+      </div>
+      <div class="form-error hidden" id="sl-error"></div>
+      <div class="form-hint hidden" id="sl-success" style="color:hsl(142 71% 45%);padding:0 18px 8px">✓ Сохранено.</div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <button class="btn btn-ghost" id="sl-reset" style="color:hsl(var(--muted-foreground))">Сбросить счётчик</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" data-close="modal-spend-limit">Закрыть</button>
+          <button class="btn btn-primary" id="sl-submit">Сохранить</button>
+        </div>
       </div>
     </div>
   </div>

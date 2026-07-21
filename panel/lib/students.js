@@ -9,6 +9,7 @@ import {
 } from './auth.js';
 import { hasKeepAlive } from './publish.js';
 import { ensureKeys, removeKeys, sshMountDir } from './ssh-access.js';
+import { homeDirFor } from './home-dir.js';
 import { spawnSync, execFile } from 'node:child_process';
 
 const STUDENTS_ROOT = process.env.STUDENTS_ROOT || '/data/vibe-students';
@@ -43,6 +44,7 @@ function ensureClaudeModelDefault(username) {
   const m = JSON.stringify(STUDENT_DEFAULT_MODEL);
   const js =
     `const fs=require('fs'),p=process.env.HOME+'/.claude/settings.json';` +
+    `fs.mkdirSync(process.env.HOME+'/.claude',{recursive:true});` +
     `let o={};try{o=JSON.parse(fs.readFileSync(p,'utf8'))}catch{}` +
     `if(o.model!==${m}){o.model=${m};fs.writeFileSync(p,JSON.stringify(o,null,2))}`;
   return new Promise((resolve) => {
@@ -63,6 +65,13 @@ export function containerName(username) {
 
 export function workspaceDir(username) {
   return path.join(STUDENTS_ROOT, username);
+}
+
+// Домашняя папка ВНУТРИ контейнера ученика (см. home-dir.js) — по логину,
+// без пересборки state вызывающим. Best-effort: неизвестный юзер → студенческий дефолт.
+export function homeDirForUser(username) {
+  const state = loadUsers();
+  return homeDirFor(state.users[username]?.role);
 }
 
 function allocatePort(state) {
@@ -120,7 +129,7 @@ export async function createStudent({ username, password, role = 'user' }) {
 
   // Workspace-level CLAUDE.md: Claude поднимется по dir-tree и прочитает.
   // Учим его сразу что это курс, какие скиллы и где память.
-  writeWorkspaceClaudeMd(ws, username);
+  writeWorkspaceClaudeMd(ws, username, role);
 
   const port = allocatePort(state);
   state.users[username] = {
@@ -132,7 +141,7 @@ export async function createStudent({ username, password, role = 'user' }) {
   const sshPort = ensureSshProvision(username, state); // sshPort + ключи + .vscode-server
   saveUsers(state);
 
-  await dockerCreate(username, port, sshPort);
+  await dockerCreate(username, port, sshPort, role);
   return state.users[username];
 }
 
@@ -179,15 +188,16 @@ export function provisionSsh(username) {
 
 // Workspace-level CLAUDE.md — раскатывается при создании ученика
 // и при первом dockerCreate. Идемпотентно — если файл уже есть, не трогаем.
-export function writeWorkspaceClaudeMd(ws, username) {
+export function writeWorkspaceClaudeMd(ws, username, role = 'user') {
   const file = path.join(ws, 'CLAUDE.md');
   if (fs.existsSync(file)) return;
+  const home = homeDirFor(role);
   const body = `# Workspace ученика курса VibeCoding
 
-Это твой личный workspace на портале \`vibe.kiselevgroup.com\`.
+Это твой личный workspace на портале Vibe Portal.
 
 - **Ученик:** \`${username}\`
-- **Расположение:** \`/home/student/workspace/\` (внутри твоего Docker-контейнера)
+- **Расположение:** \`${home}/\` (внутри твоего Docker-контейнера)
 - **Шаблоны курса (read-only):** \`/home/student/templates/\`
 
 ## Что важно для Claude
@@ -204,15 +214,16 @@ export function writeWorkspaceClaudeMd(ws, username) {
 ## Структура
 
 \`\`\`
-/home/student/
-├── workspace/            ← здесь твои проекты (видна только тебе)
-│   ├── CLAUDE.md         ← этот файл
-│   └── <проект>/
-│       ├── .claude/      ← локальная память и настройки проекта
-│       └── CLAUDE.md     ← инструкции конкретного проекта
-├── templates/            ← курсовые шаблоны (read-only)
+${home}/       ← здесь твои проекты (видна только тебе), это твой HOME
+├── CLAUDE.md              ← этот файл
+└── <проект>/
+    ├── .claude/           ← локальная память и настройки проекта
+    └── CLAUDE.md          ← инструкции конкретного проекта
+
+/home/student/             ← служебные файлы, НЕ рабочая папка
+├── templates/             ← курсовые шаблоны (read-only)
 └── .claude/
-    └── skills/           ← общие скиллы (superpowers / ui-ux-pro-max / claude-memory)
+    └── skills/            ← общие скиллы (superpowers / ui-ux-pro-max / claude-memory)
 \`\`\`
 `;
   fs.writeFileSync(file, body, 'utf-8');
@@ -228,8 +239,9 @@ export function listStudents() {
 
 // ---------- docker lifecycle ----------
 
-async function dockerCreate(username, port, sshPort) {
+async function dockerCreate(username, port, sshPort, role = 'user') {
   const name = containerName(username);
+  const home = homeDirFor(role);
 
   // если уже есть — удаляем
   try {
@@ -241,7 +253,7 @@ async function dockerCreate(username, port, sshPort) {
     name,
     Image: IMAGE,
     User: 'student',
-    WorkingDir: '/home/student/workspace',
+    WorkingDir: home,
     Env: [
       `ANTHROPIC_BASE_URL=${SHIM_BASE_URL}`,
       'ANTHROPIC_AUTH_TOKEN=sk-vibe-shim-placeholder',
@@ -249,6 +261,10 @@ async function dockerCreate(username, port, sshPort) {
       // Отключаем авто-1M-контекст: на OAuth-подписке он требует usage credits
       // → ошибка у ученика. CLI вместо этого компактит в рамках 200K.
       'CLAUDE_CODE_DISABLE_1M_CONTEXT=1',
+      // Явный HOME — единственный надёжный способ развести admin/student по
+      // разным путям на ОДНОМ образе: без него docker exec/CMD резолвят HOME
+      // из /etc/passwd образа (общий для всех), см. home-dir.js.
+      `HOME=${home}`,
     ],
     // entrypoint поднимает sshd (десктопный VS Code) + exec code-server.
     Cmd: ['/usr/local/bin/vibe-entrypoint.sh'],
@@ -259,7 +275,7 @@ async function dockerCreate(username, port, sshPort) {
     HostConfig: {
       NetworkMode: NETWORK,
       Binds: [
-        `${workspaceDir(username)}:/home/student/workspace:rw`,
+        `${workspaceDir(username)}:${home}:rw`,
         `${TEMPLATES_DIR}:/home/student/templates:ro`,
         // Общий volume для расширений code-server: ставишь раз — у всех есть.
         // User-settings/keybindings/state у каждого свои (не маунтятся).
@@ -311,7 +327,7 @@ export async function dockerStart(username) {
     if (!u.containerPort) throw new Error(`no port assigned for ${username}`);
     const sshPort = ensureSshProvision(username, state); // lazy-миграция: sshPort+ключи существующим
     saveUsers(state);
-    await dockerCreate(username, u.containerPort, sshPort);
+    await dockerCreate(username, u.containerPort, sshPort, u.role);
     c = docker.getContainer(containerName(username));
     info = await c.inspect();
   }

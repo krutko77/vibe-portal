@@ -5,6 +5,9 @@
 # для reaping зомби. sshd авторизует ТОЛЬКО по ключу.
 set -e
 
+# NB: путь абсолютный намеренно, НЕ $HOME/.sshd — HOME студента это
+# /home/my_workspace, а этот bind-mount (SSH-ключи) физически остаётся
+# в /home/student/.sshd. Резолвинг через $HOME сломает поиск authorized_keys.
 SSHD_DIR=/home/student/.sshd
 mkdir -p "$SSHD_DIR"
 
@@ -41,5 +44,15 @@ EOF
 # Поднять sshd (демонизируется сам); не валим контейнер, если не стартанул.
 /usr/sbin/sshd -f "$SSHD_DIR/sshd_config" || echo "vibe-entrypoint: sshd start failed (non-fatal)" >&2
 
+# Конфиг code-server. НЕ бейкается в образ — $HOME/.config живёт под
+# $HOME (bind-mount хостового workspace ученика/админа, см. HOME=... в
+# dockerCreate), который перекрывает содержимое образа. Без auth:none/
+# bind-addr:0.0.0.0 code-server при первом старте на пустом volume сам генерит
+# auth:password + bind 127.0.0.1 (secure-by-default) — и панель (проксирует по
+# IP контейнера) до него не достучится.
+mkdir -p "$HOME/.config/code-server"
+printf 'bind-addr: 0.0.0.0:8080\nauth: none\ncert: false\ndisable-telemetry: true\ndisable-update-check: true\n' \
+    > "$HOME/.config/code-server/config.yaml"
+
 # Основной процесс — code-server (как и было).
-exec code-server /home/student/workspace
+exec code-server "$HOME"

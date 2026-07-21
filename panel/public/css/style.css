@@ -66,6 +66,53 @@ body.app-bg {
 
 .navbar-spacer { flex: 1; }
 
+/* ── Navbar budget indicator ─────────────────────────────── */
+.navbar-budget {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  flex-shrink: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: hsl(var(--secondary) / .5);
+}
+.nb-bar-wrap {
+  width: 52px; height: 5px;
+  background: hsl(var(--border));
+  border-radius: 3px;
+  overflow: hidden;
+}
+.nb-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: hsl(142 70% 45%);
+  transition: width .4s, background .4s;
+}
+.nb-info {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+.nb-sessions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-left: 1px solid hsl(var(--border));
+  margin-left: 3px;
+  padding-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+/* ─────────────────────────────────────────────────────────── */
+
 /* Theme toggle + nav-icon — единая высота 30px как остальные navbar-кнопки */
 .theme-toggle, .nav-icon {
   width: 30px; height: 30px;
@@ -546,8 +593,27 @@ body.has-right-chat .vscode-recent {
 }
 .user-row-actions { display: flex; gap: 6px; align-items: center; }
 
-/* role-pill, кнопки «Пароль»/«Удалить» — одинаковая высота 22px, mono 10px. */
-.user-role-pill, .user-row-del, .user-row-pwd {
+.spend-chip {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  vertical-align: middle;
+  cursor: default;
+}
+.user-row-limit {
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.user-row-limit:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--foreground));
+}
+
+/* role-pill, кнопки «Пароль»/«Удалить»/«Лимит» — одинаковая высота 22px, mono 10px. */
+.user-role-pill, .user-row-del, .user-row-pwd, .user-row-limit {
   display: inline-flex; align-items: center;
   height: 22px; padding: 0 9px;
   font-family: var(--font-mono); font-size: 10px; font-weight: 600;

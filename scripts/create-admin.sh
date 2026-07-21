@@ -72,11 +72,12 @@ docker create \
   --name "vibe-$USER" \
   --network "$NETWORK" \
   --user student \
-  -w /home/student/workspace \
+  -w /home/my_workspace \
   -e ANTHROPIC_BASE_URL="$SHIM_BASE_URL" \
   -e ANTHROPIC_AUTH_TOKEN=sk-vibe-shim-placeholder \
   -e STUDENT_USERNAME="$USER" \
-  -v "$WS:/home/student/workspace:rw" \
+  -e HOME=/home/my_workspace \
+  -v "$WS:/home/my_workspace:rw" \
   -v "$TEMPLATES_DIR:/home/student/templates:ro" \
   -p "127.0.0.1:$PORT:8080/tcp" \
   --memory 1536m \
@@ -88,7 +89,7 @@ docker create \
   --label "kg.vibe.student=$USER" \
   --label "kg.vibe.role=workspace" \
   "$IMAGE" \
-  code-server /home/student/workspace > /dev/null
+  code-server /home/my_workspace > /dev/null
 
 echo "[create-admin] container vibe-$USER created on port $PORT"
-echo "[create-admin] done. login as $USER on vibe.kiselevgroup.com"
+echo "[create-admin] done. login as $USER"
