@@ -1,0 +1,62 @@
+# 201.51.4.183 — доступ к vibe-panel по голому IP (без домена, без Let's Encrypt).
+# HTTPS — самоподписанный сертификат (/etc/nginx/ssl/vibe-selfsigned.{crt,key},
+# генерится на сервере вне git, см. docs/expand_vibe-portal.md).
+# :80 отдаёт постоянный редирект на :443 — самоподписанный сертификат даёт
+# предупреждение браузера при заходе, но убирает "insecure context" для
+# code-server/admin-code (WebSocket из http-страницы в https-браузере не работал бы).
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+upstream vibe_panel {
+    server 127.0.0.1:3020;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    server_name 201.51.4.183;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name 201.51.4.183;
+    client_max_body_size 100M;
+
+    ssl_certificate     /etc/nginx/ssl/vibe-selfsigned.crt;
+    ssl_certificate_key /etc/nginx/ssl/vibe-selfsigned.key;
+
+    # SSE-стрим claude-чата: буферизацию выключаем точечно только здесь
+    # (см. nginx/vibe.kiselevgroup.com — тот же фикс под HTTP/2-хиккапы).
+    location = /api/project-chat/send {
+        proxy_pass http://vibe_panel;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+    }
+
+    location / {
+        proxy_pass http://vibe_panel;
+        proxy_http_version 1.1;
+
+        # WebSocket upgrade — нужен и /code/<user>/, и /admin-code/ (Баг 5:
+        # без Upgrade/Connection proxy-соединение к code-server рвётся 1006).
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+}
