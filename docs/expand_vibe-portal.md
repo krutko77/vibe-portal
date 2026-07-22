@@ -182,6 +182,58 @@ nginx -t && systemctl reload nginx
 certbot --nginx -d vibe.kiselevgroup.com
 ```
 
+## 8b. (Опционально) HTTPS на голом IP без домена — самоподписанный сертификат
+
+Если домена нет и есть только публичный IP (Let's Encrypt не подойдёт —
+ему нужен домен для ACME-валидации), а браузер должен перестать ругаться
+"insecure context" на `/admin-code/` (code-server требует secure context для
+части функциональности, включая доступ к буферу обмена и WebSocket из
+https-страницы) — поднимаем самоподписанный сертификат.
+
+Сертификат — **вне git**, генерится прямо на сервере:
+
+```bash
+mkdir -p /etc/nginx/ssl
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout /etc/nginx/ssl/vibe-selfsigned.key \
+  -out    /etc/nginx/ssl/vibe-selfsigned.crt \
+  -subj "/CN=<ваш IP>" \
+  -addext "subjectAltName=IP:<ваш IP>"
+chmod 600 /etc/nginx/ssl/vibe-selfsigned.key
+```
+
+Конфиг — готовый шаблон `nginx/201.51.4.183` в репозитории (назван по IP,
+на котором обкатан; при другом IP — скопировать под новым именем и заменить
+`<ваш IP>` во всех вхождениях `server_name`/`-subj`/`-addext` выше и в самом
+файле):
+
+```bash
+cp /opt/vibe-portal/nginx/201.51.4.183 /etc/nginx/sites-available/vibe
+ln -sf /etc/nginx/sites-available/vibe /etc/nginx/sites-enabled/vibe
+nginx -t && systemctl reload nginx
+```
+
+Конфиг делает: `:80` → постоянный редирект на `:443`; `:443` — тот же
+проксинг на `vibe_panel` (`127.0.0.1:3020`), что и в `vibe.kiselevgroup.com`,
+с полным пробросом `Upgrade`/`Connection $connection_upgrade` — это важно
+для `/code/<user>/*` и `/admin-code/` (оба идут через WS к code-server);
+без этого проброса — обрыв соединения 1006. Отдельный nginx-`location
+/admin-code/` не нужен: этот путь роутится не в nginx, а внутри
+`panel/server.js` (гейт по `req.session.isAdmin`, проксирование на
+`127.0.0.1:8300`) — существующий catch-all `location /` уже его покрывает.
+
+Смоук-тест:
+```bash
+curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}\n' http://<ваш IP>/    # 301 -> https://...
+curl -k -sS -o /dev/null -w '%{http_code}\n' https://<ваш IP>/                   # 200
+curl -k -sS -o /dev/null -w '%{http_code}\n' https://<ваш IP>/admin-code/        # 302 (редирект внутрь code-server, если залогинены как admin)
+```
+
+Браузер один раз спросит подтверждение самоподписанного сертификата
+(«небезопасно») — это ожидаемо и не чинится без реального домена + CA.
+Если нужен полноценный сертификат без предупреждений — единственный путь:
+завести домен, направить его на IP, и использовать `certbot` как в разделе 8.
+
 ## 9. Бутстрап первого admin'а
 
 ```bash
