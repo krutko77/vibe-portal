@@ -38,7 +38,8 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
   user:    student (uid 1000), no sudo, --cap-drop=ALL, --no-new-privileges, --init (tini)
   cmd:     vibe-entrypoint.sh — поднимает sshd (десктопный VS Code) + exec code-server
   limits:  mem 3G, cpu 1.5
-  network: vibe-net (br-vibe, 172.30.0.0/24)
+  network: vibe-net (bridge-интерфейс br-<ID сети>, имя вычисляется динамически
+           в setup-iptables.sh, не фиксировано — см. «История» 2026-07-22; subnet 172.30.0.0/24)
   mounts:
     /data/vibe-students/<user>   → HOME ученика   rw   (см. HOME по роли ниже)
     /opt/vibe-portal/templates   → /home/student/templates   ro   (только курсовые app-*)
@@ -480,11 +481,20 @@ docker rm -f vibe-<username>
   (не был перезапущен после правок `students.js`) и code-server, стартующий
   с `auth: password`/`bind-addr 127.0.0.1` из-за bind-mount, перекрывающего
   бейк-конфиг образа (конфиг перенесён из Dockerfile в `vibe-entrypoint.sh`,
-  пишется в рантайме через `$HOME`). Отдельно обнаружен и **не устранён**
-  (по решению пользователя) баг изоляции: bridge-интерфейс `vibe-net`
-  на деле называется `br-92be0fc90d9e`, а не `br-vibe`, который ожидает
-  `scripts/setup-iptables.sh` — правила `VIBE-FILTER`/`VIBE-INPUT` из
-  `DOCKER-USER`/`INPUT` ни разу не матчатся (0 pkts), т.е. изоляция между
-  контейнерами учеников и блок доступа к хосту сейчас **не работают**.
-  Фикс: переименовать bridge в `br-vibe` (`ip link set br-92be0fc90d9e name
-  br-vibe`) и перезапустить `vibe-iptables.service` — ждёт явного решения.
+  пишется в рантайме через `$HOME`). Отдельно обнаружен баг изоляции:
+  bridge-интерфейс `vibe-net` на деле называется `br-92be0fc90d9e`
+  (docker сам генерит имя как `br-<первые 12 hex ID сети>`), а не `br-vibe`,
+  который был захардкожен в `scripts/setup-iptables.sh` — правила
+  `VIBE-FILTER`/`VIBE-INPUT` из `DOCKER-USER`/`INPUT` ни разу не матчались
+  (0 pkts), т.е. изоляция между контейнерами учеников и блок доступа к хосту
+  не работали.
+- **2026-07-22** — исправлено: `scripts/setup-iptables.sh` больше не
+  хардкодит `br-vibe`, а вычисляет реальное имя моста через `docker network
+  inspect vibe-net` при каждом запуске (см. `docs/decisions.md` D-003).
+  Переименование живого интерфейса (`ip link set ... name br-vibe`)
+  сознательно отвергнуто как фикс: имя моста живёт только в ядре и не
+  переживает пересоздание bridge (в т.ч. после ребута хоста — docker
+  создаст его заново под именем `br-<ID>`), т.е. бы тихо всё сломало снова.
+  Проверено практически на `vibe-krutko77`: shim доступен, хостовые порты
+  (:3020) и публичный IP — задропаны, внешний интернет — доступен;
+  счётчики пакетов в `VIBE-FILTER`/`VIBE-INPUT` растут.

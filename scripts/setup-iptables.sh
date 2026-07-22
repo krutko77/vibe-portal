@@ -9,7 +9,12 @@ set -euo pipefail
 
 CHAIN="VIBE-FILTER"
 INPUT_CHAIN="VIBE-INPUT"
-BR="${BR:-br-vibe}"
+# Имя моста НЕ фиксировано ("br-vibe") — docker сам называет bridge-сети
+# "br-<первые 12 hex сети ID>", он не персистентен по имени между хостами
+# и не задан явно опцией com.docker.network.bridge.name у vibe-net. Поэтому
+# вычисляем актуальное имя из docker при каждом запуске (idempotent, переживает
+# ребут — юнит и так гоняется After=docker.service при каждой загрузке).
+BR="${BR:-br-$(docker network inspect vibe-net -f '{{.Id}}' | cut -c1-12)}"
 SHIM_IP="${SHIM_IP:-172.30.0.1}"
 SHIM_PORT="${SHIM_PORT:-8190}"
 HOST_PUBLIC_IP="${HOST_PUBLIC_IP:-80.87.104.193}"
