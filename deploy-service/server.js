@@ -238,23 +238,40 @@ async function handleDeploy(owner, project) {
     saveRegistry(reg);
   }
 
-  fs.mkdirSync(e.deploy_dir, { recursive: true });
-  await run('rsync', [
-    '-a', '--delete',
-    '--exclude', 'node_modules', '--exclude', '.git', '--exclude', '.env',
-    `${realSrc}/`, `${e.deploy_dir}/`,
-  ]);
-
-  if (firstRun) {
-    await provisionNginxAndCert(e.domain, e.port);
+  // type:'php' — легаси-сайты вроде a1track (php-fpm, статика на диске, без
+  // pm2/порта). Исходник может лежать в подпапке проекта (src_subdir, напр.
+  // "www"), а не в корне — .vibe-deploy.json при этом всё равно в корне
+  // проекта, чтобы владелец мог его найти. Свои файлы с прод-состоянием
+  // (секреты/рантайм-данные типа env.php, data/) исключаются полем `exclude`
+  // в registry — деплой их никогда не трогает.
+  const srcDir = path.join(realSrc, e.src_subdir || '.');
+  if (!fs.existsSync(srcDir)) {
+    throw new Error(`src_subdir not found: ${e.src_subdir}`);
   }
 
-  const [cmd, ...cmdArgs] = e.install_cmd.split(/\s+/);
-  await run(cmd, cmdArgs, { cwd: e.deploy_dir });
+  fs.mkdirSync(e.deploy_dir, { recursive: true });
+  const excludes = ['node_modules', '.git', '.env', ...(e.exclude || [])];
+  await run('rsync', [
+    '-a', '--delete',
+    ...excludes.flatMap(x => ['--exclude', x]),
+    `${srcDir}/`, `${e.deploy_dir}/`,
+  ]);
 
-  await deployPm2(e);
+  if (e.type === 'php') {
+    if (firstRun) {
+      throw new Error('первый деплой нового php-проекта через deploy-service не поддержан — зарегистрируй вручную в registry.json (nginx/php-fpm заводится руками)');
+    }
+    await run('chown', ['-R', 'www-data:www-data', e.deploy_dir]);
+  } else {
+    if (firstRun) {
+      await provisionNginxAndCert(e.domain, e.port);
+    }
+    const [cmd, ...cmdArgs] = e.install_cmd.split(/\s+/);
+    await run(cmd, cmdArgs, { cwd: e.deploy_dir });
+    await deployPm2(e);
+  }
 
-  return { domain: e.domain, url: `https://${e.domain}/`, slug: e.slug, port: e.port, firstRun };
+  return { domain: e.domain, url: `https://${e.domain}/`, slug: e.slug, port: e.port ?? null, firstRun };
 }
 
 const server = http.createServer((req, res) => {
