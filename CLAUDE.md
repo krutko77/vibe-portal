@@ -427,6 +427,59 @@ push в `git@gitflic.ru:kiselevke/dev-portal.git` (тот же репозито�
 `*.sqlite*`, `*.db`, `__pycache__`, `.DS_Store`, `.playwright-mcp`,
 `.claude/settings.local.json`, `.portal-meta.json`.
 
+## Деплой на этот же хост для проектов из /home/my_workspace (`deploy-service`)
+
+Личные (не курсовые) проекты admin'а в `/home/my_workspace` (es-trans-* и
+подобные) исторически деплоятся не в сэндбокс курса, а на реальные поддомены
+на **этом же физическом хосте** (тот, что держит vibe-portal, `es-trans.ru`
+и другие клиентские сайты). Агенту (claude-cli) внутри контейнера для этого
+нужен способ дотянуться до хоста — но `vibe-net` намеренно изолирован (см.
+«Изоляция» выше), и просто выдать root/sudo контейнеру нельзя: это тот же
+хост, что держит весь портал и чужие клиентские сайты (см. `docs/decisions.md`
+D-004 — там же разбор, почему `--privileged`/`--network host` тоже не вариант).
+
+Вместо этого — узкий сервис `deploy-service/` (`vibe-deploy.service`),
+по образцу anthropic-shim: слушает **только** `172.30.0.1:8191` (тот же
+gateway, что и шим), доступен исключительно из `vibe-net` (отдельное ACCEPT
+правило в `scripts/setup-iptables.sh`, всё остальное на хосте по-прежнему
+недоступно). Владельца-вызывающего сервис определяет по source-IP контейнера
+→ docker-лейбл `kg.vibe.student` (`deploy-service/ipmap.js`, та же техника,
+что в `shim/transcript.js`) — агент не может задеплоить чужой проект, даже
+подставив чужое имя папки.
+
+**Контракт для агента внутри проекта:**
+1. Положить `.vibe-deploy.json` в корень проекта:
+   ```json
+   { "domain": "myapp.es-trans.ru", "entry": "src/server.js" }
+   ```
+   (`entry` по умолчанию `src/server.js`; `install_cmd` по умолчанию
+   `npm install --omit=dev`, разрешены только `npm/yarn/pnpm install|ci`).
+2. `POST http://172.30.0.1:8191/deploy` с телом `{"project":"<имя папки>"}`.
+
+Домен обязан быть `*.es-trans.ru` (`DOMAIN_SUFFIX` в юните) — DNS на этот
+домен должен быть заранее направлен на хост, иначе certbot просто не сможет
+подтвердить challenge (ошибка логируется, но не блокирует остальной деплой —
+сайт поднимется по HTTP, HTTPS донастраивается вручную после DNS).
+
+Реестр проектов — `/etc/vibe-deploy/registry.json`, ключ `<owner>::<папка>`
+(не slug — так легаси-проекты можно вручную примаппить на уже существующие
+домен/порт/каталог, даже если имя папки не совпадает с именем pm2-процесса).
+Первый деплой нового ключа сам заводит nginx-vhost + Let's Encrypt + pm2;
+повторные — только `rsync` кода (exclude `node_modules`/`.git`/`.env`) +
+`npm install` + `pm2 restart`. Уже существовавшие ДО этого сервиса продакшн-
+деплои (`es-trans_repairs`, `es-trans_orders-and-transportation`,
+`es-trans_tests-results` — только эти три однозначно матчились по имени)
+заранее прописаны в registry.json на их реальные домен/порт/каталог — для
+них nginx/certbot не трогаются, только rsync+restart. Остальные легаси-сайты
+(`es-trans-standard`/`test-1`, `es-trans-test`/`test-2`, `a1track` — PHP,
+не pm2) в реестр НЕ занесены: имя папки в `/home/my_workspace` не матчится
+однозначно на них по имени, автомаппинг рискован — заносить вручную по факту.
+
+Порты для новых деплоев — автовыдача из диапазона 3100-3199
+(`DEPLOY_PORT_MIN`/`DEPLOY_PORT_MAX`), не пересекается с уже занятыми легаси
+3000-3004. Health: `curl http://172.30.0.1:8191/health` (изнутри vibe-net)
+или `curl http://127.0.0.1:8191/health` (с хоста).
+
 ## Известные ограничения / TODO
 
 - Rate-limit по токенам на ученика — нет (мониторим через journald shim).

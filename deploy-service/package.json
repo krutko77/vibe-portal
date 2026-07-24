@@ -1,0 +1,14 @@
+{
+  "name": "vibe-deploy-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Узкий сервис на 172.30.0.1:8191: позволяет агентам из проектов krutko77 (/home/my_workspace) деплоить приложения на этот же хост (nginx+certbot+pm2), без выдачи root/sudo контейнерам",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.12"
+  }
+}

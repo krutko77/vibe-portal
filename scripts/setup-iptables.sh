@@ -17,7 +17,14 @@ INPUT_CHAIN="VIBE-INPUT"
 BR="${BR:-br-$(docker network inspect vibe-net -f '{{.Id}}' | cut -c1-12)}"
 SHIM_IP="${SHIM_IP:-172.30.0.1}"
 SHIM_PORT="${SHIM_PORT:-8190}"
-HOST_PUBLIC_IP="${HOST_PUBLIC_IP:-80.87.104.193}"
+DEPLOY_PORT="${DEPLOY_PORT:-8191}"
+# HOST_PUBLIC_IP та же ошибка, что была с BR (D-003): хардкод "80.87.104.193"
+# протух, когда DHCP выдал хосту новый адрес 201.51.4.183 — правило №5 ниже
+# ни разу не матчило, NAT-loopback обход не блокировался (см. D-004). Вместо
+# одного хардкода — вычисляем ВСЕ текущие global-scope IPv4 хоста при каждом
+# запуске (может быть больше одного адреса; переживает смену DHCP-адреса и
+# ребут, юнит гоняется After=docker.service при каждой загрузке).
+HOST_PUBLIC_IPS="${HOST_PUBLIC_IPS:-$(ip -4 -o addr show scope global | awk '{print $4}' | cut -d/ -f1)}"
 
 # --- FORWARD: трафик контейнер → внешний мир и контейнер → другие сети ---
 while iptables -C DOCKER-USER -i "$BR" -j "$CHAIN" 2>/dev/null; do
@@ -41,9 +48,10 @@ iptables -N "$CHAIN"
 iptables -N "$INPUT_CHAIN"
 
 # === INPUT-цепочка: контейнер → любой IP хоста ===
-# Разрешён только shim. Остальное (sshd, nginx, etc.) — DROP.
+# Разрешён только shim + deploy-service. Остальное (sshd, nginx, etc.) — DROP.
 iptables -A "$INPUT_CHAIN" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A "$INPUT_CHAIN" -p tcp --dport "$SHIM_PORT" -d "$SHIM_IP" -j ACCEPT
+iptables -A "$INPUT_CHAIN" -p tcp --dport "$DEPLOY_PORT" -d "$SHIM_IP" -j ACCEPT
 iptables -A "$INPUT_CHAIN" -j DROP
 
 iptables -I INPUT 1 -i "$BR" -j "$INPUT_CHAIN"
@@ -51,8 +59,9 @@ iptables -I INPUT 1 -i "$BR" -j "$INPUT_CHAIN"
 # 1) Уже установленные соединения (return-трафик) — пропускаем.
 iptables -A "$CHAIN" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-# 2) Разрешаем достучаться до shim'а на gateway.
+# 2) Разрешаем достучаться до shim'а и deploy-service на gateway.
 iptables -A "$CHAIN" -d "$SHIM_IP" -p tcp --dport "$SHIM_PORT" -j ACCEPT
+iptables -A "$CHAIN" -d "$SHIM_IP" -p tcp --dport "$DEPLOY_PORT" -j ACCEPT
 
 # 3) Всё остальное в сторону gateway (любые другие порты host'а) — drop.
 iptables -A "$CHAIN" -d "$SHIM_IP" -j DROP
@@ -65,8 +74,10 @@ iptables -A "$CHAIN" -d 192.168.0.0/16   -j DROP
 iptables -A "$CHAIN" -d 169.254.0.0/16   -j DROP    # link-local + AWS metadata-style
 iptables -A "$CHAIN" -d 127.0.0.0/8      -j DROP    # на всякий
 
-# 5) Публичный IP хоста — drop (чтобы не было обхода через NAT loopback).
-iptables -A "$CHAIN" -d "$HOST_PUBLIC_IP" -j DROP
+# 5) Публичный(е) IP хоста — drop (чтобы не было обхода через NAT loopback).
+for ip in $HOST_PUBLIC_IPS; do
+  iptables -A "$CHAIN" -d "$ip" -j DROP
+done
 
 # 6) Всё остальное наружу (DNS, npm, github, anthropic напрямую без OAuth) — ок.
 iptables -A "$CHAIN" -j ACCEPT
