@@ -21,6 +21,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Системные библиотеки для headless-браузеров (Playwright/Puppeteer и т.п.
+# скиллы вроде webapp-testing). Без sudo внутри контейнера студент/агент не
+# может доустановить их сам (см. docs/superpowers 2026-08-11, website-customizer:
+# chromium скачивается через npx playwright install, но бинарник не стартует
+# без ~20 системных .so — libnss3, libX11 и т.п.). `install-deps` берёт список
+# пакетов из самого Playwright — точнее, чем ручной список, и не привязан к
+# версии playwright, которую поставит конкретный проект (те же .so для любой
+# свежей версии на Debian 12).
+RUN npx -y playwright@latest install-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+
 # code-server (тот же что на dev-портале)
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 
