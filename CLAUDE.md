@@ -14,10 +14,12 @@
 ## Главные правила
 
 1. **После любых изменений в `/opt/vibe-portal/`** — `git add . && git commit
-   -m "..."`. Push не нужен — `/opt/dev-portal/scripts/backup-all.sh`
-   снапшотит vibe-portal в общий gitflic каждые 4 часа.
-2. **Секреты никогда в git.** `.env*` исключены rsync'ом, но если что —
-   проверь руками. OAuth-токен Claude для шима лежит в
+   -m "..."`. Коммит остаётся **локальным**: автоматического бэкапа/пуша на
+   этом хосте нет (см. § «Бэкап» — механизм, описанный тут раньше, не
+   существует), а ручной пуш в GitHub сейчас сломан (невалидные креды).
+   Считай, что вся история живёт только на этом диске.
+2. **Секреты никогда в git.** `.env*` исключены `.gitignore`/rsync'ом, но если
+   что — проверь руками. OAuth-токен Claude для шима лежит в
    `/root/.claude/.credentials.json` (chmod 600, общий с хостовым claude), не здесь.
 3. **Изменение auth/контейнерной изоляции — критично.** Прежде чем трогать
    `scripts/setup-iptables.sh`, `panel/lib/students.js` или `shim/server.js` —
@@ -417,15 +419,47 @@ fieldsmap24, parser1c, pult24, quality24, support24, timepay24.
 
 ## Бэкап
 
-Покрывается общим `/opt/dev-portal/scripts/backup-all.sh` — rsync
-`/opt/vibe-portal/ → /srv/server-backup/vibe-portal/`, потом git
-push в `git@gitflic.ru:kiselevke/dev-portal.git` (тот же репозиторий, что
-для dev-портала; vibe лежит в подпапке `vibe-portal/`). Снапшот каждые
-4 часа + при завершении Claude-сессии.
+> ⚠️ **АВТОМАТИЧЕСКОГО БЭКАПА НА ЭТОМ ХОСТЕ НЕТ.** Проверено 2026-08-17.
+> Не полагайся на него и не обещай его пользователю.
 
-Исключения те же что у dev: `node_modules`, `.git`, `.env*`, `*.log`,
+Ниже — что было написано в этом разделе раньше и чего по факту не существует
+(описание, судя по всему, унаследовано от другого сервера, где живёт
+dev-portal):
+
+- `/opt/dev-portal/scripts/backup-all.sh` — **файла нет**; в `/opt/dev-portal/`
+  на этом хосте лежит только `templates/`.
+- `/srv/server-backup/` — **каталога нет**, `/srv/` пуст (цель rsync никогда
+  не создавалась).
+- «снапшот каждые 4 часа» — **нет ни systemd-таймера, ни cron-задачи**
+  (в cron только `a1track/process.php` и системные juggle).
+- git remote `git@gitflic.ru:kiselevke/dev-portal.git` — **неверен**. Реальный
+  remote: `https://github.com/krutko77/vibe-portal.git`.
+
+Фактическое состояние на 2026-08-17:
+
+- Пуш в GitHub делается **только руками**, автоматизации нет. Последний
+  успешный пуш — **2026-07-21** (`0be6139`), после него накопилось ~12
+  незапушенных коммитов.
+- Пуш сейчас **не работает**: `/root/.git-credentials` пуст (0 байт), токен в
+  `/root/.config/gh/hosts.yml` невалиден (`gh auth status` → 401). Чтение
+  работает анонимно (`git ls-remote`), запись — нет. Починка требует
+  интерактивного `gh auth login` (сам агент это сделать не может).
+- **`/data/config/` не покрыт даже по замыслу** — ни git (вне репо), ни rsync
+  (тот снапшотил бы только `/opt/vibe-portal/`). Там лежат учётки
+  (`auth/users-vibe.json`, `.htpasswd-vibe`), ssh-ключи учеников,
+  `env/` с секретами, транскрипты диалогов. Именно поэтому потеря полей в
+  `users-vibe.json` 2026-08-17 оказалась невосстановимой (см.
+  `docs/expand_vibe-portal.md` § 13.3).
+
+Объёмы, если/когда бэкап будут заводить (всё ценное крошечное):
+`/data/config` без регенерируемого `vscode-server` (998 МБ кэша VS Code) —
+**3.9 МБ**; `/opt/vibe-portal` без `.git`/`node_modules` — **4.1 МБ**.
+
+Исключения, которые предполагались для rsync (актуальны как ориентир, если
+бэкап будет реализован): `node_modules`, `.git`, `.env*`, `*.log`,
 `*.sqlite*`, `*.db`, `__pycache__`, `.DS_Store`, `.playwright-mcp`,
-`.claude/settings.local.json`, `.portal-meta.json`.
+`.claude/settings.local.json`, `.portal-meta.json`. Для `/data/config`
+дополнительно исключать `vscode-server/` (регенерируется).
 
 ## Деплой на этот же хост для проектов из /home/my_workspace (`deploy-service`)
 
