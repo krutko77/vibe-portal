@@ -381,3 +381,148 @@ mkdir -p /etc/vibe-deploy
 процессы с «противоположными» по интуиции именами, и наивный `diff` файлов
 исходного кода тоже не помог бы отличить их (код обоих деплоев совпал
 побайтово).
+
+## 13. Донастройка проектов admin'а после переезда/установки (пути, hooks, лимиты)
+
+Заготовка правок, которые понадобились при настройке личного проекта admin'а
+`website-customizer` (правки на сайты, скиллы `superpowers` + `playwright`).
+**Два пункта исходной заготовки были ошибочны и здесь исправлены** — читай
+пометки ⚠️, прежде чем копипастить. Дата разбора: 2026-08-17.
+
+### 13.1. Пути в `.claude/settings.json` — НЕ заменять на хостовые ⚠️
+
+Исходная заготовка предлагала:
+
+```bash
+# ⚠️ НЕ ДЕЛАТЬ — это сломает проект:
+sed -i 's|/home/my_workspace/|/data/vibe-students/krutko77/|g' \
+  /data/vibe-students/krutko77/website-customizer/.claude/settings.json
+```
+
+**Почему нельзя.** `/home/my_workspace` — путь **внутри контейнера** (HOME
+admin'а, см. CLAUDE.md § «HOME по роли»); `/data/vibe-students/<user>` —
+**хостовый** путь, который в этот HOME бинд-маунтится. Claude в VS Code
+(браузерный code-server и десктопный по SSH) работает **внутри** контейнера,
+где `/data/vibe-students/` не смонтирован вообще — в контейнере видны только
+6 бинд-маунтов (`docker inspect <c> --format '{{range .Mounts}}...'`). После
+такой замены абсолютные пути в `settings.json` (permission-глобы, путь к
+`.git`, пути к скиллам) начнут указывать в никуда.
+
+Правильно: внутри `.claude/settings.json` проекта, который открывают
+**в контейнере**, оставлять внутриконтейнерные пути (`/home/my_workspace/...`
+для admin'а, `/home/student/workspace/...` для ученика). Хостовые пути нужны
+только тем командам, которые запускаются **с хоста** (панельные чаты
+project-chat/user-chat спавнят `claude` на хосте — см. CLAUDE.md).
+
+Проверка «какой путь правильный» — одной командой:
+
+```bash
+docker exec -u student vibe-<user> sh -lc 'echo $HOME; ls $HOME'
+```
+
+### 13.2. Замена Windows-hook на Linux (это корректно)
+
+Скиллы `superpowers` приходят с полиглот-хуками: `run-hook.cmd` (Windows) и
+`session-start` (POSIX). На Linux-хосте нужен второй. Заменить в трёх файлах
+(`hooks.json` проекта + `hooks.json`/`hooks-cursor.json` скилла):
+
+```bash
+P=/data/vibe-students/krutko77/website-customizer
+HOOK_JSON='{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          { "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start\"",
+            "async": false }
+        ]
+      }
+    ]
+  }
+}'
+printf '%s\n' "$HOOK_JSON" > "$P/hooks.json"
+printf '%s\n' "$HOOK_JSON" > "$P/.claude/skills/superpowers-main/hooks/hooks.json"
+printf '%s\n' "$HOOK_JSON" > "$P/.claude/skills/superpowers-main/hooks/hooks-cursor.json"
+chmod +x "$P/.claude/skills/superpowers-main/hooks/session-start"
+```
+
+Найти такие места в других проектах:
+
+```bash
+find /data/vibe-students -name "hooks.json" -exec grep -l "run-hook.cmd" {} \;
+```
+
+### 13.3. Лимиты расходов — через API, НЕ перезаписью `users-vibe.json` ⚠️
+
+Исходная заготовка предлагала `cat > /data/config/auth/users-vibe.json` со
+«заглушкой» из полей `spendLimitUsd`/`tokenPeriod` (или вообще
+`{"users":{}}`). **Так делать нельзя, и на этом проде это уже привело к
+потере данных 2026-08-17.**
+
+**Почему нельзя.** `users-vibe.json` — не файл настроек лимитов, а **реестр
+учёток портала**. Панель хранит в записи каждого пользователя:
+
+| Поле | Зачем | Что будет при потере |
+|------|-------|----------------------|
+| `role` | `server.js` → `isAdmin = role === 'admin'`; `homeDirFor(role)` | admin теряет админку (CRUD учеников, `/api/transcripts`, `/logs.html`, `/admin-code/`); HOME контейнера при пересоздании уезжает с `/home/my_workspace` на `/home/student/workspace` |
+| `containerPort` | порт code-server слота 0 (820X) | `dockerStart` бросит `no port assigned`, либо переаллокация |
+| `sshPort` | published-порт sshd (84XX) | новый порт → готовый `~/.ssh/config` на ноуте перестаёт подключать |
+| `loginCount`, `dailyLogins` | счётчики рейтинга (`/api/leaderboard`) | **безвозвратно** — бэкфилла нет by design |
+| `spendLimitUsd`, `tokenPeriod` | лимиты расходов (`shim/token-limits.js`) | — |
+
+Восстановить `role`/`containerPort`/`sshPort` постфактум можно из живого
+контейнера (`docker port vibe-<u>`, `docker inspect` → `HOME`), счётчики
+логинов — нельзя.
+
+Правильный способ снять лимит (сохраняет остальные поля):
+
+```bash
+# через панель: карточка ученика → поле лимита пустое/0 → сохранить
+# или API (нужна admin-сессия):
+curl -X POST http://127.0.0.1:3020/api/students/<user> \
+  -H 'Content-Type: application/json' \
+  -b <cookie-admin-сессии> \
+  -d '{"spendLimitUsd": 0, "tokenPeriod": "total"}'
+# server.js сам приводит 0/пустое к null (= лимит выключен),
+# shim/token-limits.js трактует любое falsy-значение как «без лимита»
+```
+
+Если правка файла всё же неизбежна — **точечно, с бэкапом**, не перезаписью:
+
+```bash
+cp -a /data/config/auth/users-vibe.json \
+      /data/config/auth/users-vibe.json.bak-$(date +%F-%H%M%S)
+python3 - << 'PY'
+import json
+p = '/data/config/auth/users-vibe.json'
+d = json.load(open(p))
+d['users']['krutko77']['spendLimitUsd'] = None      # None = без лимита
+json.dump(d, open(p, 'w'), indent=2, ensure_ascii=False)
+PY
+systemctl restart vibe-panel     # шим перечитывает файл сам, но рестарт не мешает
+```
+
+**Отдельно про бэкап этого файла.** `/data/config/` лежит **вне** git-репо и
+**вне** rsync'а `backup-all.sh` (тот снапшотит только `/opt/vibe-portal/`).
+На момент разбора `/srv/server-backup/` на этом хосте вообще не существовал —
+то есть восстановить `users-vibe.json`/`.htpasswd-vibe` было бы неоткуда.
+При развёртывании нового сервера **заведи отдельный бэкап `/data/config/`**
+(там же `.htpasswd-vibe`, ssh-ключи учеников, транскрипты) — иначе одна
+неудачная команда стоит всех учёток курса.
+
+### 13.4. Что проверить после правок
+
+```bash
+# 1. JSON цел и поля на месте (role/containerPort/sshPort обязательны!)
+python3 -m json.tool /data/config/auth/users-vibe.json
+# 2. Порты в реестре совпадают с живым контейнером
+docker port vibe-<user>
+# 3. Сервисы живы
+systemctl restart vibe-panel && systemctl is-active vibe-panel anthropic-shim
+# 4. В UI: залогиниться и убедиться, что админские разделы видны
+#    (если role потерян — админки не будет, а 403 легко списать на «баг»)
+# 5. В VS Code внутри контейнера: claude запускается, нет Permission denied
+#    и нет 429 от шима (429 = превышен spendLimitUsd, см. shim/server.js:196)
+```
