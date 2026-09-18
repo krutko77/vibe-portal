@@ -170,46 +170,6 @@ function renderAuth() {
     setActiveView(localStorage.getItem('vibe.view') || 'vscode');
     refreshAll();
   }
-  renderBudget(ME);
-}
-
-function renderBudget(me) {
-  const el = $('#navbar-budget');
-  if (!me) { el.style.display = 'none'; return; }
-
-  const barWrap = el.querySelector('.nb-bar-wrap');
-  const { limitUsd, spentUsd, period, resetInMs } = me.budget || {};
-
-  if (limitUsd) {
-    const pct = Math.min(100, Math.round(spentUsd / limitUsd * 100));
-    const fill = $('#nb-bar-fill');
-    fill.style.width = pct + '%';
-    if (pct < 60) fill.style.background = 'hsl(142 70% 45%)';
-    else if (pct < 85) fill.style.background = 'hsl(45 90% 50%)';
-    else fill.style.background = 'hsl(0 72% 51%)';
-    let timeStr = '';
-    if (resetInMs > 0) {
-      const totalH = Math.floor(resetInMs / 3600000);
-      const days = Math.floor(totalH / 24);
-      const h = totalH % 24;
-      const m = Math.floor((resetInMs % 3600000) / 60000);
-      if (days > 0) timeStr = ` ${days}д ${h}ч`;
-      else if (h > 0) timeStr = ` ${h}ч ${m}м`;
-      else timeStr = ` ${m}м`;
-    }
-    $('#nb-info').textContent = `${pct}%${timeStr}`;
-    barWrap.style.display = '';
-    $('#nb-info').style.display = '';
-  } else {
-    barWrap.style.display = 'none';
-    $('#nb-info').style.display = 'none';
-  }
-
-  el.style.display = 'flex';
-
-  const sessEl = $('#nb-sessions');
-  $('#nb-sessions-count').textContent = me.sessionCount || 0;
-  sessEl.style.display = 'flex';
 }
 
 // ── COURSE: данные программы Vibecoding (M1-M6) ─────────────
@@ -714,7 +674,73 @@ async function refreshProjects() {
     projects.sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
 
     const folderInVs = (name) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent(ME.homeDir + '/' + name)}`;
-    const statusClass = (s) => /боёвой/i.test(s) ? 'status-prod' : (s === 'НОВЫЙ' ? 'status-new' : 'status-other');
+    const statusClass = (s) => /боёвой|рабочий/i.test(s) ? 'status-prod' : (s === 'НОВЫЙ' ? 'status-new' : 'status-other');
+
+    // Группировка по разделам (.portal-meta.json → section). Разделы — заголовки-
+    // разделители, всегда развёрнуты; без раздела — плоский список без заголовка
+    // (или с приглушённым «Без раздела», если разделы вообще есть).
+    const NEW_SECTION = '__new_section__';
+    const sectionNames = [...new Set(projects.map(p => p.section).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
+    const groups = sectionNames.map(name => ({ name, items: projects.filter(p => p.section === name) }));
+    const rest = projects.filter(p => !p.section);
+    if (rest.length) groups.push({ name: null, items: rest });
+
+    const rowHtml = (p) => `
+      <tr data-project="${escapeHtml(p.name)}" data-published="${p.published ? '1' : ''}" data-pub-url="${escapeHtml(p.publishUrl || '')}">
+        <td><span class="pill pill-type">ПРОЕКТ</span></td>
+        <td><span class="pill ${statusClass(p.status)}">${escapeHtml(p.status)}</span></td>
+        <td class="td-name">${escapeHtml(p.name)}</td>
+        <td>${escapeHtml(p.owner)}</td>
+        <td>${fmtDate(p.modified)}</td>
+        <td class="td-section">
+          <select class="section-select" data-project="${escapeHtml(p.name)}">
+            <option value="">— без раздела —</option>
+            ${sectionNames.map(s => `<option value="${escapeHtml(s)}" ${p.section === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
+            <option value="${NEW_SECTION}">+ новый раздел…</option>
+          </select>
+        </td>
+        <td class="td-actions">
+          <div class="actions">
+          <button class="btn btn-sm" data-action="files" title="Файлы">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <button class="btn btn-sm" data-action="claude" title="Claude">CLAUDE</button>
+          <button class="btn btn-sm" data-action="vscode">VS Code →</button>
+          <button class="btn btn-sm" data-action="vscode-desktop" title="Открыть в десктопном VS Code (по SSH)">💻</button>
+          <button class="btn btn-sm" data-action="download" title="Скачать проект (.zip)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <button class="btn btn-sm" data-action="link" title="Открыть приложение">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button class="btn btn-sm" data-action="publish" title="Публикация">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13"/><path d="M5 9l7-7 7 7"/><path d="M5 22h14"/></svg>
+          </button>
+          <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+          </div>
+        </td>
+      </tr>`;
+
+    const groupHtml = (g) => {
+      let header = '';
+      if (g.name !== null) {
+        header = `
+          <tr class="section-header-row">
+            <td colspan="7">
+              <span class="section-header" data-section="${escapeHtml(g.name)}">${escapeHtml(g.name)}</span>
+              <button class="btn btn-sm section-rename" data-section="${escapeHtml(g.name)}" title="Переименовать раздел">✎</button>
+            </td>
+          </tr>`;
+      } else if (sectionNames.length) {
+        header = `
+          <tr class="section-header-row">
+            <td colspan="7"><span class="section-header section-header-muted">Без раздела</span></td>
+          </tr>`;
+      }
+      return header + g.items.map(rowHtml).join('');
+    };
 
     wrap.innerHTML = `
       <table class="projects-table">
@@ -725,46 +751,54 @@ async function refreshProjects() {
             <th class="th-name">Название</th>
             <th class="th-owner">Автор</th>
             <th class="th-date">Дата</th>
+            <th class="th-section">Раздел</th>
             <th class="th-actions">Действия</th>
           </tr>
         </thead>
         <tbody>
-          ${projects.map(p => `
-            <tr data-project="${escapeHtml(p.name)}" data-published="${p.published ? '1' : ''}" data-pub-url="${escapeHtml(p.publishUrl || '')}">
-              <td><span class="pill pill-type">ПРОЕКТ</span></td>
-              <td><span class="pill ${statusClass(p.status)}">${escapeHtml(p.status)}</span></td>
-              <td class="td-name">${escapeHtml(p.name)}</td>
-              <td>${escapeHtml(p.owner)}</td>
-              <td>${fmtDate(p.modified)}</td>
-              <td class="td-actions">
-                <div class="actions">
-                <button class="btn btn-sm" data-action="files" title="Файлы">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                </button>
-                <button class="btn btn-sm" data-action="claude" title="Claude">CLAUDE</button>
-                <button class="btn btn-sm" data-action="vscode">VS Code →</button>
-                <button class="btn btn-sm" data-action="vscode-desktop" title="Открыть в десктопном VS Code (по SSH)">💻</button>
-                <button class="btn btn-sm" data-action="download" title="Скачать проект (.zip)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                </button>
-                <button class="btn btn-sm" data-action="link" title="Открыть приложение">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                </button>
-                <button class="btn btn-sm" data-action="publish" title="Публикация">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13"/><path d="M5 9l7-7 7 7"/><path d="M5 22h14"/></svg>
-                </button>
-                <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
+          ${groups.map(groupHtml).join('')}
         </tbody>
       </table>
     `;
+    const setSection = async (name, section) => {
+      try {
+        await api('/api/projects/' + encodeURIComponent(name) + '/section', {
+          method: 'POST', body: { section },
+        });
+        refreshProjects();
+      } catch (e) { alert(e.message); refreshProjects(); }
+    };
+    $$('.section-select', wrap).forEach(sel => {
+      sel.onchange = () => {
+        const name = sel.dataset.project;
+        if (sel.value === NEW_SECTION) {
+          const title = prompt('Название нового раздела:');
+          if (title && title.trim()) setSection(name, title.trim());
+          else refreshProjects();
+          return;
+        }
+        setSection(name, sel.value || null);
+      };
+    });
+    $$('.section-rename', wrap).forEach(btn => {
+      btn.onclick = async () => {
+        const oldName = btn.dataset.section;
+        const title = prompt('Новое название раздела:', oldName);
+        if (!title || !title.trim() || title.trim() === oldName) return;
+        const members = projects.filter(p => p.section === oldName).map(p => p.name);
+        try {
+          await Promise.all(members.map(name =>
+            api('/api/projects/' + encodeURIComponent(name) + '/section', {
+              method: 'POST', body: { section: title.trim() },
+            })
+          ));
+        } catch (e) { alert(e.message); }
+        refreshProjects();
+      };
+    });
     $$('tbody tr', wrap).forEach(tr => {
       const name = tr.dataset.project;
+      if (!name) return;
       $('[data-action="files"]', tr).onclick = () => openExplorer(name);
       $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
       $('[data-action="vscode"]', tr).onclick = () =>

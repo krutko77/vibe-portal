@@ -44,6 +44,21 @@ export function writePublish(user, project, patch) {
   return meta.publish;
 }
 
+// Раздел проекта для группировки в таблице «Мои проекты» (см. server.js
+// /api/projects и /api/projects/:name/section). Свободное имя, не отдельный
+// реестр — переименование раздела = смена значения у всех его проектов.
+export function readSection(user, project) {
+  return readMeta(user, project).section || null;
+}
+
+export function writeSection(user, project, section) {
+  const meta = readMeta(user, project);
+  if (section) meta.section = section;
+  else delete meta.section;
+  writeMeta(user, project, meta);
+  return meta.section || null;
+}
+
 // Минимальный свободный порт >= 3001 среди опубликованных проектов ученика.
 export function allocatePort(user, project) {
   const ws = workspaceDir(user);

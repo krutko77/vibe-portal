@@ -66,53 +66,6 @@ body.app-bg {
 
 .navbar-spacer { flex: 1; }
 
-/* ── Navbar budget indicator ─────────────────────────────── */
-.navbar-budget {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-left: 6px;
-  flex-shrink: 0;
-  border: 1px solid hsl(var(--border));
-  border-radius: 6px;
-  padding: 4px 8px;
-  background: hsl(var(--secondary) / .5);
-}
-.nb-bar-wrap {
-  width: 52px; height: 5px;
-  background: hsl(var(--border));
-  border-radius: 3px;
-  overflow: hidden;
-}
-.nb-bar-fill {
-  height: 100%;
-  width: 0%;
-  border-radius: 3px;
-  background: hsl(142 70% 45%);
-  transition: width .4s, background .4s;
-}
-.nb-info {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
-  white-space: nowrap;
-  letter-spacing: .02em;
-}
-.nb-sessions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  border-left: 1px solid hsl(var(--border));
-  margin-left: 3px;
-  padding-left: 6px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  color: hsl(var(--muted-foreground));
-}
-/* ─────────────────────────────────────────────────────────── */
-
 /* Theme toggle + nav-icon — единая высота 30px как остальные navbar-кнопки */
 .theme-toggle, .nav-icon {
   width: 30px; height: 30px;
@@ -703,6 +656,29 @@ body.has-right-chat .vscode-recent {
 .pill.status-new { color: hsl(var(--muted-foreground)); }
 .pill.status-prod { color: #e89a3c; border-color: #e89a3c; }
 .pill.status-other { color: hsl(var(--primary)); border-color: hsl(var(--primary)); }
+
+.projects-table .th-section { min-width: 140px; }
+.projects-table .td-section { white-space: nowrap; }
+.section-select {
+  font-family: var(--font-mono); font-size: 10px;
+  background: hsl(var(--background)); color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border)); padding: 3px 6px; max-width: 150px;
+}
+.projects-table .section-header-row td {
+  padding: 8px 12px 4px; border-bottom: none;
+  background: transparent;
+}
+.projects-table tr.section-header-row:hover { background: transparent; }
+.section-header {
+  font-size: 11px; font-weight: 600; letter-spacing: .03em;
+  color: hsl(var(--foreground));
+}
+.section-header.section-header-muted { color: hsl(var(--muted-foreground)); font-weight: 500; }
+.section-rename {
+  margin-left: 6px; padding: 1px 6px; font-size: 10px;
+  color: hsl(var(--muted-foreground)); border-color: transparent; background: transparent;
+}
+.section-rename:hover { color: hsl(var(--foreground)); border-color: hsl(var(--border)); }
 
 /* ── Explorer (встаёт в центральную колонку, между чатами) ──── */
 .explorer-overlay {

@@ -40,7 +40,7 @@ import { leaderboard } from './lib/leaderboard.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
 import {
-  readPublish, writePublish, allocatePort, ensureRunning,
+  readPublish, writePublish, writeSection, allocatePort, ensureRunning,
   deployApp, stopApp, containerIp, appAlive,
 } from './lib/publish.js';
 import {
@@ -290,6 +290,14 @@ app.post('/api/projects/upload', requireAuth, projectUpload.array('files'), (req
 app.get('/api/projects', requireAuth, (req, res) => {
   const ws = workspaceDir(req.session.user);
   fs.mkdirSync(ws, { recursive: true });
+  // Реестр deploy-service (личные production-деплои admin'а на этом же хосте,
+  // ключ `<owner>::<папка>`) — присутствие ключа означает, что проект реально
+  // задеплоен (или это уже-жившая ДО сервиса production-точка, прописанная
+  // туда вручную) — см. CLAUDE.md § deploy-service.
+  let deployRegistry = {};
+  try {
+    deployRegistry = JSON.parse(fs.readFileSync('/etc/vibe-deploy/registry.json', 'utf8'));
+  } catch {}
   const projects = fs.readdirSync(ws, { withFileTypes: true })
     .filter(d => d.isDirectory() && !d.name.startsWith('.') && d.name !== '_vibe-setup')
     .map(d => {
@@ -304,16 +312,18 @@ app.get('/api/projects', requireAuth, (req, res) => {
           meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
         }
       } catch {}
+      const published = !!(meta.publish && meta.publish.enabled);
+      const deployedViaService = !!deployRegistry[`${req.session.user}::${d.name}`];
       return {
         name: d.name,
         created: st ? new Date(st.birthtimeMs || st.ctimeMs).toISOString() : null,
         modified: st ? new Date(st.mtimeMs).toISOString() : null,
         owner: req.session.user,
-        status: meta.status || 'НОВЫЙ',
+        status: meta.status || ((published || deployedViaService) ? 'РАБОЧИЙ' : 'НОВЫЙ'),
         siteUrl: meta.siteUrl || null,
-        published: !!(meta.publish && meta.publish.enabled),
-        publishUrl: (meta.publish && meta.publish.enabled)
-          ? `/${req.session.user}/${d.name}/` : null,
+        published,
+        publishUrl: published ? `/${req.session.user}/${d.name}/` : null,
+        section: meta.section || null,
       };
     });
   res.json({ projects });
@@ -709,6 +719,19 @@ app.post('/api/projects/:name/publish', requireAuth, async (req, res) => {
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
+});
+
+// Раздел проекта в таблице «Мои проекты» (группировка + переименование на клиенте).
+app.post('/api/projects/:name/section', requireAuth, (req, res) => {
+  const t = resolvePublishTarget(req);
+  if (!t) return res.status(404).json({ error: 'no such project' });
+  const { section } = req.body || {};
+  if (section != null && typeof section !== 'string') {
+    return res.status(400).json({ error: 'invalid section' });
+  }
+  const trimmed = section ? section.trim().slice(0, 60) : null;
+  const saved = writeSection(t.user, t.project, trimmed);
+  res.json({ ok: true, section: saved });
 });
 
 app.post('/api/projects/:name/redeploy', requireAuth, async (req, res) => {
