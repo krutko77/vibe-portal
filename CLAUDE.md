@@ -443,15 +443,34 @@ dev-portal):
 
 - Пуш в GitHub делается **только руками**, автоматизации нет (ни хука, ни
   таймера) — после коммита `git push origin master` нужно набирать самому.
-- Пуш **работает** (починен 2026-08-17): пользователь дал валидный PAT, он
-  записан в `/root/.git-credentials` (chmod 600, `credential.helper=store`).
-  До этого файл был пуст (0 байт) и запись не проходила — с 2026-07-21
-  накопилось 13 неотправленных коммитов, они запушены (`0be6139..96b8e5a`).
-  Токен в `/root/.config/gh/hosts.yml` (для `gh`) **по-прежнему невалиден**
-  (401) — это отдельная от git-креденшелов вещь, `gh api`/`gh pr` не
-  работают, пока не сделать интерактивный `gh auth login`.
+- Пуш **работает** (починен 2026-08-17, токен ротирован 2026-09-19):
+  валидный PAT записан в `/root/.git-credentials` (chmod 600,
+  `credential.helper=store`). До 2026-08-17 файл был пуст (0 байт) и запись
+  не проходила — с 2026-07-21 накопилось 13 неотправленных коммитов, они
+  запушены (`0be6139..96b8e5a`). Токен в `/root/.config/gh/hosts.yml` (для
+  `gh`) **по-прежнему невалиден** (401) — `gh api`/`gh pr` не работают, пока
+  не сделать интерактивный `gh auth login`.
+- **Ловушка, найденная 2026-09-19:** даже с валидным токеном в
+  `.git-credentials` push может продолжать падать с `Invalid username or
+  token. Password authentication is not supported` — если в `~/.gitconfig`
+  для `github.com` отдельно прописан `credential.https://github.com.helper`
+  (например, `!/usr/bin/gh auth git-credential`, обычно ставится при
+  `gh auth login`/`gh extension`). Такой url-специфичный helper **перебивает**
+  общий `credential.helper=store` именно для `github.com` — git спрашивает
+  токен у `gh` (а он невалиден, см. выше), не у `store`, сколько ни
+  переписывай `.git-credentials`. `git ls-remote`/`fetch` при этом всё равно
+  проходят без ошибок и маскируют проблему — репозиторий публичный, чтение
+  не требует авторизации вообще, только `push`. Диагностика: `git config
+  --global --list | grep credential` — если видишь
+  `credential.https://github.com.helper=...gh...`, это оно. Фикс: `git config
+  --global --unset-all 'credential.https://github.com.helper'` (оставляет
+  только общий `store`). Проверено на инциденте 2026-09-19: после ротации
+  токена push продолжал падать именно по этой причине, а не из-за самого
+  токена.
 - Если пуш вдруг снова стал спрашивать логин или вешаться — первым делом
-  `wc -c /root/.git-credentials` (пустой файл = токен снесли/истёк) и
+  `wc -c /root/.git-credentials` (пустой файл = токен снесли/истёк), затем
+  `git config --global --list | grep credential` (нет ли url-специфичного
+  override для `github.com`, см. выше) и
   `timeout 60 env GIT_TERMINAL_PROMPT=0 git push --dry-run origin master`
   (без `GIT_TERMINAL_PROMPT=0` push именно **висит**, а не падает: `GIT_ASKPASS`
   указывает на VS Code, которого в headless-сессии нет).
