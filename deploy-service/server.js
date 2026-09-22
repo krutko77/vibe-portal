@@ -250,7 +250,15 @@ async function handleDeploy(owner, project) {
   }
 
   fs.mkdirSync(e.deploy_dir, { recursive: true });
-  const excludes = ['node_modules', '.git', '.env', ...(e.exclude || [])];
+  // .env — часть конфигурации node-проекта (dotenv/config грузит его из cwd
+  // при старте), поэтому для type:"node" он синхронизируется как обычный
+  // файл проекта: воркспейс — единственный источник правды. Для type:"php"
+  // (легаси-сайты вроде a1track) .env по-прежнему не трогаем — там прод-
+  // секреты живут отдельно на сервере (env.php защищается через свой
+  // `exclude` в registry), а не в workspace.
+  const excludes = e.type === 'php'
+    ? ['node_modules', '.git', '.env', ...(e.exclude || [])]
+    : ['node_modules', '.git', ...(e.exclude || [])];
   await run('rsync', [
     '-a', '--delete',
     ...excludes.flatMap(x => ['--exclude', x]),
