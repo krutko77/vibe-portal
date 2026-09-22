@@ -21,18 +21,25 @@
     живой E2E с реальной отправкой письма сознательно не запускался —
     нужно попросить автора тикета пройти тест ещё раз и подтвердить, что
     письмо дошло
-  - **Не проверено, есть ли та же уязвимость у других `type:"node"`-записей
+  - **Не проверено, есть ли та же уязвимость у оставшихся `type:"node"`-записей
     `registry.json`** (`es-trans-orders`, `es-trans-repairs`,
-    `es-trans-results`, `krutko77-test-transport-logistics`,
-    `krutko77-es-trans-test-om`) — гитигноренные рантайм-папки, которые
+    `es-trans-results`) — гитигноренные рантайм-папки, которые
     `rsync --delete` может стереть при следующем их редеплое так же тихо,
-    как это случилось у `es-trans-standard` 22.09
+    как это случилось у `es-trans-standard` 22.09. `krutko77-test-transport-
+    logistics` и `krutko77-es-trans-test-om` уже защищены вторым тикетом
+    того же дня (`exclude: ["data"]` в `registry.json`, mkdir-гвард в
+    `results.js` подтверждён с обеих сторон обоих проектов)
   - Правки этой сессии сделаны вне git-репозитория vibe-portal:
-    `/etc/vibe-deploy/registry.json` (добавлен `exclude`),
-    `/opt/es-trans-standard/data/results/` (восстановлен каталог),
-    `results.js` в воркспейсе `krutko77` и в прод-копии `/opt/es-trans-standard`
-    (добавлен `mkdir`-гвард) — ни один из этих путей не под git этого репо,
-    в `docs/*` они задокументированы вручную
+    `/etc/vibe-deploy/registry.json` (добавлен `exclude` для трёх записей —
+    `es-trans_test_standard_MOO`, `es-trans_test_transport_logistics`,
+    `es-trans_test_GFD_MOO`), `/opt/es-trans-standard/data/results/`
+    (восстановлен каталог), `results.js` в воркспейсе `krutko77` и в
+    прод-копии `/opt/es-trans-standard` (добавлен `mkdir`-гвард) — ни один
+    из этих путей не под git этого репо, в `docs/*` они задокументированы
+    вручную. Устойчивость `exclude` к перезатиранию: `handleDeploy` пишет
+    `registry.json` только при первом деплое нового ключа (`firstRun`) —
+    для существующих ключей код его не трогает, риск только ручной правки
+    человеком
   - (Из прошлой сессии, не проверено вживую) Группировка проектов по
     разделам сделана и проверена серверно/синтаксически, но
     клика-проверки в браузере пользователем ещё не было
