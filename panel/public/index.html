@@ -2885,6 +2885,10 @@ EU-VPS (для прокси):
         <span class="form-hint" id="upload-info">node_modules и .git не загружаются — сделай npm install внутри VS Code.</span>
       </div>
       <div class="form-error hidden" id="upload-error"></div>
+      <div class="upload-progress hidden" id="upload-progress-wrap">
+        <div class="upload-progress-bar"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>
+        <span class="upload-progress-label" id="upload-progress-label">0%</span>
+      </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-upload">Отмена</button>
         <button class="btn btn-primary" id="upload-submit">Загрузить →</button>

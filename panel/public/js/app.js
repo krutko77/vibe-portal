@@ -1309,7 +1309,13 @@ async function doUploadProject() {
   }
   const btn = $('#upload-submit');
   const oldLabel = btn.textContent;
+  const wrap = $('#upload-progress-wrap');
+  const fill = $('#upload-progress-fill');
+  const label = $('#upload-progress-label');
   btn.disabled = true; btn.textContent = 'Загрузка…';
+  fill.style.width = '0%';
+  label.textContent = '0%';
+  wrap.classList.remove('hidden');
   try {
     const fd = new FormData();
     fd.append('name', name);
@@ -1318,9 +1324,27 @@ async function doUploadProject() {
       fd.append('files', f);
       fd.append('paths', f.webkitRelativePath || f.name);
     }
-    const r = await fetch('/api/projects/upload', { method: 'POST', credentials: 'same-origin', body: fd });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    // fetch не отдаёт событий прогресса загрузки тела запроса — только XHR даёт upload.onprogress.
+    const data = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/projects/upload');
+      xhr.withCredentials = true;
+      xhr.upload.onprogress = (ev) => {
+        if (!ev.lengthComputable) return;
+        const pct = Math.round((ev.loaded / ev.total) * 100);
+        fill.style.width = pct + '%';
+        label.textContent = pct + '%';
+      };
+      xhr.onload = () => {
+        let body = {};
+        try { body = JSON.parse(xhr.responseText); } catch { /* ignore */ }
+        if (xhr.status >= 200 && xhr.status < 300) resolve(body);
+        else reject(new Error(body.error || `HTTP ${xhr.status}`));
+      };
+      xhr.onerror = () => reject(new Error('Ошибка сети'));
+      xhr.send(fd);
+    });
+    void data;
     closeModal('modal-upload');
     refreshProjects();
   } catch (e) {
@@ -1328,6 +1352,7 @@ async function doUploadProject() {
     err.classList.remove('hidden');
   } finally {
     btn.disabled = false; btn.textContent = oldLabel;
+    wrap.classList.add('hidden');
   }
 }
 
@@ -1506,6 +1531,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#upload-name').value = '';
     $('#upload-folder').value = '';
     $('#upload-error').classList.add('hidden');
+    $('#upload-progress-wrap').classList.add('hidden');
     updateUploadInfo();
     openModal('modal-upload');
     setTimeout(() => $('#upload-name').focus(), 30);

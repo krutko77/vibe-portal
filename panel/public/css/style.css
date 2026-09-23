@@ -473,6 +473,34 @@ body.has-right-chat .vscode-recent {
   padding-top: 6px;
 }
 
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 18px 0;
+}
+.upload-progress.hidden { display: none; }
+.upload-progress-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: hsl(var(--border) / 0.5);
+  overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: hsl(var(--primary));
+  transition: width 0.15s ease;
+}
+.upload-progress-label {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+  min-width: 34px;
+  text-align: right;
+}
+
 .modal-footer {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 14px 18px !important;
