@@ -21,6 +21,13 @@
   <nav class="navbar">
     <a href="/" class="navbar-kg">WEBKRUTKO</a>
 
+    <button class="btn-vps hidden-when-no-auth admin-only" id="vpsDiskBtn" title="Диск сервера VPS РФ (Brainy Waxwing)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/>
+      </svg>
+      <span>VPS РФ</span>
+    </button>
+
     <span class="navbar-spacer"></span>
 
     <!-- Центральное меню (4 view-таб'а) -->
@@ -2660,6 +2667,77 @@ EU-VPS (для прокси):
       <div class="modal-footer">
         <button class="btn btn-ghost" id="ssh-regen">Перевыпустить ключ</button>
         <button class="btn btn-primary" data-close="modal-ssh">Готово</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Диск сервера VPS РФ (Brainy Waxwing) ─────────── -->
+  <div class="modal-overlay hidden" id="modal-vps-disk" role="dialog" aria-modal="true">
+    <div class="modal modal-vps" style="max-width:830px">
+      <div class="modal-header">
+        <span class="modal-title">Нагрузка сервера · VPS РФ</span>
+        <button class="modal-close" data-close="modal-vps-disk" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="disk-usage-bar"><div class="disk-usage-fill" id="vpsDiskFill"></div></div>
+        <div class="disk-usage-stats">
+          <div class="disk-usage-stat">
+            <strong id="vpsDiskUsed">—</strong>
+            <span>занято · <b id="vpsDiskPct">—</b></span>
+          </div>
+          <div class="disk-usage-stat">
+            <strong id="vpsDiskAvail">—</strong>
+            <span>свободно</span>
+          </div>
+          <div class="disk-usage-stat">
+            <strong id="vpsDiskTotal">—</strong>
+            <span>всего</span>
+          </div>
+        </div>
+        <div class="form-hint" style="margin-top:12px">
+          Brainy Waxwing (201.51.4.183). Данные — из Timeweb Cloud (как в их
+          дашборде), замер текущий при каждом открытии окна.
+        </div>
+
+        <div class="vps-metrics-range-wrap">
+          <select class="vps-metrics-range-select" id="vpsMetricsRange">
+            <option value="1h">За час</option>
+            <option value="6h">За 6 часов</option>
+            <option value="24h" selected>За день</option>
+            <option value="week">За неделю</option>
+          </select>
+        </div>
+
+        <div class="vps-metric-block">
+          <div class="vps-metric-header">
+            <span class="vps-metric-title">Нагрузка на процессор</span>
+            <span class="vps-metric-nums">сейчас <b id="vpsCpuNow">—</b> · среднее <b id="vpsCpuAvg">—</b> · макс <b id="vpsCpuMax">—</b></span>
+          </div>
+          <div class="vps-chart-wrap">
+            <svg class="vps-metric-chart cpu" id="vpsCpuChart" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+            <div class="vps-chart-tooltip hidden" id="vpsCpuTooltip"></div>
+          </div>
+        </div>
+
+        <div class="vps-metric-block">
+          <div class="vps-metric-header">
+            <span class="vps-metric-title">Оперативная память</span>
+            <span class="vps-metric-nums">сейчас <b id="vpsMemNow">—</b> · среднее <b id="vpsMemAvg">—</b> · макс <b id="vpsMemMax">—</b></span>
+          </div>
+          <div class="vps-metric-legend">
+            <span class="vps-legend-item"><i class="vps-legend-dot ram-used"></i>Использовано</span>
+            <span class="vps-legend-item"><i class="vps-legend-dot ram-cached"></i>Использовано с кэшем</span>
+          </div>
+          <div class="vps-chart-wrap">
+            <svg class="vps-metric-chart mem" id="vpsMemChart" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+            <div class="vps-chart-tooltip hidden" id="vpsMemTooltip"></div>
+          </div>
+        </div>
+
+        <div class="form-hint" id="vpsMetricsHint" style="margin-top:4px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-close="modal-vps-disk">Закрыть</button>
       </div>
     </div>
   </div>

@@ -100,6 +100,178 @@ function fmtDate(iso) {
   return d.toLocaleString('ru', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+function fmtBytesGb(bytes) {
+  return (bytes / (1024 ** 3)).toFixed(1) + ' ГБ';
+}
+
+// Отрисовка линейного/area-графика CPU/RAM (% за период), без внешних библиотек.
+// Поддерживает несколько серий на одном графике (RAM: «использовано» +
+// «использовано с кэшем») и hover-тултип с крестиком-прицелом, как на Timeweb.
+const VPS_CHART_NS = 'http://www.w3.org/2000/svg';
+const VPS_CHART_W = 600, VPS_CHART_H = 120, VPS_CHART_PAD = 6;
+
+function vpsChartX(i, n) {
+  return (i / (n - 1)) * VPS_CHART_W;
+}
+function vpsChartY(v) {
+  return VPS_CHART_H - VPS_CHART_PAD - (Math.max(0, Math.min(100, v)) / 100) * (VPS_CHART_H - 2 * VPS_CHART_PAD);
+}
+function vpsFmtAxisTime(ts, range) {
+  const d = new Date(ts);
+  return range === 'week'
+    ? d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
+    : d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+function vpsFmtTooltipTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString('ru-RU', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+}
+
+// series: [{ points, valueKey, lineClass, areaClass?, label, color }]
+// Первая серия в массиве рисуется снизу (фон), остальные — поверх.
+function renderVpsChart(svg, tooltipEl, series, range) {
+  svg.innerHTML = '';
+  svg.__vps = null;
+  const base = series[0] && series[0].points || [];
+  if (base.length < 2) {
+    const text = document.createElementNS(VPS_CHART_NS, 'text');
+    text.setAttribute('x', VPS_CHART_W / 2);
+    text.setAttribute('y', VPS_CHART_H / 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', 'vps-chart-empty');
+    text.textContent = 'нет данных за период';
+    svg.appendChild(text);
+    if (tooltipEl) tooltipEl.classList.add('hidden');
+    return;
+  }
+  const n = base.length;
+
+  [0, 50, 100].forEach(v => {
+    const line = document.createElementNS(VPS_CHART_NS, 'line');
+    line.setAttribute('x1', 0); line.setAttribute('x2', VPS_CHART_W);
+    line.setAttribute('y1', vpsChartY(v)); line.setAttribute('y2', vpsChartY(v));
+    line.setAttribute('class', 'vps-chart-grid');
+    svg.appendChild(line);
+  });
+
+  series.forEach(s => {
+    const path = s.points
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${vpsChartX(i, n).toFixed(1)},${vpsChartY(p[s.valueKey]).toFixed(1)}`)
+      .join(' ');
+    if (s.areaClass) {
+      const area = document.createElementNS(VPS_CHART_NS, 'path');
+      area.setAttribute('d', `${path} L ${VPS_CHART_W},${VPS_CHART_H} L 0,${VPS_CHART_H} Z`);
+      area.setAttribute('class', 'vps-chart-area ' + s.areaClass);
+      svg.appendChild(area);
+    }
+    const line = document.createElementNS(VPS_CHART_NS, 'path');
+    line.setAttribute('d', path);
+    line.setAttribute('class', 'vps-chart-line ' + s.lineClass);
+    svg.appendChild(line);
+  });
+
+  const first = document.createElementNS(VPS_CHART_NS, 'text');
+  first.setAttribute('x', 2); first.setAttribute('y', VPS_CHART_H - 2);
+  first.setAttribute('class', 'vps-chart-axis-label');
+  first.textContent = vpsFmtAxisTime(base[0].t, range);
+  svg.appendChild(first);
+
+  const last = document.createElementNS(VPS_CHART_NS, 'text');
+  last.setAttribute('x', VPS_CHART_W - 2); last.setAttribute('y', VPS_CHART_H - 2);
+  last.setAttribute('text-anchor', 'end');
+  last.setAttribute('class', 'vps-chart-axis-label');
+  last.textContent = vpsFmtAxisTime(base[base.length - 1].t, range);
+  svg.appendChild(last);
+
+  if (!tooltipEl) return;
+
+  const crosshair = document.createElementNS(VPS_CHART_NS, 'line');
+  crosshair.setAttribute('y1', 0); crosshair.setAttribute('y2', VPS_CHART_H);
+  crosshair.setAttribute('class', 'vps-chart-crosshair hidden');
+  svg.appendChild(crosshair);
+
+  const dots = series.map(s => {
+    const dot = document.createElementNS(VPS_CHART_NS, 'circle');
+    dot.setAttribute('r', 3);
+    dot.setAttribute('class', 'vps-chart-dot hidden');
+    dot.style.fill = s.color;
+    svg.appendChild(dot);
+    return dot;
+  });
+
+  svg.__vps = { series, n, crosshair, dots, tooltipEl, range };
+  svg.onmousemove = vpsHandleHover;
+  svg.onmouseleave = vpsHideHover;
+}
+
+function vpsHandleHover(ev) {
+  const svg = ev.currentTarget;
+  const ctx = svg.__vps;
+  if (!ctx) return;
+  const rect = svg.getBoundingClientRect();
+  const relX = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+  const idx = Math.round(relX * (ctx.n - 1));
+  const x = vpsChartX(idx, ctx.n);
+
+  ctx.crosshair.setAttribute('x1', x); ctx.crosshair.setAttribute('x2', x);
+  ctx.crosshair.classList.remove('hidden');
+
+  const rows = [];
+  ctx.series.forEach((s, i) => {
+    const v = s.points[idx][s.valueKey];
+    ctx.dots[i].setAttribute('cx', x);
+    ctx.dots[i].setAttribute('cy', vpsChartY(v));
+    ctx.dots[i].classList.remove('hidden');
+    rows.push(`<div class="vps-tooltip-row"><i style="background:${s.color}"></i>${s.label}: <b>${v}%</b></div>`);
+  });
+
+  ctx.tooltipEl.innerHTML = `<div class="vps-tooltip-time">${vpsFmtTooltipTime(ctx.series[0].points[idx].t)}</div>` + rows.join('');
+  ctx.tooltipEl.classList.remove('hidden');
+
+  const left = (x / VPS_CHART_W) * rect.width;
+  const clamped = Math.max(50, Math.min(rect.width - 50, left));
+  ctx.tooltipEl.style.left = clamped + 'px';
+}
+
+function vpsHideHover(ev) {
+  const ctx = ev.currentTarget.__vps;
+  if (!ctx) return;
+  ctx.crosshair.classList.add('hidden');
+  ctx.dots.forEach(d => d.classList.add('hidden'));
+  ctx.tooltipEl.classList.add('hidden');
+}
+
+let vpsMetricsRange = '24h';
+
+async function loadVpsMetrics(range) {
+  vpsMetricsRange = range;
+  const sel = $('#vpsMetricsRange');
+  if (sel) sel.value = range;
+  $('#vpsMetricsHint').textContent = '';
+  try {
+    const { cpu, mem } = await api('/api/vps-metrics?range=' + range);
+    $('#vpsCpuNow').textContent = cpu.now + '%';
+    $('#vpsCpuAvg').textContent = cpu.avg + '%';
+    $('#vpsCpuMax').textContent = cpu.max + '%';
+    $('#vpsMemNow').textContent = mem.now + '%';
+    $('#vpsMemAvg').textContent = mem.avg + '%';
+    $('#vpsMemMax').textContent = mem.max + '%';
+
+    renderVpsChart($('#vpsCpuChart'), $('#vpsCpuTooltip'), [
+      { points: cpu.points, valueKey: 'v', lineClass: 'cpu-line', areaClass: 'cpu-area', label: 'CPU', color: 'hsl(217,91%,60%)' },
+    ], range);
+
+    renderVpsChart($('#vpsMemChart'), $('#vpsMemTooltip'), [
+      { points: mem.points, valueKey: 'vCached', lineClass: 'ram-cached-line', areaClass: 'ram-cached-area', label: 'Использовано с кэшем', color: 'hsl(160,60%,45%)' },
+      { points: mem.points, valueKey: 'v', lineClass: 'ram-used-line', areaClass: null, label: 'Использовано', color: 'hsl(280,75%,65%)' },
+    ], range);
+  } catch (e) {
+    $('#vpsMetricsHint').textContent = 'Не удалось загрузить нагрузку: ' + e.message;
+    renderVpsChart($('#vpsCpuChart'), $('#vpsCpuTooltip'), [{ points: [], valueKey: 'v' }], range);
+    renderVpsChart($('#vpsMemChart'), $('#vpsMemTooltip'), [{ points: [], valueKey: 'v' }], range);
+  }
+}
+
 // ── Кастомный select (вместо системного, в нашей теме) ─────
 // Прогрессивное улучшение: прячем нативный <select>, строим дропдаун в дизайне
 // портала и синхронизируем через события 'change' (внешний код читает .value
@@ -1303,6 +1475,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('#settings-close').onclick = () => {
     $('#settings-panel').classList.remove('open');
   };
+
+  // VPS РФ — диск сервера (Brainy Waxwing)
+  $('#vpsDiskBtn').onclick = async () => {
+    openModal('modal-vps-disk');
+    $('#vpsDiskFill').style.width = '0%';
+    $('#vpsDiskUsed').textContent = '…';
+    $('#vpsDiskAvail').textContent = '…';
+    $('#vpsDiskTotal').textContent = '…';
+    $('#vpsDiskPct').textContent = '…';
+    try {
+      const { total, used, avail, percent } = await api('/api/vps-disk');
+      const fill = $('#vpsDiskFill');
+      fill.style.width = percent + '%';
+      fill.classList.toggle('warn', percent >= 80 && percent < 90);
+      fill.classList.toggle('danger', percent >= 90);
+      $('#vpsDiskUsed').textContent = fmtBytesGb(used);
+      $('#vpsDiskAvail').textContent = fmtBytesGb(avail);
+      $('#vpsDiskTotal').textContent = fmtBytesGb(total);
+      $('#vpsDiskPct').textContent = percent + '%';
+    } catch (e) {
+      $('#vpsDiskUsed').textContent = 'ошибка';
+      $('#vpsDiskPct').textContent = e.message;
+    }
+    loadVpsMetrics(vpsMetricsRange);
+  };
+  $('#vpsMetricsRange').onchange = (e) => loadVpsMetrics(e.target.value);
 
   // Add user
   $('#btn-add-user').onclick = () => {

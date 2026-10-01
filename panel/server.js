@@ -15,6 +15,8 @@
 //   POST   /api/students        (admin) { username, password, role }
 //   POST   /api/students/:u/password (admin) { password } — смена пароля ученика
 //   DELETE /api/students/:u     (admin)
+//   GET    /api/vps-disk        (admin) статистика диска этого VPS (Timeweb Cloud API)
+//   GET    /api/vps-metrics     (admin) история CPU/RAM этого VPS (Timeweb Cloud API)
 //   /code/<user>/*              прокси в контейнер ученика (auth-gate на сессию)
 
 import express from 'express';
@@ -39,6 +41,7 @@ import { homeDirFor } from './lib/home-dir.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
 import { writeSection, containerIp } from './lib/publish.js';
+import { getVpsMetrics, getVpsDisk } from './lib/vps-metrics.js';
 import {
   allocateSlot, touchSlot, releaseSlot, ensureCodeInstance, portForSlot,
 } from './lib/code-slots.js';
@@ -790,6 +793,27 @@ app.get('/api/transcripts/:u', requireAdmin, (req, res) => {
     res.json(readTranscriptUser(u, req.query.date));
   } catch (e) {
     res.status(400).json({ error: e.message });
+  }
+});
+
+// ---------- VPS РФ (Brainy Waxwing): диск этого же сервера ----------
+// Источник — Timeweb Cloud API (те же цифры, что в их дашборде), не локальный
+// statfs(/): у root-раздела он меньше полного диска на размер EFI/boot-партиций.
+
+app.get('/api/vps-disk', requireAdmin, async (req, res) => {
+  try {
+    res.json(await getVpsDisk());
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+app.get('/api/vps-metrics', requireAdmin, async (req, res) => {
+  const range = ['1h', '6h', '24h', 'week'].includes(req.query.range) ? req.query.range : '24h';
+  try {
+    res.json(await getVpsMetrics(range));
+  } catch (e) {
+    res.status(502).json({ error: e.message });
   }
 });
 
