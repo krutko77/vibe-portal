@@ -7,7 +7,6 @@ import {
   loadUsers, saveUsers,
   htpasswdSet, htpasswdDelete,
 } from './auth.js';
-import { hasKeepAlive } from './publish.js';
 import { ensureKeys, removeKeys, sshMountDir } from './ssh-access.js';
 import { homeDirFor } from './home-dir.js';
 import { spawnSync, execFile } from 'node:child_process';
@@ -367,22 +366,6 @@ export function touchActivity(username) {
   saveUsers(state);
 }
 
-// Учёт заходов (для дашборда/рейтинга). Инкремент при каждом успешном логине.
-// Бэкфилла нет — счётчик растёт с момента внедрения, как и аудит диалогов.
-export function recordLogin(username) {
-  const state = loadUsers();
-  if (!state.users[username]) return;
-  const u = state.users[username];
-  u.loginCount = (u.loginCount || 0) + 1;
-  u.lastLoginAt = new Date().toISOString();
-  // Посуточный счётчик заходов — для дневного рейтинга на дашборде. Бэкфилла нет,
-  // растёт с момента внедрения. День в UTC — как у транскриптов/leaderboard.
-  const day = new Date().toISOString().slice(0, 10);
-  u.dailyLogins = u.dailyLogins || {};
-  u.dailyLogins[day] = (u.dailyLogins[day] || 0) + 1;
-  saveUsers(state);
-}
-
 // Бэкграунд-задача: останавливаем idle > IDLE_STOP_MIN минут
 const IDLE_STOP_MIN = parseInt(process.env.IDLE_STOP_MIN || '30', 10);
 
@@ -403,7 +386,6 @@ export async function reapIdleContainers() {
   for (const [username, u] of Object.entries(state.users)) {
     const last = u.lastActivityAt ? Date.parse(u.lastActivityAt) : 0;
     if (now - last < IDLE_STOP_MIN * 60 * 1000) continue;
-    if (hasKeepAlive(username)) continue; // опубликовано с autosleep=off — не усыпляем
     // Живая SSH-сессия (десктопный VS Code) = активность: не усыпляем, обновляем метку.
     if (hasActiveSsh(u.sshPort)) {
       u.lastActivityAt = new Date().toISOString();

@@ -166,8 +166,7 @@ function renderAuth() {
   $('#main-layout').classList.toggle('hidden', !isAuth);
   if (isAuth) {
     $('#authUsername').textContent = ME.username + (ME.isAdmin ? ' (admin)' : '');
-    if (ME.homeDir) $('#vscodeHeroPath').textContent = ME.homeDir + '/';
-    setActiveView(localStorage.getItem('vibe.view') || 'vscode');
+    setActiveView(localStorage.getItem('vibe.view') || 'projects');
     refreshAll();
   }
 }
@@ -512,13 +511,12 @@ function renderCourseContent() {
 
 // ── View tab switcher (VS CODE / Проекты / Курс / Материалы) ──
 function setActiveView(view) {
-  const allowed = ['vscode', 'projects', 'kb', 'myvibe', 'claude-pay'];
-  if (!allowed.includes(view)) view = 'vscode';
+  const allowed = ['projects', 'kb', 'myvibe', 'claude-pay'];
+  if (!allowed.includes(view)) view = 'projects';
   localStorage.setItem('vibe.view', view);
   $$('.btn-nav').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   $$('.view').forEach(s => s.classList.toggle('hidden', s.dataset.view !== view));
   // подгрузка контента view-зависимо
-  if (view === 'vscode') refreshRecentProjects();
   if (view === 'kb') window.renderKb && window.renderKb();
 }
 
@@ -537,47 +535,8 @@ async function refreshContainerStatus() {
   try {
     const me = await api('/api/me');
     ME = { ...ME, ...me };
-    const toggle = $('#containerToggleBtn');
-    const open = $('#openCodeBtn');
-    open.dataset.user = me.username;
-    open.dataset.running = me.container?.running ? '1' : '0';
-    if (!me.containerPort) {
-      toggle.classList.remove('running');
-      toggle.classList.add('disabled');
-      $('.nav-btn-container-label', toggle).textContent = 'Не создан';
-      $('#containerTimerLabel').textContent = '';
-      toggle.title = 'Контейнер не создан — обратись к админу';
-    } else if (me.container?.running) {
-      toggle.classList.add('running');
-      toggle.classList.remove('disabled');
-      $('.nav-btn-container-label', toggle).textContent = 'Вкл';
-      toggle.title = `Запущен ${fmtDate(me.container.startedAt)} · клик → остановить`;
-    } else {
-      toggle.classList.remove('running', 'disabled');
-      $('.nav-btn-container-label', toggle).textContent = 'Выкл';
-      $('#containerTimerLabel').textContent = '';
-      toggle.title = 'Контейнер остановлен · клик → запустить';
-    }
-    updateContainerTimer();
   } catch {}
 }
-
-// Обновление лейбла «осталось мин:сек до автозакрытия» (idle reaper)
-function updateContainerTimer() {
-  if (!ME?.container?.running || !ME?.lastActivityAt || !ME?.idleStopMinutes) {
-    $('#containerTimerLabel').textContent = '';
-    return;
-  }
-  const last = Date.parse(ME.lastActivityAt);
-  const deadline = last + ME.idleStopMinutes * 60 * 1000;
-  const ms = deadline - Date.now();
-  if (ms <= 0) { $('#containerTimerLabel').textContent = '0:00'; return; }
-  const total = Math.floor(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  $('#containerTimerLabel').textContent = m + ':' + String(s).padStart(2, '0');
-}
-setInterval(updateContainerTimer, 1000);
 
 // Открыть VS Code: если контейнер не running — показать модалку, запустить,
 // дождаться, потом открыть в новой вкладке. Это убирает «открылось но недоступно».
@@ -616,51 +575,6 @@ async function openVsCodeFor(username, folder = null) {
 
 // ── Projects / templates ───────────────────────────────────
 
-// «Недавние проекты» в VS CODE view — 3 самых свежих по mtime
-async function refreshRecentProjects() {
-  if (!ME?.username) return;
-  try {
-    const { projects } = await api('/api/projects');
-    projects.sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
-    const top = projects.slice(0, 3);
-    const recentCount = $('#vscodeRecentCount');
-    recentCount.textContent = projects.length + ' всего →';
-    recentCount.style.cursor = 'pointer';
-    recentCount.onclick = () => setActiveView('projects');
-    const wrap = $('#vscodeRecentList');
-    if (!top.length) {
-      wrap.innerHTML = '<div class="empty">пока нет проектов — открой таб «Проекты» чтобы создать</div>';
-      return;
-    }
-    const folderInVs = (n) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent(ME.homeDir + '/' + n)}`;
-    wrap.innerHTML = `
-      <table class="projects-table">
-        <thead><tr><th class="th-name">Название</th><th class="th-date">Изменён</th><th class="th-actions">Действия</th></tr></thead>
-        <tbody>
-          ${top.map(p => `
-            <tr data-project="${escapeHtml(p.name)}">
-              <td class="td-name">${escapeHtml(p.name)}</td>
-              <td>${fmtDate(p.modified)}</td>
-              <td class="td-actions">
-                <div class="actions">
-                <button class="btn btn-sm" data-action="files">📁</button>
-                <button class="btn btn-sm" data-action="claude">CLAUDE</button>
-                <a class="btn btn-sm" target="_blank" href="${folderInVs(p.name)}">VS Code →</a>
-                </div>
-              </td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-    $$('tbody tr', wrap).forEach(tr => {
-      const name = tr.dataset.project;
-      $('[data-action="files"]', tr).onclick = () => openExplorer(name);
-      $('[data-action="claude"]', tr).onclick = () => openProjectChat(name);
-    });
-  } catch {}
-}
-
 async function refreshProjects() {
   try {
     const { projects } = await api('/api/projects');
@@ -686,7 +600,7 @@ async function refreshProjects() {
     if (rest.length) groups.push({ name: null, items: rest });
 
     const rowHtml = (p) => `
-      <tr data-project="${escapeHtml(p.name)}" data-published="${p.published ? '1' : ''}" data-pub-url="${escapeHtml(p.publishUrl || '')}">
+      <tr data-project="${escapeHtml(p.name)}">
         <td><span class="pill pill-type">ПРОЕКТ</span></td>
         <td><span class="pill ${statusClass(p.status)}">${escapeHtml(p.status)}</span></td>
         <td class="td-name">${escapeHtml(p.name)}</td>
@@ -709,12 +623,6 @@ async function refreshProjects() {
           <button class="btn btn-sm" data-action="vscode-desktop" title="Открыть в десктопном VS Code (по SSH)">💻</button>
           <button class="btn btn-sm" data-action="download" title="Скачать проект (.zip)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </button>
-          <button class="btn btn-sm" data-action="link" title="Открыть приложение">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-          <button class="btn btn-sm" data-action="publish" title="Публикация">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13"/><path d="M5 9l7-7 7 7"/><path d="M5 22h14"/></svg>
           </button>
           <button class="btn btn-sm btn-danger" data-action="delete" title="Удалить">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
@@ -807,11 +715,6 @@ async function refreshProjects() {
       $('[data-action="download"]', tr).onclick = () => {
         window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
       };
-      $('[data-action="link"]', tr).onclick = () => {
-        if (tr.dataset.published && tr.dataset.pubUrl) window.open(tr.dataset.pubUrl, '_blank');
-        else openPublishModal(name);
-      };
-      $('[data-action="publish"]', tr).onclick = () => openPublishModal(name);
       $('[data-action="delete"]', tr).onclick = async () => {
         if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
         try {
@@ -823,84 +726,6 @@ async function refreshProjects() {
   } catch {}
 }
 
-// ── Publish modal ──────────────────────────────────────────
-
-let PUB_PROJECT = null;
-
-async function openPublishModal(name) {
-  PUB_PROJECT = name;
-  $('#pub-project').textContent = name;
-  $('#pub-error').classList.add('hidden');
-  openModal('modal-publish');
-  try {
-    const s = await api('/api/projects/' + encodeURIComponent(name) + '/publish');
-    $('#pub-enabled').checked = s.enabled;
-    $('#pub-visibility').value = s.visibility || 'owner';
-    $('#pub-visibility').dispatchEvent(new Event('change')); // обновить кастомный дропдаун
-    $('#pub-autosleep').checked = s.autosleep !== false;
-    renderPubUrl(s);
-  } catch (e) { showPubError(e.message); }
-}
-
-function renderPubUrl(s) {
-  const box = $('#pub-url-box');
-  if (s.enabled && s.url) {
-    box.classList.remove('hidden');
-    $('#pub-url').textContent = location.origin + s.url;
-    $('#pub-open').href = s.url;
-    $('#pub-status').textContent = s.running ? '● запущено · порт ' + s.port : '○ спит (поднимется при заходе)';
-  } else {
-    box.classList.add('hidden');
-    $('#pub-status').textContent = '';
-  }
-}
-
-function showPubError(m) { const e = $('#pub-error'); e.textContent = m; e.classList.remove('hidden'); }
-
-async function savePublish() {
-  if (!PUB_PROJECT) return;
-  $('#pub-error').classList.add('hidden');
-  try {
-    const body = {
-      enabled: $('#pub-enabled').checked,
-      visibility: $('#pub-visibility').value,
-      autosleep: $('#pub-autosleep').checked,
-    };
-    await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish', { method: 'POST', body });
-    const s = await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish');
-    renderPubUrl(s);
-    refreshProjects();
-  } catch (e) { showPubError(e.message); }
-}
-
-async function redeployPublish() {
-  if (!PUB_PROJECT) return;
-  $('#pub-error').classList.add('hidden');
-  if (!$('#pub-enabled').checked) {
-    showPubError('Сначала включи «Опубликовать приложение», потом жми «Деплой».');
-    return;
-  }
-  const btn = $('#pub-redeploy');
-  const prev = btn.textContent;
-  btn.disabled = true; btn.textContent = 'Деплой…';
-  try {
-    // 1) сохранить текущие настройки (включит публикацию и поднимет приложение)
-    await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish', {
-      method: 'POST',
-      body: {
-        enabled: true,
-        visibility: $('#pub-visibility').value,
-        autosleep: $('#pub-autosleep').checked,
-      },
-    });
-    // 2) форс-рестарт под свежий код
-    await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/redeploy', { method: 'POST' });
-    const s = await api('/api/projects/' + encodeURIComponent(PUB_PROJECT) + '/publish');
-    renderPubUrl(s);
-    refreshProjects();
-  } catch (e) { showPubError(e.message); }
-  finally { btn.disabled = false; btn.textContent = prev; }
-}
 
 // ── File explorer ──────────────────────────────────────────
 
@@ -1470,24 +1295,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderAuth();
   };
 
-  // Container toggle (вкл/выкл)
-  $('#containerToggleBtn').onclick = async () => {
-    const btn = $('#containerToggleBtn');
-    if (btn.classList.contains('disabled')) return;
-    const running = btn.classList.contains('running');
-    const label = $('.nav-btn-container-label', btn);
-    label.textContent = running ? 'остановка…' : 'запуск…';
-    try {
-      await api(running ? '/api/container/stop' : '/api/container/start', { method: 'POST' });
-      // дать docker 1-2 сек чтобы статус успел переключиться
-      await new Promise(r => setTimeout(r, 800));
-      refreshContainerStatus();
-    } catch (e) {
-      alert(e.message);
-      refreshContainerStatus();
-    }
-  };
-
   // Settings panel toggle
   $('#settingsBtn').onclick = () => {
     $('#settings-panel').classList.toggle('open');
@@ -1571,12 +1378,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const b = e.currentTarget, t = b.textContent;
     b.textContent = '✓ Скопировано'; setTimeout(() => { b.textContent = t; }, 1200);
   });
-  // Publish modal
-  $('#pub-save').onclick = savePublish;
-  $('#pub-redeploy').onclick = redeployPublish;
-  $('#pub-copy').onclick = () => {
-    navigator.clipboard?.writeText($('#pub-url').textContent).catch(() => {});
-  };
   // Кастомные дропдауны вместо системных <select> (вся всплывающая часть UI)
   enhanceAllSelects();
   $('#create-name').addEventListener('keydown', (e) => {
@@ -1592,15 +1393,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Tab switcher (view-таб'ы в centre)
   $$('.btn-nav').forEach(b => {
-    b.onclick = () => setActiveView(b.dataset.view);
+    b.onclick = () => { closeExplorer(); setActiveView(b.dataset.view); };
   });
   // (подвкладки «Материалов» заменены сайдбаром хаба «База знаний» — см. kb.js)
-
-  // Open VS Code button (на VS CODE view)
-  $('#openCodeBtn').onclick = () => {
-    if (!ME) return;
-    openVsCodeFor(ME.username);
-  };
 
   // Project chat (left pane)
   $('#btn-close-left').onclick = pcCloseLeft;

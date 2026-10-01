@@ -5,6 +5,13 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Скругление рамок 3px по умолчанию (как на Dev Portal). Нулевая
+   специфичность :where() — любое точечное border-radius (50% у точек/
+   спиннера и т.п.) ниже по файлу всё равно выигрывает. */
+:where(button, input, select, textarea, [class]) {
+  border-radius: var(--radius);
+}
+
 html { height: 100%; }
 
 body {
@@ -209,11 +216,7 @@ body:not(.is-admin) .admin-only { display: none !important; }
 /* При открытом боковом чате рабочая область сужается: убираем авто-центрирование
    колонок (левый отступ уходит) и тянем контент на всю доступную ширину. */
 body.has-left-chat .section-block,
-body.has-right-chat .section-block,
-body.has-left-chat .vscode-hero,
-body.has-right-chat .vscode-hero,
-body.has-left-chat .vscode-recent,
-body.has-right-chat .vscode-recent {
+body.has-right-chat .section-block {
   max-width: none;
   margin-left: 0;
   margin-right: 0;
@@ -222,9 +225,7 @@ body.has-right-chat .vscode-recent {
 /* Узкий экран: не центрируем рабочие блоки на 972px (иначе большой «отступ слева») —
    тянем на всю ширину рабочей области (остаются только паддинги .dashboard). */
 @media (max-width: 1300px) {
-  .section-block,
-  .vscode-hero,
-  .vscode-recent {
+  .section-block {
     max-width: none;
     margin-left: 0;
     margin-right: 0;
@@ -398,9 +399,6 @@ body.has-right-chat .vscode-recent {
 .modal > .modal-footer { padding: 0 18px; }
 .modal > .form-group { padding-top: 14px; }
 .modal > .form-row   { padding-top: 14px; }
-.modal > .pub-row,
-.modal > .pub-url-box,
-.modal > .pub-status { padding-left: 18px; padding-right: 18px; }
 
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-row { display: flex; align-items: flex-end; gap: 8px; }
@@ -1292,91 +1290,6 @@ body.has-right-chat .nav-btn-claude {
   .template-cards { grid-template-columns: 1fr; }
 }
 
-/* ── Navbar: container toggle + open-vscode ───────────────── */
-.nav-btn-container {
-  display: inline-flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 2px;
-  height: 30px; padding: 2px 10px;
-  background: transparent;
-  border: 1px solid hsl(var(--border));
-  color: hsl(var(--muted-foreground));
-  font-family: var(--font-mono);
-  line-height: 1;
-  cursor: pointer;
-  transition: background .15s, color .15s, border-color .15s;
-}
-.nav-btn-container:hover { border-color: hsl(var(--smui-border-hover)); }
-.nav-btn-container-top {
-  display: inline-flex; gap: 5px; align-items: center;
-  font-size: 10px; font-weight: 600;
-  letter-spacing: .03em;
-}
-.nav-btn-container-sub {
-  font-size: 8px; font-weight: 500;
-  letter-spacing: .05em;
-  opacity: .75;
-  font-variant-numeric: tabular-nums;
-  min-height: 9px;
-}
-.nav-btn-container-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: hsl(var(--muted-foreground));
-  flex-shrink: 0;
-}
-/* Running = зелёный */
-.nav-btn-container.running {
-  background: hsl(var(--smui-green) / 0.18);
-  border-color: hsl(var(--smui-green) / 0.55);
-  color: hsl(var(--smui-green));
-}
-.nav-btn-container.running .nav-btn-container-dot { background: hsl(var(--smui-green)); }
-.nav-btn-container.running:hover {
-  background: hsl(var(--smui-green) / 0.28);
-  border-color: hsl(var(--smui-green));
-}
-/* Stopped = красный */
-.nav-btn-container:not(.running):not(.disabled) {
-  background: hsl(var(--smui-red) / 0.15);
-  border-color: hsl(var(--smui-red) / 0.5);
-  color: hsl(var(--smui-red));
-}
-.nav-btn-container:not(.running):not(.disabled) .nav-btn-container-dot {
-  background: hsl(var(--smui-red));
-}
-.nav-btn-container:not(.running):not(.disabled):hover {
-  background: hsl(var(--smui-red) / 0.25);
-  border-color: hsl(var(--smui-red));
-}
-/* Disabled = серый (контейнер не создан) */
-.nav-btn-container.disabled {
-  opacity: .55;
-  cursor: not-allowed;
-}
-
-/* Open VS Code — серый фон как у логотипа KG, две строки как у auth-group */
-.nav-btn-vscode {
-  display: inline-flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 2px;
-  height: 30px; padding: 2px 10px;
-  background: hsl(var(--foreground) / 0.65);
-  color: hsl(var(--background));
-  border: none;
-  font-family: var(--font-mono);
-  line-height: 1;
-  cursor: pointer;
-  transition: opacity .15s;
-  white-space: nowrap;
-}
-.nav-btn-vscode:hover { opacity: .85; }
-.nav-btn-vscode-top { font-size: 10px; font-weight: 600; letter-spacing: .03em; }
-.nav-btn-vscode-sub {
-  font-size: 8px; font-weight: 500;
-  letter-spacing: .08em; text-transform: uppercase;
-  opacity: .85;
-}
-
 /* ── Navbar center (4 view-tab'а) ─────────────────────────── */
 .navbar-center {
   display: flex; gap: 4px; align-items: center;
@@ -1412,40 +1325,6 @@ body.has-right-chat .nav-btn-claude {
 /* ── view-обёртки ─────────────────────────────────────────── */
 .view { display: block; }
 .view.hidden { display: none !important; }
-
-/* ── VS CODE view: hero-bar в одну строку + недавние проекты ── */
-.vscode-hero {
-  display: grid; grid-template-columns: 1fr auto auto;
-  gap: 16px; align-items: center;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  padding: 22px 24px;
-  margin-bottom: 24px;
-  max-width: 972px; margin-left: auto; margin-right: auto;
-}
-.vscode-hero-label {
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: .08em; text-transform: uppercase;
-  color: hsl(var(--muted-foreground));
-}
-.vscode-hero-path {
-  font-family: var(--font-mono); font-size: 16px; font-weight: 600;
-  color: hsl(var(--foreground));
-  margin-top: 4px;
-}
-.vscode-hero-mid .nav-btn-container {
-  height: 44px; padding: 4px 14px;
-}
-.vscode-hero-mid .nav-btn-container-top { font-size: 11px; }
-.vscode-hero-mid .nav-btn-container-sub { font-size: 9px; }
-.vscode-hero-right .nav-btn-vscode {
-  height: 44px; padding: 4px 18px;
-}
-.vscode-hero-right .nav-btn-vscode-top { font-size: 13px; }
-.vscode-hero-right .nav-btn-vscode-sub { font-size: 9px; }
-.vscode-recent {
-  max-width: 972px; margin-left: auto; margin-right: auto;
-}
 
 /* ── COURSE view ──────────────────────────────────────────── */
 .course-head { max-width: 760px; margin: 0 auto 28px; }
@@ -1841,10 +1720,6 @@ body.has-right-chat .nav-btn-claude {
   color: hsl(var(--muted-foreground));
 }
 
-@media (max-width: 800px) {
-  .vscode-hero { grid-template-columns: 1fr; gap: 12px; }
-}
-
 /* ── COURSE: двухколоночный layout ─────────────────────── */
 .course-layout {
   display: grid;
@@ -2225,7 +2100,7 @@ html:not(.dark) .course-placeholder-desc a:hover {
 }
 .dl-card {
   border: 1px solid hsl(var(--border));
-  border-radius: 12px;
+  border-radius: 3px;
   background: hsl(var(--card));
   padding: 18px;
   display: flex;
@@ -2266,18 +2141,6 @@ html:not(.dark) .course-placeholder-desc a:hover {
 }
 .dl-btn-sec:hover { color: hsl(var(--foreground)); border-color: hsl(var(--foreground) / .4); }
 
-/* ── Публикация приложений ─────────────────────────────────── */
-.pub-row { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; font-size: 13px; cursor: pointer; }
-.pub-row input { margin-top: 2px; }
-.pub-url-box {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  background: hsl(var(--accent) / .4); border: 1px solid hsl(var(--border));
-  border-radius: 6px; padding: 8px 10px; margin: 10px 0;
-}
-.pub-url { font-family: var(--font-mono); font-size: 12px; color: hsl(var(--foreground)); word-break: break-all; flex: 1; }
-.pub-status { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); margin: 6px 0; }
-
-
 /* ── Кнопки в футере модалок — одного размера ──────────────── */
 .modal-footer .btn { min-width: 96px; }
 
@@ -2300,7 +2163,7 @@ html:not(.dark) .course-placeholder-desc a:hover {
   display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   z-index: 50; max-height: 240px; overflow-y: auto;
   background: hsl(var(--popover, var(--card))); border: 1px solid hsl(var(--border));
-  border-radius: 6px; box-shadow: 0 8px 24px hsl(0 0% 0% / .35);
+  border-radius: 3px; box-shadow: 0 8px 24px hsl(0 0% 0% / .35);
 }
 .kg-select.open .kg-select-menu { display: block; }
 .kg-select-item {

@@ -8,8 +8,7 @@
  *   sub:   значение data-sub существующего блока .materials-page
  */
 window.KB_REFERENCE = [
-  { id:'how-to',        group:'start',     kind:'start',      icon:'🧭', sub:'how-to',        title:'Как работать с порталом',     desc:'Вход, навбар, VS Code, проект, чат с Claude, файлы, контейнер.' },
-  { id:'publish',       group:'start',     kind:'start',      icon:'🚀', sub:'publish',       title:'Как опубликовать приложение', desc:'Публикация, кто видит, деплой, относительные пути.' },
+  { id:'how-to',        group:'start',     kind:'start',      icon:'🧭', sub:'how-to',        title:'Как работать с порталом',     desc:'Вход, навбар, проект, чат с Claude, файлы, контейнер.' },
   { id:'cheatsheet',    group:'reference', kind:'cheatsheet', icon:'📋', sub:'cheatsheet',    title:'Шпаргалка по Claude Code',    desc:'Горячие клавиши, slash-команды, флаги CLI.' },
   { id:'claude-md',     group:'reference', kind:'example',    icon:'📝', sub:'claude-md',     title:'.md и CLAUDE.md — что это',   desc:'Учебная мини-страница про Markdown и CLAUDE.md.' },
   { id:'claude-folder', group:'reference', kind:'example',    icon:'🧩', sub:'claude-folder', title:'Структура папки .claude',     desc:'Из чего состоит .claude и за что отвечает.' },

@@ -32,17 +32,13 @@ import {
 import {
   createStudent, deleteStudent, setStudentPassword, listStudents,
   dockerStart, dockerStop, containerStatus, workspaceDir,
-  touchActivity, recordLogin, startReaper, provisionSsh,
+  touchActivity, startReaper, provisionSsh,
 } from './lib/students.js';
 import { sshConfig, privateKey, regenerateKeys } from './lib/ssh-access.js';
 import { homeDirFor } from './lib/home-dir.js';
-import { leaderboard } from './lib/leaderboard.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
-import {
-  readPublish, writePublish, writeSection, allocatePort, ensureRunning,
-  deployApp, stopApp, containerIp, appAlive,
-} from './lib/publish.js';
+import { writeSection, containerIp } from './lib/publish.js';
 import {
   allocateSlot, touchSlot, releaseSlot, ensureCodeInstance, portForSlot,
 } from './lib/code-slots.js';
@@ -110,7 +106,6 @@ app.post('/api/login', (req, res) => {
   if (!user) return res.status(401).json({ error: 'user not registered' });
   req.session.user = username;
   req.session.isAdmin = user.role === 'admin';
-  recordLogin(username); // учёт заходов для дашборда/рейтинга
   res.json({ ok: true, username, isAdmin: req.session.isAdmin });
 });
 
@@ -186,19 +181,6 @@ app.get('/api/me', (req, res) => {
     budget,
     sessionCount,
   }));
-});
-
-// ---------- дашборд: рейтинг учеников (любой залогиненный) ----------
-// Отдаёт ТОЛЬКО агрегаты-числа + имена (см. lib/leaderboard.js). Без текста
-// сообщений и без названий чужих проектов — ничего конфиденциального между
-// учениками не утекает.
-
-app.get('/api/leaderboard', requireAuth, (req, res) => {
-  try {
-    res.json(leaderboard());
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
 });
 
 // ---------- SSH-доступ: десктопный VS Code (user) ----------
@@ -312,17 +294,14 @@ app.get('/api/projects', requireAuth, (req, res) => {
           meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
         }
       } catch {}
-      const published = !!(meta.publish && meta.publish.enabled);
       const deployedViaService = !!deployRegistry[`${req.session.user}::${d.name}`];
       return {
         name: d.name,
         created: st ? new Date(st.birthtimeMs || st.ctimeMs).toISOString() : null,
         modified: st ? new Date(st.mtimeMs).toISOString() : null,
         owner: req.session.user,
-        status: meta.status || ((published || deployedViaService) ? 'РАБОЧИЙ' : 'НОВЫЙ'),
+        status: meta.status || (deployedViaService ? 'РАБОЧИЙ' : 'НОВЫЙ'),
         siteUrl: meta.siteUrl || null,
-        published,
-        publishUrl: published ? `/${req.session.user}/${d.name}/` : null,
         section: meta.section || null,
       };
     });
@@ -663,10 +642,10 @@ app.get('/api/template-claude/:which', requireAuth, (req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 
-// ---------- публикация приложений ----------
+// ---------- раздел проекта ----------
 
 // Хелпер: проверка владения проектом (или админ через ?asUser=).
-function resolvePublishTarget(req) {
+function resolveProjectTarget(req) {
   const name = req.params.name;
   if (!/^[a-zA-Z0-9._-]+$/.test(name)) return null;
   if (name.startsWith('.') || name === '.' || name === '..') return null;
@@ -677,53 +656,9 @@ function resolvePublishTarget(req) {
   return { user: asUser, project: name };
 }
 
-app.get('/api/projects/:name/publish', requireAuth, async (req, res) => {
-  const t = resolvePublishTarget(req);
-  if (!t) return res.status(404).json({ error: 'no such project' });
-  const pub = readPublish(t.user, t.project) || { enabled: false };
-  let running = false;
-  if (pub.enabled) {
-    try { running = await appAlive(await containerIp(t.user), pub.port); } catch {}
-  }
-  res.json({
-    enabled: !!pub.enabled,
-    visibility: pub.visibility || 'owner',
-    autosleep: pub.autosleep !== false,
-    port: pub.port || null,
-    url: pub.enabled ? `/${t.user}/${t.project}/` : null,
-    running,
-  });
-});
-
-app.post('/api/projects/:name/publish', requireAuth, async (req, res) => {
-  const t = resolvePublishTarget(req);
-  if (!t) return res.status(404).json({ error: 'no such project' });
-  const { enabled, visibility, autosleep } = req.body || {};
-  try {
-    if (enabled) {
-      let pub = readPublish(t.user, t.project) || {};
-      const port = pub.port || allocatePort(t.user, t.project);
-      pub = writePublish(t.user, t.project, {
-        enabled: true,
-        visibility: ['auth', 'public'].includes(visibility) ? visibility : 'owner',
-        autosleep: autosleep !== false,
-        port,
-      });
-      await ensureRunning(t.user, t.project).catch(e => console.error('[publish] deploy:', e.message));
-      return res.json({ ok: true, url: `/${t.user}/${t.project}/`, port });
-    } else {
-      await stopApp(t.user, t.project);
-      writePublish(t.user, t.project, { enabled: false });
-      return res.json({ ok: true });
-    }
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
-});
-
 // Раздел проекта в таблице «Мои проекты» (группировка + переименование на клиенте).
 app.post('/api/projects/:name/section', requireAuth, (req, res) => {
-  const t = resolvePublishTarget(req);
+  const t = resolveProjectTarget(req);
   if (!t) return res.status(404).json({ error: 'no such project' });
   const { section } = req.body || {};
   if (section != null && typeof section !== 'string') {
@@ -732,17 +667,6 @@ app.post('/api/projects/:name/section', requireAuth, (req, res) => {
   const trimmed = section ? section.trim().slice(0, 60) : null;
   const saved = writeSection(t.user, t.project, trimmed);
   res.json({ ok: true, section: saved });
-});
-
-app.post('/api/projects/:name/redeploy', requireAuth, async (req, res) => {
-  const t = resolvePublishTarget(req);
-  if (!t) return res.status(404).json({ error: 'no such project' });
-  const pub = readPublish(t.user, t.project);
-  if (!pub || !pub.enabled) return res.status(400).json({ error: 'not published' });
-  try {
-    await deployApp(t.user, t.project, pub.port);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ---------- container lifecycle (user) ----------
@@ -968,75 +892,6 @@ app.use((req, res, next) => {
   return adminCodeProxy(req, res, next);
 });
 
-// ---------- публичный прокси приложений /<user>/<project>/ ----------
-
-const RESERVED_SEG = new Set(['api', 'code', 'admin-code', 'assets', 'css', 'js', 'img', 'public', '.well-known']);
-
-function parsePublishPath(url) {
-  const m = url.match(/^\/([a-zA-Z0-9][a-zA-Z0-9_-]*)\/([a-zA-Z0-9][a-zA-Z0-9._-]*)(\/.*|)$/);
-  if (!m) return null;
-  if (RESERVED_SEG.has(m[1])) return null;
-  return { user: m[1], project: m[2] };
-}
-
-// можно ли смотреть: public → кто угодно; owner → владелец+админ; auth → любой залогиненный
-function canView(req, user, pub) {
-  if (pub.visibility === 'public') return true;
-  if (!req.session?.user) return false;
-  if (req.session.isAdmin) return true;
-  if (pub.visibility === 'auth') return true;
-  return req.session.user === user; // owner
-}
-
-const appProxy = createProxyMiddleware({
-  router: (req) => req._appTarget,
-  changeOrigin: true,
-  ws: false, // апгрейд гоним вручную из server.on('upgrade') — см. codeProxy
-  pathRewrite: (p, req) => {
-    const rewritten = p.replace(req._appPrefix, '');
-    return rewritten || '/';
-  },
-  on: {
-    error: (err, req, res) => {
-      if (res && !res.headersSent) { try { res.writeHead(502); res.end('app not ready'); } catch {} }
-    },
-  },
-});
-
-async function publishMiddleware(req, res, next) {
-  const parsed = parsePublishPath(req.url);
-  if (!parsed) return next();
-  const state = loadUsers();
-  if (!state.users[parsed.user]) return next(); // не ученик — отдаём дальше (статика/404)
-  const pub = readPublish(parsed.user, parsed.project);
-  if (!pub || !pub.enabled) return next();
-
-  // auth-гейт (public — без логина; иначе нужна сессия + право)
-  if (pub.visibility !== 'public') {
-    if (!req.session?.user) {
-      return res.redirect(302, '/');
-    }
-    if (!canView(req, parsed.user, pub)) {
-      return res.status(403).send('forbidden');
-    }
-  }
-
-  try {
-    const { ip, port } = await ensureRunning(parsed.user, parsed.project);
-    touchActivity(parsed.user);
-    req._appTarget = `http://${ip}:${port}`;
-    req._appPrefix = `/${parsed.user}/${parsed.project}`;
-    return appProxy(req, res, next);
-  } catch (e) {
-    if (!res.headersSent) res.status(502).send('app not ready: ' + e.message);
-  }
-}
-
-app.use((req, res, next) => {
-  if (parsePublishPath(req.url)) return publishMiddleware(req, res, next);
-  next();
-});
-
 // ---------- статика ----------
 
 // Реестр и контент «Базы знаний» (content/reference.js и пр.).
@@ -1063,27 +918,6 @@ server.on('upgrade', (req, socket, head) => {
       adminCodeProxy.upgrade(req, socket, head);
     });
     return;
-  }
-  const parsed = parsePublishPath(req.url || '');
-  if (parsed) {
-    const state = loadUsers();
-    const pub = state.users[parsed.user] ? readPublish(parsed.user, parsed.project) : null;
-    if (pub && pub.enabled) {
-      sessionParser(req, {}, () => {
-        // public → без сессии; иначе нужна сессия + право
-        if (pub.visibility !== 'public' && (!req.session?.user || !canView(req, parsed.user, pub))) {
-          try { socket.destroy(); } catch {}
-          return;
-        }
-        containerIp(parsed.user).then(ip => {
-          if (!ip) { try { socket.destroy(); } catch {} return; }
-          req._appTarget = `http://${ip}:${pub.port}`;
-          req._appPrefix = `/${parsed.user}/${parsed.project}`;
-          appProxy.upgrade(req, socket, head);
-        }).catch(() => { try { socket.destroy(); } catch {} });
-      });
-      return;
-    }
   }
   if (req.url && req.url.startsWith('/code/')) {
     const m = req.url.match(/^\/code\/([^/]+)/);

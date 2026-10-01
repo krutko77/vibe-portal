@@ -27,7 +27,7 @@
   --border:               219 18% 72%;   /* #b7c4bc */
   --input:                219 18% 72%;
   --ring:                 213 32% 40%;
-  --radius:               0rem;
+  --radius:               3px;
 
   /* Frost blues (darkened for light backgrounds) */
   --smui-frost-1: 176 30% 35%;
@@ -77,7 +77,7 @@
   --border:               217 17% 28%;   /* #3b4252 */
   --input:                217 17% 28%;
   --ring:                 193 44% 67%;
-  --radius:               0rem;
+  --radius:               3px;
 
   /* Frost blues (original Nord values) */
   --smui-frost-1: 176 25% 65%;  /* #8fbcbb */

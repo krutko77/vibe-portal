@@ -25,12 +25,6 @@
 
     <!-- Центральное меню (4 view-таб'а) -->
     <div class="navbar-center hidden-when-no-auth">
-      <button class="btn-nav" data-view="vscode" title="VS Code">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-        </svg>
-        <span class="btn-nav-text">VS Code</span>
-      </button>
       <button class="btn-nav" data-view="projects" title="Проекты">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -74,15 +68,6 @@
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
     </button>
-
-    <a class="nav-icon hidden-when-no-auth" href="/dashboard.html" title="Рейтинг учеников">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-        <path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-      </svg>
-    </a>
 
     <a class="nav-icon hidden-when-no-auth" href="/history.html" title="История">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -204,40 +189,6 @@
   <!-- Центр: dashboard с 4 view'ами -->
   <main class="dashboard" id="app">
 
-    <!-- ── view: VS CODE ───────────────────────────────────── -->
-    <section class="view view-vscode" data-view="vscode">
-      <div class="vscode-hero">
-        <div class="vscode-hero-left">
-          <div class="vscode-hero-label">Workspace</div>
-          <div class="vscode-hero-path" id="vscodeHeroPath">/home/my_workspace/</div>
-        </div>
-        <div class="vscode-hero-mid">
-          <button class="nav-btn-container" id="containerToggleBtn" title="Запустить/Остановить контейнер">
-            <span class="nav-btn-container-top">
-              <span class="nav-btn-container-dot"></span>
-              <span class="nav-btn-container-label">…</span>
-            </span>
-            <span class="nav-btn-container-sub" id="containerTimerLabel"></span>
-          </button>
-        </div>
-        <div class="vscode-hero-right">
-          <button class="nav-btn-vscode" id="openCodeBtn">
-            <span class="nav-btn-vscode-top">Открыть →</span>
-            <span class="nav-btn-vscode-sub">VS Code</span>
-          </button>
-        </div>
-      </div>
-      <div class="vscode-recent">
-        <div class="section-head">
-          <div class="section-head-left">
-            <span class="section-label">Топ-3 недавних</span>
-            <span class="section-path" id="vscodeRecentCount">—</span>
-          </div>
-        </div>
-        <div class="projects-table-wrap" id="vscodeRecentList"></div>
-      </div>
-    </section>
-
     <!-- ── view: ПРОЕКТЫ ─────────────────────────────────── -->
     <section class="view view-projects hidden" data-view="projects">
       <div class="section-block" style="max-width:1200px">
@@ -291,7 +242,6 @@
         <div class="anchor-chips">
           <a href="#a-login" class="anchor-chip">Вход</a>
           <a href="#a-navbar" class="anchor-chip">Навбар</a>
-          <a href="#a-vscode" class="anchor-chip">VS Code</a>
           <a href="#a-projects" class="anchor-chip">Проекты</a>
           <a href="#a-create" class="anchor-chip">Создание проекта</a>
           <a href="#a-chat" class="anchor-chip">Чат Claude</a>
@@ -305,31 +255,27 @@
         </div>
         <div class="page-sect" id="a-navbar">
           <div class="page-sect-no">2. НАВБАР</div>
-          <p>В шапке: <strong>WEBKRUTKO</strong> — логотип, <strong>4 таба</strong> (VS Code, Проекты, Курс, Материалы), справа — кнопки <em>Claude</em>, тема, история, настройки.</p>
-        </div>
-        <div class="page-sect" id="a-vscode">
-          <div class="page-sect-no">3. VS CODE</div>
-          <p>На таб’е «VS Code» — большая серая кнопка «Открыть → VS Code». Слева от неё — состояние контейнера (Вкл/Выкл) с таймером авто-стопа.</p>
+          <p>В шапке: <strong>WEBKRUTKO</strong> — логотип, вкладки <em>Проекты, База знаний, Свой Vibe, Оплата Claude</em>, справа — кнопки <em>Claude</em>, тема, история, настройки.</p>
         </div>
         <div class="page-sect" id="a-projects">
-          <div class="page-sect-no">4. ПРОЕКТЫ</div>
+          <div class="page-sect-no">3. ПРОЕКТЫ</div>
           <p>Таблица: <em>Тип, Статус, Название, Автор, Дата, Действия</em>. По кнопкам: 📁 Файлы, CLAUDE (чат по проекту), VS Code, 🗑 Удалить (в архив <code>.deleted/</code>).</p>
         </div>
         <div class="page-sect" id="a-create">
-          <div class="page-sect-no">5. СОЗДАНИЕ ПРОЕКТА</div>
+          <div class="page-sect-no">4. СОЗДАНИЕ ПРОЕКТА</div>
           <p>Две кнопки сверху: <strong>+ Пустой</strong> (пустая папка) и <strong>+ Шаблон</strong> (выбор из двух базовых шаблонов).</p>
         </div>
         <div class="page-sect" id="a-chat">
-          <div class="page-sect-no">6. ЧАТ С CLAUDE</div>
+          <div class="page-sect-no">5. ЧАТ С CLAUDE</div>
           <p>В строке проекта — кнопка <strong>CLAUDE</strong>. Открывается левая панель: сессии, выбор модели (sonnet/opus), история, attachments. Справа сверху — общий помощник Claude (по всему workspace).</p>
         </div>
         <div class="page-sect" id="a-files">
-          <div class="page-sect-no">7. ФАЙЛЫ</div>
+          <div class="page-sect-no">6. ФАЙЛЫ</div>
           <p>Кнопка 📁 в строке проекта — открывает встроенный просмотрщик файлов. Дерево слева, содержимое справа.</p>
         </div>
         <div class="page-sect" id="a-container">
-          <div class="page-sect-no">8. КОНТЕЙНЕР</div>
-          <p>У тебя свой Docker-контейнер (1.5GB RAM / 1 CPU). Авто-останавливается через 30 мин простоя. Таймер виден сверху. Workspace сохраняется — следующий клик «Открыть VS Code» подымет контейнер за 2–4 сек.</p>
+          <div class="page-sect-no">7. КОНТЕЙНЕР</div>
+          <p>У тебя свой Docker-контейнер (1.5GB RAM / 1 CPU). Авто-останавливается через 30 мин простоя. Workspace сохраняется — клик «VS Code» в строке проекта подымет контейнер за 2–4 сек.</p>
         </div>
       </div>
 
@@ -846,41 +792,6 @@ description: Объясняет каждый шаг простыми слова�
               <a class="btn dl-btn-sec" href="/api/template-claude/universal">↓ Только CLAUDE.md</a>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- materials > Публикация -->
-      <div class="materials-page hidden" data-sub="publish">
-        <div class="page-meta">VIBE PORTAL · ПУБЛИКАЦИЯ</div>
-        <h1 class="page-h1">Как <em>опубликовать</em> приложение</h1>
-        <p class="page-lead">Публикация делает твой проект доступным по ссылке внутри портала. Открыть его смогут только авторизованные — ты, админ и (по желанию) другие ученики.</p>
-
-        <div class="page-sect">
-          <div class="page-sect-no">1. ОТКРОЙ ПУБЛИКАЦИЮ</div>
-          <p>На вкладке <strong>Проекты</strong> в строке проекта нажми иконку <strong>«Публикация»</strong> (стрелка вверх ↥). Откроется окно настроек.</p>
-        </div>
-        <div class="page-sect">
-          <div class="page-sect-no">2. ВКЛЮЧИ И НАСТРОЙ</div>
-          <ul class="page-list">
-            <li><strong>Опубликовать приложение</strong> — поставь галочку, чтобы включить.</li>
-            <li><strong>Кто может смотреть</strong> — «Только я и админ», «Все залогиненные ученики» или «Публично» (внешние пользователи без входа — например, чтобы показать клиенту).</li>
-            <li><strong>Авто-засыпание</strong> — если включено, приложение засыпает вместе с контейнером через 30 минут простоя и само поднимается при следующем заходе. Выключи, если приложение должно работать постоянно.</li>
-          </ul>
-          <p>Нажми <strong>Сохранить</strong>. Появится ссылка вида
-          <code>201.51.4.183/&lt;твой-логин&gt;/&lt;проект&gt;/</code> — её можно скопировать и открыть.</p>
-        </div>
-        <div class="page-sect">
-          <div class="page-sect-no">3. КНОПКА «ДЕПЛОЙ»</div>
-          <p>Если ты изменил код приложения — открой окно публикации и нажми <strong>«Деплой»</strong>. Это перезапустит приложение с новой версией кода. Заодно деплой поднимет приложение, если оно «спит».</p>
-        </div>
-        <div class="page-sect">
-          <div class="page-sect-no">4. ЧТО ВАЖНО ЗНАТЬ</div>
-          <ul class="page-list">
-            <li>Приложение запускается прямо в твоём контейнере (как и VS Code) — отдельный сервер не нужен.</li>
-            <li>Node-проекты (есть <code>package.json</code>) и PHP-проекты (папка <code>www/</code>) поднимаются автоматически — настраивать ничего не надо.</li>
-            <li>Подключай стили и скрипты <strong>относительным</strong> путём (<code>css/style.css</code>, а не <code>/css/style.css</code>) — приложение живёт под адресом <code>/&lt;логин&gt;/&lt;проект&gt;/</code>.</li>
-            <li>По умолчанию ссылка работает только для вошедших в портал. Вариант «Публично» открывает приложение всем по ссылке (без входа) — удобно показать клиенту, но не публикуй так черновики и ничего с секретами.</li>
-          </ul>
         </div>
       </div>
 
@@ -1465,9 +1376,9 @@ allowed-tools: Read, Bash(gh pr:*)
             </tbody>
           </table>
           <p style="margin-top:12px">Ключ передаётся в заголовке каждого запроса:</p>
-          <pre style="background:hsl(var(--muted));padding:10px 14px;border-radius:6px;font-size:12px;overflow-x:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace">X-Api-Key: vibe_api_твой_ключ</pre>
+          <pre style="background:hsl(var(--muted));padding:10px 14px;border-radius:3px;font-size:12px;overflow-x:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace">X-Api-Key: vibe_api_твой_ключ</pre>
           <p style="margin-top:12px"><strong>Пример промпта для ИИ:</strong></p>
-          <pre style="background:hsl(var(--muted));padding:10px 14px;border-radius:6px;font-size:12px;overflow-x:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace">Мой Вайбкод ключ: vibe_api_xxx
+          <pre style="background:hsl(var(--muted));padding:10px 14px;border-radius:3px;font-size:12px;overflow-x:auto;margin-top:6px;font-family:'IBM Plex Mono',monospace">Мой Вайбкод ключ: vibe_api_xxx
 Документация: https://vibecode.bitrix24.tech/docs
 Задача: создай дашборд со статистикой открытых сделок по стадиям</pre>
           <p style="margin-top:8px;font-size:12px;color:hsl(var(--muted-foreground))">ИИ сам прочитает документацию, напишет код и задеплоит приложение.</p>
@@ -1616,7 +1527,7 @@ allowed-tools: Read, Bash(gh pr:*)
 
           <!-- ══ ДИАГРАММА 1: Полная карта платформы ══════════════════════ -->
           <h2 class="page-h2" style="margin-top:20px">① Полная карта платформы</h2>
-          <div style="border:1px solid hsl(var(--border));border-radius:12px;overflow:hidden;margin:14px 0;font-family:'IBM Plex Mono',monospace">
+          <div style="border:1px solid hsl(var(--border));border-radius:3px;overflow:hidden;margin:14px 0;font-family:'IBM Plex Mono',monospace">
             <div style="background:hsl(var(--accent));border-bottom:1px solid hsl(var(--border));padding:14px 20px;text-align:center">
               <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:hsl(var(--muted-foreground));margin-bottom:3px">Точка входа</div>
               <strong style="font-size:14px">ТЫ + ИИ-ИНСТРУМЕНТ</strong>
@@ -1654,7 +1565,7 @@ allowed-tools: Read, Bash(gh pr:*)
                 <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">1</div>
                 <div style="width:2px;background:hsl(var(--border));flex:1;margin:3px 0"></div>
               </div>
-              <div style="flex:1;padding:2px 0 14px 10px"><strong>Твой код</strong> отправляет HTTP-запрос с ключом<br><pre style="display:inline-block;background:hsl(var(--muted));border:1px solid hsl(var(--border));padding:5px 10px;border-radius:5px;font-size:11px;margin:5px 0 0">GET /v1/deals &nbsp;&nbsp; X-Api-Key: vibe_api_xxx</pre></div>
+              <div style="flex:1;padding:2px 0 14px 10px"><strong>Твой код</strong> отправляет HTTP-запрос с ключом<br><pre style="display:inline-block;background:hsl(var(--muted));border:1px solid hsl(var(--border));padding:5px 10px;border-radius:3px;font-size:11px;margin:5px 0 0">GET /v1/deals &nbsp;&nbsp; X-Api-Key: vibe_api_xxx</pre></div>
             </div>
             <div style="display:flex;align-items:stretch">
               <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
@@ -1688,16 +1599,16 @@ allowed-tools: Read, Bash(gh pr:*)
               <div style="width:30px;display:flex;flex-direction:column;align-items:center;flex-shrink:0">
                 <div style="background:hsl(var(--primary));color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">6</div>
               </div>
-              <div style="flex:1;padding:2px 0 0 10px"><strong>Твой код</strong> получает чистый JSON и рендерит его<br><pre style="display:inline-block;background:hsl(var(--muted));border:1px solid hsl(var(--border));padding:5px 10px;border-radius:5px;font-size:11px;margin:5px 0 0">{"success":true,"data":[{"id":1,"title":"Сделка #1",...}]}</pre></div>
+              <div style="flex:1;padding:2px 0 0 10px"><strong>Твой код</strong> получает чистый JSON и рендерит его<br><pre style="display:inline-block;background:hsl(var(--muted));border:1px solid hsl(var(--border));padding:5px 10px;border-radius:3px;font-size:11px;margin:5px 0 0">{"success":true,"data":[{"id":1,"title":"Сделка #1",...}]}</pre></div>
             </div>
           </div>
 
           <!-- ══ ДИАГРАММА 3: Black Hole Tunnel ═══════════════════════════ -->
           <h2 class="page-h2" style="margin-top:28px">③ Туннель Black Hole — как невидимый сервер принимает запросы</h2>
-          <div style="border:1px solid hsl(var(--border));border-radius:10px;overflow:hidden;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
+          <div style="border:1px solid hsl(var(--border));border-radius:3px;overflow:hidden;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
             <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:7px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--muted-foreground))">Фаза А — Старт сервера (один раз при запуске)</div>
             <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px;border-bottom:1px solid hsl(var(--border))">
-              <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:8px 14px;text-align:center;min-width:100px">
+              <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:3px;padding:8px 14px;text-align:center;min-width:100px">
                 <div style="font-size:10px;color:hsl(var(--muted-foreground))">🖥 твой сервер</div>
                 <div style="font-weight:700;font-size:12px;margin-top:2px">Black Hole</div>
                 <div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">Ubuntu 24.04<br>нет IP · нет портов</div>
@@ -1705,7 +1616,7 @@ allowed-tools: Read, Bash(gh pr:*)
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
               <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center">устанавливает<br>исходящий<br>WebSocket</div>
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
-              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:8px 14px;text-align:center;min-width:100px">
+              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:8px 14px;text-align:center;min-width:100px">
                 <div style="font-size:10px;color:hsl(var(--muted-foreground))">🌐 Vibecode</div>
                 <div style="font-weight:700;font-size:12px;margin-top:2px">Gateway</div>
                 <div style="font-size:9px;color:hsl(var(--muted-foreground));margin-top:2px">принимает канал<br>выдаёт поддомен</div>
@@ -1715,21 +1626,21 @@ allowed-tools: Read, Bash(gh pr:*)
             </div>
             <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:7px 16px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:hsl(var(--muted-foreground))">Фаза Б — Входящий запрос пользователя</div>
             <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:14px 16px">
-              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:8px 14px;text-align:center;min-width:90px">
                 <div style="font-size:10px;color:hsl(var(--muted-foreground))">👤 браузер</div>
                 <div style="font-weight:700;font-size:12px;margin-top:2px">Пользователь</div>
               </div>
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
               <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center"><code style="background:transparent">GET app-xxx<br>.vibecode…</code></div>
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
-              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+              <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:8px 14px;text-align:center;min-width:90px">
                 <div style="font-size:10px;color:hsl(var(--muted-foreground))">🌐</div>
                 <div style="font-weight:700;font-size:12px;margin-top:2px">Gateway</div>
               </div>
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
               <div style="font-size:10px;color:hsl(var(--muted-foreground));text-align:center">через открытый<br>WebSocket-канал</div>
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700;flex-shrink:0">→</div>
-              <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+              <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:3px;padding:8px 14px;text-align:center;min-width:90px">
                 <div style="font-size:10px;color:hsl(var(--muted-foreground))">🖥</div>
                 <div style="font-weight:700;font-size:12px;margin-top:2px">Black Hole<br>:3000</div>
               </div>
@@ -1739,27 +1650,27 @@ allowed-tools: Read, Bash(gh pr:*)
           <!-- ══ ДИАГРАММА 4: Bot Polling Loop ════════════════════════════ -->
           <h2 class="page-h2" style="margin-top:28px">④ Жизненный цикл чат-бота (polling loop)</h2>
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:11px;font-family:'IBM Plex Mono',monospace">
-            <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+            <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:3px;padding:10px 14px;text-align:center;min-width:108px">
               <div style="font-weight:700;color:hsl(var(--primary))">① СТАРТ</div>
               <div style="margin-top:4px">POST /v1/bots<br><span style="color:hsl(var(--muted-foreground));font-size:10px">регистрация в Битрикс24</span></div>
             </div>
             <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
-            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:10px 14px;text-align:center;min-width:108px">
               <div style="font-weight:700">② ОПРОС</div>
               <div style="margin-top:4px;color:hsl(var(--muted-foreground));font-size:10px">GET /v1/bots/:id/events<br>раз в N секунд</div>
             </div>
             <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
-            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:10px 14px;text-align:center;min-width:108px">
               <div style="font-weight:700">③ СОБЫТИЕ?</div>
               <div style="margin-top:5px;text-align:left;font-size:10px;color:hsl(var(--muted-foreground))">Да → обработка<br>Нет → ждать → ②</div>
             </div>
             <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
-            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:10px 14px;text-align:center;min-width:108px">
               <div style="font-weight:700">④ ОБРАБОТКА</div>
               <div style="margin-top:4px;color:hsl(var(--muted-foreground));font-size:10px">AI Router (опц.)<br>Entity API</div>
             </div>
             <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
-            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:10px 14px;text-align:center;min-width:108px">
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:10px 14px;text-align:center;min-width:108px">
               <div style="font-weight:700">⑤ ОТВЕТ</div>
               <div style="margin-top:4px;color:hsl(var(--muted-foreground));font-size:10px">POST /v1/bots/:id<br>/messages → в чат</div>
             </div>
@@ -1768,7 +1679,7 @@ allowed-tools: Read, Bash(gh pr:*)
 
           <!-- ══ ДИАГРАММА 5: AI Router ════════════════════════════════════ -->
           <h2 class="page-h2" style="margin-top:28px">⑤ AI Router — маршрутизация к нужной модели</h2>
-          <div style="border:1px solid hsl(var(--border));border-radius:10px;overflow:hidden;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
+          <div style="border:1px solid hsl(var(--border));border-radius:3px;overflow:hidden;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
             <div style="background:hsl(var(--accent));border-bottom:1px solid hsl(var(--border));padding:12px 16px;text-align:center">
               <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-bottom:3px">Твой запрос</div>
               <code style="font-size:11px">POST /v1/chat/completions &nbsp; {"model":"…","messages":[…]}</code>
@@ -1776,42 +1687,42 @@ allowed-tools: Read, Bash(gh pr:*)
             <div style="background:hsl(var(--muted));border-bottom:1px solid hsl(var(--border));padding:6px;text-align:center;font-size:11px;color:hsl(var(--muted-foreground))">↓ поле <code style="background:transparent">model</code> определяет, куда идёт запрос</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr)">
               <div style="border-right:1px solid hsl(var(--border));border-bottom:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
-                <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:6px;padding:6px 8px">
+                <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:3px;padding:6px 8px">
                   <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--primary))">🆓 Бесплатно</div>
                   <div style="font-weight:700;font-size:12px;margin-top:3px">BitrixGPT</div>
                   <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">bitrix/bitrixgpt-5.5</code>
                 </div>
               </div>
               <div style="border-right:1px solid hsl(var(--border));border-bottom:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
-                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:6px 8px">
                   <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
                   <div style="font-weight:700;font-size:12px;margin-top:3px">OpenAI</div>
                   <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">gpt-4o, gpt-4o-mini</code>
                 </div>
               </div>
               <div style="border-bottom:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
-                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:6px 8px">
                   <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
                   <div style="font-weight:700;font-size:12px;margin-top:3px">Anthropic Claude</div>
                   <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">claude-sonnet-4-6</code>
                 </div>
               </div>
               <div style="border-right:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
-                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:6px 8px">
                   <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
                   <div style="font-weight:700;font-size:12px;margin-top:3px">DeepSeek</div>
                   <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">deepseek-chat</code>
                 </div>
               </div>
               <div style="border-right:1px solid hsl(var(--border));padding:10px 8px;text-align:center">
-                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:6px 8px">
                   <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
                   <div style="font-weight:700;font-size:12px;margin-top:3px">ЯндексGPT</div>
                   <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">yandexgpt/latest</code>
                 </div>
               </div>
               <div style="padding:10px 8px;text-align:center">
-                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:6px;padding:6px 8px">
+                <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:6px 8px">
                   <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground))">BYOK</div>
                   <div style="font-weight:700;font-size:12px;margin-top:3px">GigaChat</div>
                   <code style="font-size:10px;background:transparent;color:hsl(var(--muted-foreground))">GigaChat-Max</code>
@@ -1824,7 +1735,7 @@ allowed-tools: Read, Bash(gh pr:*)
           <!-- ══ ДИАГРАММА 6: Жизненный цикл приложения ═══════════════════ -->
           <h2 class="page-h2" style="margin-top:28px">⑥ Жизненный цикл OAuth-приложения</h2>
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0;font-size:12px;font-family:'IBM Plex Mono',monospace">
-            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:8px;padding:14px 18px;text-align:center;min-width:110px">
+            <div style="background:hsl(var(--muted));border:1px solid hsl(var(--border));border-radius:3px;padding:14px 18px;text-align:center;min-width:110px">
               <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground));margin-bottom:4px">① создание</div>
               <div style="font-weight:700;font-size:14px">PRIVATE</div>
               <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-top:4px">видит только автор<br>этап разработки</div>
@@ -1833,7 +1744,7 @@ allowed-tools: Read, Bash(gh pr:*)
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">→</div>
               <div style="font-size:9px;color:hsl(var(--muted-foreground))">задеплоить<br>настроить URL</div>
             </div>
-            <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:8px;padding:14px 18px;text-align:center;min-width:110px">
+            <div style="background:hsl(var(--accent));border:1.5px solid hsl(var(--primary));border-radius:3px;padding:14px 18px;text-align:center;min-width:110px">
               <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--primary));margin-bottom:4px">② живой</div>
               <div style="font-weight:700;font-size:14px">PUBLISHED</div>
               <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-top:4px">видят все сотрудники<br>с интеграциями</div>
@@ -1842,7 +1753,7 @@ allowed-tools: Read, Bash(gh pr:*)
               <div style="color:hsl(var(--primary));font-size:18px;font-weight:700">⇄</div>
               <div style="font-size:9px;color:hsl(var(--muted-foreground))">снять / вернуть</div>
             </div>
-            <div style="background:hsl(var(--muted));border:1px dashed hsl(var(--border));border-radius:8px;padding:14px 18px;text-align:center;min-width:110px">
+            <div style="background:hsl(var(--muted));border:1px dashed hsl(var(--border));border-radius:3px;padding:14px 18px;text-align:center;min-width:110px">
               <div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:hsl(var(--muted-foreground));margin-bottom:4px">③ пауза</div>
               <div style="font-weight:700;font-size:14px">UNPUBLISHED</div>
               <div style="font-size:10px;color:hsl(var(--muted-foreground));margin-top:4px">данные сохранены<br>можно вернуть</div>
@@ -1952,7 +1863,7 @@ allowed-tools: Read, Bash(gh pr:*)
         <p class="page-lead">Полная копия Vibe Portal на твоём VPS — свой workspace, свои правила, полный контроль.</p>
 
         <!-- ── Плашка «Для самых смелых» ── -->
-        <div style="border:2px solid hsl(0 70% 50%/.6);border-radius:10px;padding:18px 20px;margin:24px 0 8px;background:hsl(0 70% 50%/.07)">
+        <div style="border:2px solid hsl(0 70% 50%/.6);border-radius:3px;padding:18px 20px;margin:24px 0 8px;background:hsl(0 70% 50%/.07)">
           <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:hsl(0 70% 45%);margin-bottom:8px">🔥 ДЛЯ САМЫХ СМЕЛЫХ</div>
           <p style="font-size:13px;line-height:1.6;color:hsl(var(--foreground));margin:0 0 12px">
             Хочешь не просто копию Vibe Portal, а собрать <strong>собственный дев-портал с нуля</strong> — свою корпоративную панель для команды (вход по паролю, проекты, чат с Claude, статистика, единый дизайн)? Скачай файл-методичку, скинь его целиком первым сообщением Claude и напиши: <em>«Веди меня по этой методичке»</em>. Дальше Claude шаг за шагом проведёт тебя через сборку — ты настраиваешь и кодишь свой портал сам.
@@ -1964,7 +1875,7 @@ allowed-tools: Read, Bash(gh pr:*)
         <div style="display:grid;gap:10px;margin:24px 0 32px">
 
           <!-- Чат Claude — широкая карточка -->
-          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:10px;padding:16px 20px;background:hsl(var(--primary)/.05);display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:3px;padding:16px 20px;background:hsl(var(--primary)/.05);display:flex;align-items:center;gap:20px;flex-wrap:wrap">
             <div style="flex:1;min-width:200px">
               <div style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">💬 Чат с Claude — помощник по установке</div>
               <div style="font-size:12px;color:hsl(var(--muted-foreground))">Знает всю архитектуру портала. Подключится по SSH и настроит сервер за тебя.</div>
@@ -1975,19 +1886,19 @@ allowed-tools: Read, Bash(gh pr:*)
           <!-- Три кнопки скачивания -->
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
 
-            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">↓ Весь Vibe Portal</div>
               <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:12px;line-height:1.5">Исходный код — для развёртывания на своём сервере</div>
               <a class="btn btn-sm btn-primary" href="/api/vibe-setup/download-portal" style="width:100%">Скачать .zip</a>
             </div>
 
-            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">↓ Мои проекты</div>
               <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:12px;line-height:1.5">Весь твой workspace — все проекты одним архивом</div>
               <a class="btn btn-sm btn-primary" href="/api/workspace/download" style="width:100%">Скачать .zip</a>
             </div>
 
-            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">↓ База знаний</div>
               <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:12px;line-height:1.5">Уроки и шаблоны курса — для переноса на свой портал</div>
               <a class="btn btn-sm btn-primary" href="/api/vibe-setup/download-kb" style="width:100%">Скачать .zip</a>
@@ -2028,13 +1939,13 @@ allowed-tools: Read, Bash(gh pr:*)
           <p>Выбери способ — оба приводят к одному результату:</p>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
-            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--muted-foreground));margin-bottom:8px">ВАРИАНТ А — САМИ</div>
               <p style="font-size:12px;line-height:1.55;margin-bottom:12px">Зайди на сервер по SSH и запусти одну команду. Скрипт установит Docker, nginx и поднимет портал.</p>
               <pre class="step-code" style="font-size:11px">curl -fsSL https://vibe.kiselevgroup.com/install.sh | bash</pre>
               <p style="font-size:11px;color:hsl(var(--muted-foreground));margin-top:8px">⚠ Скрипт готовится — появится здесь скоро.</p>
             </div>
-            <div style="border:1px solid hsl(var(--primary)/.4);border-radius:8px;padding:16px;background:hsl(var(--primary)/.04)">
+            <div style="border:1px solid hsl(var(--primary)/.4);border-radius:3px;padding:16px;background:hsl(var(--primary)/.04)">
               <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--primary));margin-bottom:8px">ВАРИАНТ Б — ЧЕРЕЗ CLAUDE ↓</div>
               <p style="font-size:12px;line-height:1.55;margin-bottom:12px">Создай проект, открой чат с Claude и вставь готовый промпт из шага 4. Claude подключится по SSH и всё настроит сам.</p>
               <a href="#mv-deploy" class="btn btn-primary" style="font-size:12px">Перейти к промпту →</a>
@@ -2090,12 +2001,12 @@ allowed-tools: Read, Bash(gh pr:*)
           <p style="margin-top:14px">Достаточно минимального EU-VPS: 1 vCPU, 1 GB RAM (~€3–5/мес).</p>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;margin-bottom:4px">
-            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:14px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:3px">Vultr</div>
               <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:10px;line-height:1.5">Мы используем для EU-сервера. Амстердам, от $2.5/мес. Оплата иностранной картой.</div>
               <a class="btn btn-sm" href="https://vultr.com" target="_blank" rel="noopener" style="width:100%">vultr.com →</a>
             </div>
-            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:14px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:3px">Timeweb Cloud</div>
               <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:10px;line-height:1.5">Карта РФ, есть EU-локации. Чуть дороже, зато без иностранной карты.</div>
               <a class="btn btn-sm" href="https://timeweb.cloud/" target="_blank" rel="noopener" style="width:100%">timeweb.cloud →</a>
@@ -2103,7 +2014,7 @@ allowed-tools: Read, Bash(gh pr:*)
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
-            <div style="border:1px solid hsl(var(--border));border-radius:8px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--muted-foreground));margin-bottom:10px">ВАРИАНТ А — САМИ</div>
 
               <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:6px">На EU-VPS:</div>
@@ -2136,7 +2047,7 @@ curl http://127.0.0.1:8190/_shim/health</pre>
               ">Копировать</button>
             </div>
 
-            <div style="border:1px solid hsl(var(--primary)/.4);border-radius:8px;padding:16px;background:hsl(var(--primary)/.04)">
+            <div style="border:1px solid hsl(var(--primary)/.4);border-radius:3px;padding:16px;background:hsl(var(--primary)/.04)">
               <div style="font-size:11px;font-weight:600;letter-spacing:.06em;color:hsl(var(--primary));margin-bottom:10px">ВАРИАНТ Б — ЧЕРЕЗ CLAUDE</div>
               <p style="font-size:12px;line-height:1.55;margin-bottom:12px">Открой чат с Claude на этой странице и вставь промпт — он подключится к обоим серверам и настроит всё:</p>
               <pre class="step-code" id="proxy-prompt" style="white-space:pre-wrap;font-size:10.5px">Помоги настроить HTTP-прокси для Claude.
@@ -2188,7 +2099,7 @@ EU-VPS (для прокси):
 
         <!-- ══ СХЕМА ПОСЛЕДОВАТЕЛЬНОСТИ ══ -->
         <div style="margin:24px 0 32px">
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:10px;padding:20px;overflow-x:auto">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:3px;padding:20px;overflow-x:auto">
   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
   │  1. VPN  │──▶│ 2. Почта │──▶│ 3. Карта │──▶│ 4. Номер │──▶│ 5. Клод  │
   │          │   │          │   │          │   │          │   │          │
@@ -2208,7 +2119,7 @@ EU-VPS (для прокси):
           <div class="page-sect-no">1. VPN — ФУНДАМЕНТ ВСЕГО</div>
           <p>Anthropic блокирует аккаунты из РФ, Белоруссии и ряда других стран. VPN — обязательное условие. Важно: IP-адрес VPN должен совпадать со страной твоей карты и номера телефона.</p>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.6;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.6;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   Твой ПК (РФ)
     │
     └──▶ VPN-сервер (например, Нидерланды, Германия, США)
@@ -2229,17 +2140,17 @@ EU-VPS (для прокси):
 
           <p style="margin-top:14px"><strong>Стандартные VPN-сервисы:</strong> Mullvad, ProtonVPN, Windscribe — поддерживают оплату без привязки аккаунта.</p>
 
-          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:8px;padding:12px 16px;margin-top:12px;font-size:12px">
+          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:3px;padding:12px 16px;margin-top:12px;font-size:12px">
             ⚠ Включи VPN до открытия браузера, используй режим инкогнито, не переключай страну в процессе регистрации.
           </div>
 
           <!-- 1A: Amnezia -->
-          <div style="border:1px solid hsl(var(--primary)/.4);border-radius:10px;padding:20px;margin-top:20px;background:hsl(var(--primary)/.04)">
+          <div style="border:1px solid hsl(var(--primary)/.4);border-radius:3px;padding:20px;margin-top:20px;background:hsl(var(--primary)/.04)">
             <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:6px">1А — ЛУЧШИЙ ВАРИАНТ: СВОЙ VPN НА AMNEZIA</div>
             <p style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">Вместо чужого VPN — поднять свой на купленном сервере</p>
             <p style="font-size:12px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:14px">Amnezia — приложение, которое само настраивает VPN на твоём EU-сервере. Вводишь IP, логин и пароль сервера — Amnezia сама ставит все протоколы и выдаёт конфиг. Итог: VPN с твоим личным IP, который никто не банит, потому что он известен только тебе.</p>
 
-            <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:8px;padding:14px;margin-bottom:14px">
+            <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:3px;padding:14px;margin-bottom:14px">
   ┌──────────────────────┐         ┌──────────────────────┐
   │   Твой ПК (Россия)   │         │   EU-VPS (твой сервер)│
   │                      │         │                       │
@@ -2263,25 +2174,25 @@ EU-VPS (для прокси):
 
             <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">Ссылки на Amnezia:</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-              <div style="background:hsl(var(--muted)/.6);border:1px solid hsl(var(--border));border-radius:8px;padding:12px">
+              <div style="background:hsl(var(--muted)/.6);border:1px solid hsl(var(--border));border-radius:3px;padding:12px">
                 <div style="font-size:11px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">Если сайт открывается</div>
                 <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:8px;line-height:1.5">Официальная инструкция (без VPN, иногда блокируют в РФ)</div>
                 <a class="btn btn-sm btn-primary" href="https://amnezia.org/ru/starter-guide" target="_blank" rel="noopener" style="width:100%">amnezia.org →</a>
               </div>
-              <div style="background:hsl(var(--muted)/.6);border:1px solid hsl(var(--border));border-radius:8px;padding:12px">
+              <div style="background:hsl(var(--muted)/.6);border:1px solid hsl(var(--border));border-radius:3px;padding:12px">
                 <div style="font-size:11px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">Зеркало (всегда работает)</div>
                 <div style="font-size:11px;color:hsl(var(--muted-foreground));margin-bottom:8px;line-height:1.5">Google Cloud Storage — открывается из РФ без VPN</div>
                 <a class="btn btn-sm btn-primary" href="https://storage.googleapis.com/amnezia/amnezia.org" target="_blank" rel="noopener" style="width:100%">Зеркало →</a>
               </div>
             </div>
 
-            <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.6">
+            <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:3px;padding:12px 14px;font-size:12px;line-height:1.6">
               ⚠ <strong>Важно:</strong> сам сайт amnezia.org периодически блокируют в РФ. Используй зеркало. При этом сам VPN, поднятый через Amnezia, работает стабильно — протокол AmneziaWG специально разработан против DPI-блокировок. Мы сами работаем через него и рекомендуем.
             </div>
           </div>
 
           <!-- 1Б: proxys.io — готовый прокси без аренды своего VPS -->
-          <div style="border:1px solid hsl(var(--primary)/.4);border-radius:10px;padding:20px;margin-top:20px;background:hsl(var(--primary)/.04)">
+          <div style="border:1px solid hsl(var(--primary)/.4);border-radius:3px;padding:20px;margin-top:20px;background:hsl(var(--primary)/.04)">
             <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:6px">1Б — ПРОЩЕ: ГОТОВЫЙ ПРОКСИ-СЕРВЕР</div>
             <p style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">Не хочешь арендовать и настраивать свой VPS — купи готовый прокси</p>
             <p style="font-size:12px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:14px"><strong>proxys.io</strong> — сервис, где мы сами покупали европейские прокси-серверы и пробрасывали через них трафик к Claude. Выбираешь страну (например, Нидерланды или Германия), получаешь готовый прокси с логином и паролем — настраивать сервер не нужно, прописываешь его в VPN-клиенте или в <code>HTTPS_PROXY</code> на своём портале.</p>
@@ -2294,11 +2205,11 @@ EU-VPS (для прокси):
           <div class="page-sect-no">2. GOOGLE ПОЧТА — РЕГИОН НЕ РОССИЯ</div>
           <p>Для регистрации Claude используй Gmail, созданный с включённым VPN. Google привяжет аккаунт к стране по твоему IP — получится почта с EU/US-регионом, а не российским.</p>
 
-          <div style="background:hsl(0 70% 50%/.08);border:1px solid hsl(0 70% 50%/.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:12px;line-height:1.6">
+          <div style="background:hsl(0 70% 50%/.08);border:1px solid hsl(0 70% 50%/.3);border-radius:3px;padding:12px 16px;margin:12px 0;font-size:12px;line-height:1.6">
             ✗ Не используй Яндекс, Mail.ru — они сразу ассоциируются с Россией. Не используй существующий Gmail, который создавался без VPN из РФ.
           </div>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   Как создать Gmail с EU/US-регионом:
   ────────────────────────────────────────────────────────
   [ ] VPN включён (та же страна, что карта и номер)
@@ -2312,7 +2223,7 @@ EU-VPS (для прокси):
   5. Регион Google автоматически определит по VPN-IP ✓
   6. Аккаунт готов — этот email используешь при регистрации Claude</pre>
 
-          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6">
+          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:3px;padding:12px 16px;font-size:12px;line-height:1.6">
             💡 Можно создать почту на ProtonMail (proton.me) — изначально анонимная, не требует телефона, EU-сервера. Тоже хороший вариант.
           </div>
         </div>
@@ -2323,17 +2234,17 @@ EU-VPS (для прокси):
           <p>Российские карты (Visa/MC/Мир) не принимаются. Нужна зарубежная виртуальная карта. <strong>Страна карты = страна VPN = страна номера = страна почты.</strong></p>
 
           <!-- Главная рекомендация -->
-          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:10px;padding:18px;margin:14px 0;background:hsl(var(--primary)/.05)">
+          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:3px;padding:18px;margin:14px 0;background:hsl(var(--primary)/.05)">
             <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:6px">РЕКОМЕНДУЕМ — ПРОВЕРЕНО НАМИ</div>
             <div style="font-size:13px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">Platipomiru — виртуальная карта для подписок</div>
             <p style="font-size:12px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:10px">При оформлении выбирай тариф <strong>«для подписок»</strong> — он предназначен именно для регулярных платежей (Claude Pro $20/мес). Карта выпускается испанским банком, регион — <strong>Испания 🇪🇸</strong>.</p>
-            <div style="background:hsl(45 90% 50%/.12);border:1px solid hsl(45 90% 50%/.5);border-radius:7px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6">
+            <div style="background:hsl(45 90% 50%/.12);border:1px solid hsl(45 90% 50%/.5);border-radius:3px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6">
               ⚠ <strong>Важно:</strong> раз карта испанская — все остальные шаги тоже делай через Испанию. VPN = Испания, виртуальный номер = испанский, Gmail создавай с испанским IP, при регистрации Claude выбирай Испанию.
             </div>
             <a class="btn btn-primary" href="https://platipomiru.com/" target="_blank" rel="noopener">Открыть Platipomiru →</a>
           </div>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   Если Platipomiru не подошёл — другие сервисы:
   ┌──────────────┬─────────────┬───────────────┬───────────────────┐
   │   Сервис     │   Страна    │  Пополнение   │  Сложность        │
@@ -2344,17 +2255,17 @@ EU-VPS (для прокси):
   │ Paysera      │ EU (Литва)  │  SWIFT        │  Средняя          │
   └──────────────┴─────────────┴───────────────┴───────────────────┘</pre>
 
-          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6">
+          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:3px;padding:12px 16px;font-size:12px;line-height:1.6">
             💡 Какую бы карту ты ни выбрал — запомни её страну выпуска. Именно эту страну используй во всех остальных шагах: VPN, номер, почта, и при выборе страны в форме регистрации Claude.
           </div>
 
           <!-- Адрес и Stripe — важный блок -->
-          <div style="border:2px solid hsl(0 70% 50%/.5);border-radius:10px;padding:18px;margin-top:16px;background:hsl(0 70% 50%/.05)">
+          <div style="border:2px solid hsl(0 70% 50%/.5);border-radius:3px;padding:18px;margin-top:16px;background:hsl(0 70% 50%/.05)">
             <div style="font-size:12px;font-weight:700;letter-spacing:.05em;color:hsl(0 70% 45%);margin-bottom:10px">⚠ ВАЖНО — АДРЕС И IP ПРИ ОПЛАТЕ</div>
 
             <p style="font-size:12px;line-height:1.7;margin-bottom:12px">Anthropic использует платёжную систему <strong>Stripe</strong>, которая проверяет сразу три вещи: страну карты, IP-адрес в момент транзакции и платёжный адрес. Все три должны совпадать или хотя бы не противоречить друг другу.</p>
 
-            <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:8px;padding:14px;margin-bottom:14px">
+            <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.5);border:1px solid hsl(var(--border));border-radius:3px;padding:14px;margin-bottom:14px">
   Что Stripe проверяет при оплате:
   ─────────────────────────────────────────────────────
   ✓ Страна карты           → Испания (Platipomiru)
@@ -2377,18 +2288,18 @@ EU-VPS (для прокси):
           <p>Claude требует подтверждение по SMS. Российские номера (+7) заблокированы. Нужен виртуальный номер из той же страны, что VPN, почта и карта.</p>
 
           <!-- Рекомендуемые сервисы -->
-          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:10px;padding:18px;margin:14px 0;background:hsl(var(--primary)/.05)">
+          <div style="border:1px solid hsl(var(--primary)/.5);border-radius:3px;padding:18px;margin:14px 0;background:hsl(var(--primary)/.05)">
             <div style="font-size:11px;font-weight:600;letter-spacing:.07em;color:hsl(var(--primary));margin-bottom:12px">РЕКОМЕНДУЕМ — ПРОВЕРЕНО НАМИ</div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
 
-              <div style="background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+              <div style="background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:3px;padding:14px">
                 <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">SMSFast</div>
                 <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:10px">Прямая ссылка на страницу Claude. Выбираешь страну, покупаешь номер, получаешь SMS.</p>
                 <a class="btn btn-sm btn-primary" href="https://smsfast.cc/service/claude" target="_blank" rel="noopener" style="width:100%">Открыть SMSFast →</a>
               </div>
 
-              <div style="background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:8px;padding:14px">
+              <div style="background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:3px;padding:14px">
                 <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:4px">Hero SMS <span style="font-size:10px;font-weight:400;color:hsl(142 60% 45%)">● есть Испания 🇪🇸</span></div>
                 <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:10px">Пополнение через российскую карту. Есть испанские номера — удобно если карта Platipomiru.</p>
                 <a class="btn btn-sm btn-primary" href="https://hero-sms.com/ru" target="_blank" rel="noopener" style="width:100%">Открыть Hero SMS →</a>
@@ -2397,7 +2308,7 @@ EU-VPS (для прокси):
             </div>
           </div>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   Другие сервисы (если SMSFast не подошёл):
   ┌─────────────────┬──────────────┬─────────────────────┐
   │    Сервис       │  Оплата      │  Примечание          │
@@ -2407,7 +2318,7 @@ EU-VPS (для прокси):
   │ 5sim.net        │  Крипто/карта│  EU-номера           │
   └─────────────────┴──────────────┴─────────────────────┘</pre>
 
-          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.6">
+          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.4);border-radius:3px;padding:12px 16px;font-size:12px;line-height:1.6">
             ⚠ Страна номера = страна VPN = страна карты = страна почты. Все четыре должны совпадать. Не бери +7 (Россия), +375 (Беларусь), бесплатные онлайн-номера — Anthropic их блокирует.
           </div>
         </div>
@@ -2416,7 +2327,7 @@ EU-VPS (для прокси):
         <div class="page-sect">
           <div class="page-sect-no">5. РЕГИСТРАЦИЯ CLAUDE</div>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.8;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   Подготовка (до открытия браузера):
   ─────────────────────────────────────────────────────────
   [ ] VPN включён → страна совпадает с картой и номером
@@ -2439,7 +2350,7 @@ EU-VPS (для прокси):
   Шаг 9. Страна выставления счёта = страна карты
   Шаг 10. Оплата прошла → Pro активирован ✓</pre>
 
-          <div style="background:hsl(142 60% 45%/.1);border:1px solid hsl(142 60% 45%/.4);border-radius:8px;padding:12px 16px;margin-top:4px;font-size:12px;line-height:1.6">
+          <div style="background:hsl(142 60% 45%/.1);border:1px solid hsl(142 60% 45%/.4);border-radius:3px;padding:12px 16px;margin-top:4px;font-size:12px;line-height:1.6">
             ✓ Проверь: после регистрации зайди в настройки и убедись, что страна аккаунта не определилась как Россия. Если да — напиши в поддержку или пересоздай аккаунт.
           </div>
         </div>
@@ -2448,7 +2359,7 @@ EU-VPS (для прокси):
         <div class="page-sect">
           <div class="page-sect-no">ЧТО НЕ ДЕЛАТЬ</div>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   ┌────────────────────────────────────┬────────────────────────────┐
   │  Не делай                          │  Почему                    │
   ├────────────────────────────────────┼────────────────────────────┤
@@ -2476,7 +2387,7 @@ EU-VPS (для прокси):
             <li>Если используешь API — запросы через прокси той же страны (как в разделе «Свой Vibe»)</li>
           </ul>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:1.7;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   Ежедневное использование:
 
   Личный Claude (браузер):
@@ -2492,7 +2403,7 @@ EU-VPS (для прокси):
           <div class="page-sect-no">РЕКОМЕНДУЕМАЯ СТРАТЕГИЯ ПОДПИСКИ</div>
           <p>Не торопись сразу покупать дорогой план. Вот проверенная последовательность:</p>
 
-          <pre style="font-family:var(--font-mono);font-size:11px;line-height:2;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:8px;padding:16px;margin:14px 0">
+          <pre style="font-family:var(--font-mono);font-size:11px;line-height:2;color:hsl(var(--foreground));background:hsl(var(--muted)/.4);border:1px solid hsl(var(--border));border-radius:3px;padding:16px;margin:14px 0">
   1. Регистрируешься → пользуешься бесплатно
      Посмотри на возможности, пойми как работать с Клодом
 
@@ -2505,7 +2416,7 @@ EU-VPS (для прокси):
   4. Только если очень нужно → MAX $100/мес
      Для интенсивной профессиональной работы</pre>
 
-          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:8px;padding:12px 16px;font-size:12px;line-height:1.7">
+          <div style="background:hsl(var(--primary)/.08);border:1px solid hsl(var(--primary)/.3);border-radius:3px;padding:12px 16px;font-size:12px;line-height:1.7">
             💡 Большинство останавливается на Pro $20. На MAX переходят те, кто работает с Claude по 8+ часов в день и каждый день упирается в контекст или лимиты сообщений.
           </div>
         </div>
@@ -2523,19 +2434,19 @@ EU-VPS (для прокси):
           <p>Самый быстрый способ — без карты, без верификации и лишних шагов. Но со своими рисками и ограничениями.</p>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0">
-            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">GGSEL</div>
               <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:12px">Крупный агрегатор цифровых товаров. Широкий выбор: базовые аккаунты, Pro, Max. Автовыдача, гарантия от магазина.</p>
               <a class="btn btn-sm btn-primary" href="https://ggsel.com" target="_blank" rel="noopener" style="width:100%">Перейти на GGSEL →</a>
             </div>
-            <div style="border:1px solid hsl(var(--border));border-radius:10px;padding:16px">
+            <div style="border:1px solid hsl(var(--border));border-radius:3px;padding:16px">
               <div style="font-size:12px;font-weight:600;color:hsl(var(--foreground));margin-bottom:6px">Plati.Market</div>
               <p style="font-size:11px;line-height:1.6;color:hsl(var(--muted-foreground));margin-bottom:12px">Маркетплейс с десятками продавцов. Рейтинговая система и история продаж — выбирай проверенных.</p>
               <a class="btn btn-sm btn-primary" href="https://plati.market" target="_blank" rel="noopener" style="width:100%">Перейти на Plati.Market →</a>
             </div>
           </div>
 
-          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.5);border-radius:10px;padding:16px;font-size:12px;line-height:1.75">
+          <div style="background:hsl(45 90% 50%/.1);border:1px solid hsl(45 90% 50%/.5);border-radius:3px;padding:16px;font-size:12px;line-height:1.75">
             <div style="font-weight:600;color:hsl(var(--foreground));margin-bottom:8px">⚠ На что смотреть</div>
             <ul style="padding-left:16px;margin:0;color:hsl(var(--foreground))">
               <li><strong>Рейтинг продавца</strong> — только с высоким рейтингом и большим числом продаж. Новые без истории — риск.</li>
@@ -2774,45 +2685,6 @@ EU-VPS (для прокси):
       </div>
       <div class="modal-footer">
         <button class="btn btn-primary" data-close="modal-proj-vscode">Готово</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Modal: Публикация приложения ─────────────────────── -->
-  <div class="modal-overlay hidden" id="modal-publish" role="dialog" aria-modal="true">
-    <div class="modal" style="max-width:520px">
-      <div class="modal-header">
-        <span class="modal-title">Публикация · <span id="pub-project"></span></span>
-        <button class="modal-close" data-close="modal-publish" aria-label="Закрыть">✕</button>
-      </div>
-      <label class="pub-row">
-        <input type="checkbox" id="pub-enabled" />
-        <span>Опубликовать приложение</span>
-      </label>
-      <div class="form-group">
-        <label class="form-label">Кто может смотреть</label>
-        <select id="pub-visibility" class="form-input">
-          <option value="owner">Только я и админ</option>
-          <option value="auth">Все залогиненные ученики</option>
-          <option value="public">Публично — внешние пользователи (без входа)</option>
-        </select>
-      </div>
-      <label class="pub-row">
-        <input type="checkbox" id="pub-autosleep" checked />
-        <span>Авто-засыпание (засыпает с контейнером через 30 мин простоя)</span>
-      </label>
-      <div class="pub-url-box hidden" id="pub-url-box">
-        <span class="pub-url" id="pub-url"></span>
-        <button class="btn btn-sm" id="pub-copy">Копировать</button>
-        <a class="btn btn-sm" id="pub-open" target="_blank">Открыть →</a>
-      </div>
-      <div class="pub-status" id="pub-status"></div>
-      <div class="form-error hidden" id="pub-error"></div>
-      <div class="modal-footer">
-        <button class="btn" id="pub-redeploy">Деплой</button>
-        <span style="flex:1"></span>
-        <button class="btn btn-ghost" data-close="modal-publish">Закрыть</button>
-        <button class="btn btn-primary" id="pub-save">Сохранить</button>
       </div>
     </div>
   </div>
