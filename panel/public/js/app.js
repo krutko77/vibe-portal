@@ -241,25 +241,209 @@ function vpsHideHover(ev) {
   ctx.tooltipEl.classList.add('hidden');
 }
 
+// ── График «Нагрузка на процессор» — отдельная раскладка 1:1 с дашбордом
+// Timeweb Cloud: подписи по Y слева (фикс. 0-100% либо авто под фактический
+// максимум — переключатель «Показывать …») и несколько подписей по X вместо
+// двух крайних, как в общем renderVpsChart() (тот остаётся как есть — им
+// рисуется RAM, которую этот редизайн не затрагивает).
+const VPS_CPU_PLOT_W = 600, VPS_CPU_PLOT_H = 118;
+const VPS_CPU_LEFT = 36, VPS_CPU_TOP = 4, VPS_CPU_BOTTOM = 18;
+const VPS_CPU_W = VPS_CPU_LEFT + VPS_CPU_PLOT_W;
+const VPS_CPU_H = VPS_CPU_TOP + VPS_CPU_PLOT_H + VPS_CPU_BOTTOM;
+const VPS_CPU_X_TICKS = 6;
+const VPS_CPU_COLOR = 'hsl(217 91% 60%)';
+
+let vpsCpuScaleMode = 'fixed';
+let vpsCpuLastPoints = [];
+let vpsCpuLastRange = '24h';
+
+// Верхняя граница шкалы для режима «автоматическая»: с запасом ~15% над
+// фактическим максимумом, округлённая до «красивого» числа (1/2/2.5/5/10 × 10^n).
+function vpsCpuNiceMax(max) {
+  if (max <= 0) return 10;
+  const rough = max * 1.15;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+  for (const step of [1, 2, 2.5, 5, 10]) {
+    const candidate = step * magnitude;
+    if (candidate >= rough) return candidate;
+  }
+  return 10 * magnitude;
+}
+
+function vpsCpuX(i, n) {
+  return VPS_CPU_LEFT + (i / (n - 1)) * VPS_CPU_PLOT_W;
+}
+function vpsCpuY(v, domainMax) {
+  return VPS_CPU_TOP + VPS_CPU_PLOT_H - (Math.max(0, Math.min(domainMax, v)) / domainMax) * VPS_CPU_PLOT_H;
+}
+function vpsCpuFmtAxisTime(ts, range) {
+  const d = new Date(ts);
+  return (range === 'week' || range === '2w' || range === 'month')
+    ? d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })
+    : d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderVpsCpuChart(points, range) {
+  const svg = $('#vpsCpuChart');
+  const tooltipEl = $('#vpsCpuTooltip');
+  svg.setAttribute('viewBox', `0 0 ${VPS_CPU_W} ${VPS_CPU_H}`);
+  svg.innerHTML = '';
+  svg.__vpsCpu = null;
+  svg.onmousemove = null; svg.onmouseleave = null;
+  vpsCpuLastPoints = points;
+  vpsCpuLastRange = range;
+
+  if (points.length < 2) {
+    const text = document.createElementNS(VPS_CHART_NS, 'text');
+    text.setAttribute('x', VPS_CPU_W / 2);
+    text.setAttribute('y', VPS_CPU_H / 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', 'vps-chart-empty');
+    text.textContent = 'нет данных за период';
+    svg.appendChild(text);
+    tooltipEl.classList.add('hidden');
+    return;
+  }
+
+  const n = points.length;
+  const domainMax = vpsCpuScaleMode === 'auto'
+    ? vpsCpuNiceMax(Math.max(...points.map(p => p.v)))
+    : 100;
+
+  for (let i = 0; i <= 5; i++) {
+    const v = domainMax * i / 5;
+    const y = vpsCpuY(v, domainMax);
+    const grid = document.createElementNS(VPS_CHART_NS, 'line');
+    grid.setAttribute('x1', VPS_CPU_LEFT); grid.setAttribute('x2', VPS_CPU_W);
+    grid.setAttribute('y1', y); grid.setAttribute('y2', y);
+    grid.setAttribute('class', 'vps-chart-grid');
+    svg.appendChild(grid);
+
+    const label = document.createElementNS(VPS_CHART_NS, 'text');
+    label.setAttribute('x', VPS_CPU_LEFT - 6);
+    label.setAttribute('y', y + 3);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'vps-chart-axis-label');
+    label.textContent = (Math.round(v * 10) / 10) + ' %';
+    svg.appendChild(label);
+  }
+
+  const path = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${vpsCpuX(i, n).toFixed(1)},${vpsCpuY(p.v, domainMax).toFixed(1)}`)
+    .join(' ');
+  const area = document.createElementNS(VPS_CHART_NS, 'path');
+  area.setAttribute('d', `${path} L ${VPS_CPU_W},${VPS_CPU_TOP + VPS_CPU_PLOT_H} L ${VPS_CPU_LEFT},${VPS_CPU_TOP + VPS_CPU_PLOT_H} Z`);
+  area.setAttribute('class', 'vps-chart-area cpu-area');
+  svg.appendChild(area);
+  const line = document.createElementNS(VPS_CHART_NS, 'path');
+  line.setAttribute('d', path);
+  line.setAttribute('class', 'vps-chart-line cpu-line');
+  svg.appendChild(line);
+
+  const tickCount = Math.min(VPS_CPU_X_TICKS, n);
+  for (let i = 0; i < tickCount; i++) {
+    const idx = tickCount === 1 ? 0 : Math.round(i * (n - 1) / (tickCount - 1));
+    const x = vpsCpuX(idx, n);
+    const label = document.createElementNS(VPS_CHART_NS, 'text');
+    label.setAttribute('x', x);
+    label.setAttribute('y', VPS_CPU_H - 4);
+    label.setAttribute('text-anchor', i === 0 ? 'start' : i === tickCount - 1 ? 'end' : 'middle');
+    label.setAttribute('class', 'vps-chart-axis-label');
+    label.textContent = vpsCpuFmtAxisTime(points[idx].t, range);
+    svg.appendChild(label);
+  }
+
+  const crosshair = document.createElementNS(VPS_CHART_NS, 'line');
+  crosshair.setAttribute('y1', VPS_CPU_TOP); crosshair.setAttribute('y2', VPS_CPU_TOP + VPS_CPU_PLOT_H);
+  crosshair.setAttribute('class', 'vps-chart-crosshair hidden');
+  svg.appendChild(crosshair);
+
+  const dot = document.createElementNS(VPS_CHART_NS, 'circle');
+  dot.setAttribute('r', 3);
+  dot.setAttribute('class', 'vps-chart-dot hidden');
+  dot.style.fill = VPS_CPU_COLOR;
+  svg.appendChild(dot);
+
+  svg.__vpsCpu = { points, n, domainMax, crosshair, dot, tooltipEl };
+  svg.onmousemove = vpsCpuHandleHover;
+  svg.onmouseleave = vpsCpuHideHover;
+}
+
+function vpsCpuHandleHover(ev) {
+  const svg = ev.currentTarget;
+  const ctx = svg.__vpsCpu;
+  if (!ctx) return;
+  const rect = svg.getBoundingClientRect();
+  const plotLeftPx = (VPS_CPU_LEFT / VPS_CPU_W) * rect.width;
+  const plotWidthPx = rect.width - plotLeftPx;
+  const relX = Math.max(0, Math.min(1, (ev.clientX - rect.left - plotLeftPx) / plotWidthPx));
+  const idx = Math.round(relX * (ctx.n - 1));
+  const x = vpsCpuX(idx, ctx.n);
+  const v = ctx.points[idx].v;
+
+  ctx.crosshair.setAttribute('x1', x); ctx.crosshair.setAttribute('x2', x);
+  ctx.crosshair.classList.remove('hidden');
+  ctx.dot.setAttribute('cx', x);
+  ctx.dot.setAttribute('cy', vpsCpuY(v, ctx.domainMax));
+  ctx.dot.classList.remove('hidden');
+
+  ctx.tooltipEl.innerHTML =
+    `<div class="vps-tooltip-time">${vpsFmtTooltipTime(ctx.points[idx].t)}</div>` +
+    `<div class="vps-tooltip-row"><i style="background:${VPS_CPU_COLOR}"></i>Нагрузка: <b>${v} %</b></div>`;
+  ctx.tooltipEl.classList.remove('hidden');
+
+  const left = (x / VPS_CPU_W) * rect.width;
+  const clamped = Math.max(50, Math.min(rect.width - 50, left));
+  ctx.tooltipEl.style.left = clamped + 'px';
+}
+
+function vpsCpuHideHover(ev) {
+  const ctx = ev.currentTarget.__vpsCpu;
+  if (!ctx) return;
+  ctx.crosshair.classList.add('hidden');
+  ctx.dot.classList.add('hidden');
+  ctx.tooltipEl.classList.add('hidden');
+}
+
+// ── Инлайн-дропдаун («Статистика за …», «Показывать …») — кликабельный текст
+// со стрелкой вместо нативного <select>, попап со списком ниже.
+function wireInlineSelect(id, onChange) {
+  const root = document.getElementById(id);
+  const btn = root.querySelector('.vps-inline-select-btn');
+  const label = root.querySelector('.vps-inline-select-label');
+  const items = [...root.querySelectorAll('.vps-inline-select-menu button')];
+  const close = () => root.classList.remove('open');
+
+  function setValue(value, { silent } = {}) {
+    const item = items.find(it => it.dataset.value === value) || items[0];
+    items.forEach(it => it.classList.toggle('active', it === item));
+    label.textContent = item.textContent;
+    if (!silent) onChange(item.dataset.value);
+  }
+
+  items.forEach(it => {
+    it.onclick = () => { setValue(it.dataset.value); close(); };
+  });
+  btn.onclick = (e) => { e.stopPropagation(); root.classList.toggle('open'); };
+  document.addEventListener('click', (e) => { if (!root.contains(e.target)) close(); });
+
+  const def = items.find(it => it.dataset.default === '1') || items[0];
+  setValue(def.dataset.value, { silent: true });
+  return { setValue };
+}
+
 let vpsMetricsRange = '24h';
 
 async function loadVpsMetrics(range) {
   vpsMetricsRange = range;
-  const sel = $('#vpsMetricsRange');
-  if (sel) sel.value = range;
   $('#vpsMetricsHint').textContent = '';
   try {
     const { cpu, mem } = await api('/api/vps-metrics?range=' + range);
-    $('#vpsCpuNow').textContent = cpu.now + '%';
-    $('#vpsCpuAvg').textContent = cpu.avg + '%';
-    $('#vpsCpuMax').textContent = cpu.max + '%';
     $('#vpsMemNow').textContent = mem.now + '%';
     $('#vpsMemAvg').textContent = mem.avg + '%';
     $('#vpsMemMax').textContent = mem.max + '%';
 
-    renderVpsChart($('#vpsCpuChart'), $('#vpsCpuTooltip'), [
-      { points: cpu.points, valueKey: 'v', lineClass: 'cpu-line', areaClass: 'cpu-area', label: 'CPU', color: 'hsl(217,91%,60%)' },
-    ], range);
+    renderVpsCpuChart(cpu.points, range);
 
     renderVpsChart($('#vpsMemChart'), $('#vpsMemTooltip'), [
       { points: mem.points, valueKey: 'vCached', lineClass: 'ram-cached-line', areaClass: 'ram-cached-area', label: 'Использовано с кэшем', color: 'hsl(160,60%,45%)' },
@@ -267,7 +451,7 @@ async function loadVpsMetrics(range) {
     ], range);
   } catch (e) {
     $('#vpsMetricsHint').textContent = 'Не удалось загрузить нагрузку: ' + e.message;
-    renderVpsChart($('#vpsCpuChart'), $('#vpsCpuTooltip'), [{ points: [], valueKey: 'v' }], range);
+    renderVpsCpuChart([], range);
     renderVpsChart($('#vpsMemChart'), $('#vpsMemTooltip'), [{ points: [], valueKey: 'v' }], range);
   }
 }
@@ -1485,7 +1669,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#vpsDiskTotal').textContent = '…';
     $('#vpsDiskPct').textContent = '…';
     try {
-      const { total, used, avail, percent } = await api('/api/vps-disk');
+      const { total, used, avail, percent, cpuCount, cpuFrequency } = await api('/api/vps-disk');
       const fill = $('#vpsDiskFill');
       fill.style.width = percent + '%';
       fill.classList.toggle('warn', percent >= 80 && percent < 90);
@@ -1494,13 +1678,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#vpsDiskAvail').textContent = fmtBytesGb(avail);
       $('#vpsDiskTotal').textContent = fmtBytesGb(total);
       $('#vpsDiskPct').textContent = percent + '%';
+      $('#vpsCpuSpec').textContent = cpuCount && cpuFrequency ? `${cpuCount} x ${cpuFrequency} ГГц` : '';
     } catch (e) {
       $('#vpsDiskUsed').textContent = 'ошибка';
       $('#vpsDiskPct').textContent = e.message;
     }
     loadVpsMetrics(vpsMetricsRange);
   };
-  $('#vpsMetricsRange').onchange = (e) => loadVpsMetrics(e.target.value);
+  wireInlineSelect('vpsRangeSelect', (value) => loadVpsMetrics(value));
+  wireInlineSelect('vpsCpuScaleSelect', (value) => {
+    vpsCpuScaleMode = value;
+    renderVpsCpuChart(vpsCpuLastPoints, vpsCpuLastRange);
+  });
 
   // Add user
   $('#btn-add-user').onclick = () => {

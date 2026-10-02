@@ -2699,22 +2699,46 @@ EU-VPS (для прокси):
           дашборде), замер текущий при каждом открытии окна.
         </div>
 
-        <div class="vps-metrics-range-wrap">
-          <select class="vps-metrics-range-select" id="vpsMetricsRange">
-            <option value="1h">За час</option>
-            <option value="6h">За 6 часов</option>
-            <option value="24h" selected>За день</option>
-            <option value="week">За неделю</option>
-          </select>
+        <div class="vps-controls">
+          <div class="vps-control-row">
+            <span>Статистика за</span>
+            <div class="vps-inline-select" id="vpsRangeSelect">
+              <button type="button" class="vps-inline-select-btn">
+                <span class="vps-inline-select-label"></span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="vps-inline-select-menu">
+                <button type="button" data-value="1h">час</button>
+                <button type="button" data-value="6h">6 часов</button>
+                <button type="button" data-value="24h" data-default="1">день</button>
+                <button type="button" data-value="week">неделю</button>
+                <button type="button" data-value="2w">2 недели</button>
+                <button type="button" data-value="month">месяц</button>
+              </div>
+            </div>
+          </div>
+          <div class="vps-control-row">
+            <span>Показывать</span>
+            <div class="vps-inline-select" id="vpsCpuScaleSelect">
+              <button type="button" class="vps-inline-select-btn">
+                <span class="vps-inline-select-label"></span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="vps-inline-select-menu">
+                <button type="button" data-value="fixed" data-default="1">фиксированную шкалу</button>
+                <button type="button" data-value="auto">автоматическую шкалу</button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="vps-metric-block">
-          <div class="vps-metric-header">
+        <div class="vps-metric-card">
+          <div class="vps-metric-card-header">
             <span class="vps-metric-title">Нагрузка на процессор</span>
-            <span class="vps-metric-nums">сейчас <b id="vpsCpuNow">—</b> · среднее <b id="vpsCpuAvg">—</b> · макс <b id="vpsCpuMax">—</b></span>
+            <span class="vps-metric-cpu-spec" id="vpsCpuSpec"></span>
           </div>
           <div class="vps-chart-wrap">
-            <svg class="vps-metric-chart cpu" id="vpsCpuChart" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+            <svg class="vps-metric-chart cpu" id="vpsCpuChart" viewBox="0 0 640 158" preserveAspectRatio="none"></svg>
             <div class="vps-chart-tooltip hidden" id="vpsCpuTooltip"></div>
           </div>
         </div>
@@ -2735,9 +2759,6 @@ EU-VPS (для прокси):
         </div>
 
         <div class="form-hint" id="vpsMetricsHint" style="margin-top:4px"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" data-close="modal-vps-disk">Закрыть</button>
       </div>
     </div>
   </div>

@@ -7,7 +7,7 @@ const API_BASE = 'https://api.timeweb.cloud/api/v1';
 const SERVER_ID = process.env.TIMEWEB_SERVER_ID || '8414777';
 const TOKEN = process.env.TIMEWEB_API_TOKEN || '';
 
-const RANGE_HOURS = { '1h': 1, '6h': 6, '24h': 24, week: 24 * 7 };
+const RANGE_HOURS = { '1h': 1, '6h': 6, '24h': 24, week: 24 * 7, '2w': 24 * 14, month: 24 * 30 };
 const MAX_POINTS = 300;
 const CACHE_TTL_MS = 60_000;
 
@@ -21,7 +21,10 @@ function isoNoMs(d) {
 // Усредняет по бакетам все числовые поля точки, кроме `t` (а не только `v`) —
 // у RAM кроме `v` (использовано) есть `vCached` (использовано с кэшем), оба
 // должны схлопываться синхронно, индекс-в-индекс, иначе две линии разъедутся.
-function downsample(points) {
+// `digits` — точность округления (CPU хочет десятые, как в дашборде Timeweb;
+// RAM по умолчанию остаётся целыми, как раньше).
+function downsample(points, digits = 0) {
+  const factor = 10 ** digits;
   if (points.length <= MAX_POINTS) return points;
   const bucketSize = Math.ceil(points.length / MAX_POINTS);
   const keys = Object.keys(points[0]).filter(k => k !== 't');
@@ -30,19 +33,20 @@ function downsample(points) {
     const chunk = points.slice(i, i + bucketSize);
     const bucket = { t: chunk[Math.floor(chunk.length / 2)].t };
     for (const k of keys) {
-      bucket[k] = Math.round(chunk.reduce((a, p) => a + p[k], 0) / chunk.length);
+      bucket[k] = Math.round(chunk.reduce((a, p) => a + p[k], 0) / chunk.length * factor) / factor;
     }
     out.push(bucket);
   }
   return out;
 }
 
-function stats(points) {
+function stats(points, digits = 0) {
   if (!points.length) return { now: 0, avg: 0, max: 0 };
+  const factor = 10 ** digits;
   const vals = points.map(p => p.v);
   return {
     now: vals[vals.length - 1],
-    avg: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length),
+    avg: Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * factor) / factor,
     max: Math.max(...vals),
   };
 }
@@ -97,11 +101,11 @@ export async function getVpsMetrics(range) {
   const cpuList = cpuBody.statistics?.[0]?.list || [];
   const cpuRaw = cpuList.map(p => ({
     t: new Date(p.time).getTime(),
-    v: Math.round(Math.max(0, Math.min(100, p.value))),
+    v: Math.round(Math.max(0, Math.min(100, p.value)) * 10) / 10,
   }));
 
   const data = {
-    cpu: { points: downsample(cpuRaw), ...stats(cpuRaw) },
+    cpu: { points: downsample(cpuRaw, 1), ...stats(cpuRaw, 1) },
     mem: { points: downsample(ramRaw), ...stats(ramRaw) },
   };
 
@@ -128,7 +132,13 @@ export async function getVpsDisk() {
   const used = disk.used * 1024 * 1024;
   const avail = total - used;
   const percent = Math.ceil((used / total) * 100);
-  const data = { total, used, avail, percent };
+  // cpu/cpu_frequency — для подписи «N x X.X ГГц» в карточке нагрузки CPU,
+  // как на дашборде Timeweb Cloud.
+  const data = {
+    total, used, avail, percent,
+    cpuCount: body.server?.cpu ?? null,
+    cpuFrequency: body.server?.cpu_frequency ?? null,
+  };
 
   diskCache = { at: Date.now(), data };
   return data;

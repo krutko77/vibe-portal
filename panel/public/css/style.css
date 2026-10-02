@@ -133,19 +133,56 @@ body.app-bg {
   .modal-vps { max-width: 480px !important; }
 }
 
-/* Переключатель диапазона графиков нагрузки — dropdown, как на Timeweb */
-.vps-metrics-range-wrap { margin-top: 18px; }
-.vps-metrics-range-select {
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
+/* Переключатели «Статистика за … / Показывать …» над графиком CPU — инлайн-
+   дропдауны текстом со стрелкой, 1:1 с дашбордом Timeweb Cloud. */
+.vps-controls { margin-top: 18px; display: flex; flex-direction: column; gap: 9px; }
+.vps-control-row {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
   color: hsl(var(--foreground));
-  font-family: var(--font-mono);
-  font-size: 11px; font-weight: 600;
-  letter-spacing: .02em;
-  padding: 5px 10px;
+}
+.vps-inline-select { position: relative; }
+.vps-inline-select-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; padding: 0;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: hsl(var(--primary));
   cursor: pointer;
 }
-.vps-metrics-range-select:hover { border-color: hsl(var(--smui-border-hover)); }
+.vps-inline-select-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.vps-inline-select-btn svg { opacity: .8; transition: transform .15s; }
+.vps-inline-select.open .vps-inline-select-btn svg { transform: rotate(180deg); }
+.vps-inline-select-menu {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0;
+  min-width: 180px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  z-index: 5;
+  box-shadow: 0 4px 14px hsl(0 0% 0% / 0.3);
+}
+.vps-inline-select.open .vps-inline-select-menu { display: block; }
+.vps-inline-select-menu button {
+  display: block; width: 100%; text-align: left;
+  background: none; border: none; padding: 7px 11px;
+  font-family: var(--font-mono); font-size: 12px;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+.vps-inline-select-menu button:hover { background: hsl(var(--primary) / 0.12); color: hsl(var(--primary)); }
+.vps-inline-select-menu button.active { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); font-weight: 700; }
+
+/* Карточка с графиком CPU — фон/рамка отделяют её от переключателей выше,
+   как на дашборде Timeweb Cloud. */
+.vps-metric-card {
+  margin-top: 16px;
+  background: hsl(var(--border) / 0.12);
+  border: 1px solid hsl(var(--border));
+  padding: 14px 14px 10px;
+}
+.vps-metric-card-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.vps-metric-cpu-spec { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); }
+.vps-metric-chart.cpu { background: none; border: none; height: 150px; }
+#vpsCpuTooltip .vps-tooltip-row i { border-radius: 1px; width: 10px; height: 2px; }
 
 /* Блоки графиков CPU/RAM */
 .vps-metric-block { margin-top: 18px; }
@@ -604,6 +641,7 @@ body.has-right-chat .section-block {
   padding: 14px 18px 4px;
   overflow-y: auto; min-height: 0;
 }
+#modal-vps-disk .modal-body { padding-bottom: 20px; }
 .modal-body > p { margin: 0 0 10px; }
 .modal-body .form-hint { line-height: 1.6; }
 .modal-body .note-steps { margin: 4px 0 10px; }
