@@ -8,6 +8,7 @@ const SERVER_ID = process.env.TIMEWEB_SERVER_ID || '8414777';
 const TOKEN = process.env.TIMEWEB_API_TOKEN || '';
 
 const RANGE_HOURS = { '1h': 1, '6h': 6, '24h': 24, week: 24 * 7, '2w': 24 * 14, month: 24 * 30 };
+export const VALID_RANGES = Object.keys(RANGE_HOURS);
 const MAX_POINTS = 300;
 const CACHE_TTL_MS = 60_000;
 

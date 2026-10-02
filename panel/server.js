@@ -41,7 +41,7 @@ import { homeDirFor } from './lib/home-dir.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
 import { writeSection, containerIp } from './lib/publish.js';
-import { getVpsMetrics, getVpsDisk } from './lib/vps-metrics.js';
+import { getVpsMetrics, getVpsDisk, VALID_RANGES } from './lib/vps-metrics.js';
 import {
   allocateSlot, touchSlot, releaseSlot, ensureCodeInstance, portForSlot,
 } from './lib/code-slots.js';
@@ -809,7 +809,7 @@ app.get('/api/vps-disk', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/vps-metrics', requireAdmin, async (req, res) => {
-  const range = ['1h', '6h', '24h', 'week'].includes(req.query.range) ? req.query.range : '24h';
+  const range = VALID_RANGES.includes(req.query.range) ? req.query.range : '24h';
   try {
     res.json(await getVpsMetrics(range));
   } catch (e) {
