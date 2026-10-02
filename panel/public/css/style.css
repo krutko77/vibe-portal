@@ -879,8 +879,10 @@ body.has-right-chat .section-block {
   color: hsl(var(--muted-foreground));
 }
 .pill-type { color: hsl(var(--muted-foreground)); }
+.pill-type.type-agent { color: #86C0D0; border-color: #86C0D0; }
+.pill-type.type-project { color: #F4B658; border-color: #F4B658; }
 .pill.status-new { color: hsl(var(--muted-foreground)); }
-.pill.status-prod { color: #e89a3c; border-color: #e89a3c; }
+.pill.status-prod { color: #50C878; border-color: #50C878; }
 .pill.status-other { color: hsl(var(--primary)); border-color: hsl(var(--primary)); }
 
 .projects-table .th-section { min-width: 140px; }

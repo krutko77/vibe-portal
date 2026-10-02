@@ -309,6 +309,7 @@ app.get('/api/projects', requireAuth, (req, res) => {
         created: st ? new Date(st.birthtimeMs || st.ctimeMs).toISOString() : null,
         modified: st ? new Date(st.mtimeMs).toISOString() : null,
         owner: req.session.user,
+        type: meta.type || 'ПРОЕКТ',
         status: meta.status || (deployedViaService ? 'РАБОЧИЙ' : 'НОВЫЙ'),
         siteUrl: meta.siteUrl || null,
         section: meta.section || null,

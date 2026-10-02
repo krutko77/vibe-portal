@@ -1030,6 +1030,7 @@ async function refreshProjects() {
 
     const folderInVs = (name) => `/code/${encodeURIComponent(ME.username)}/?folder=${encodeURIComponent(ME.homeDir + '/' + name)}`;
     const statusClass = (s) => /боёвой|рабочий/i.test(s) ? 'status-prod' : (s === 'НОВЫЙ' ? 'status-new' : 'status-other');
+    const typeClass = (t) => t === 'АГЕНТ' ? 'type-agent' : (t === 'ПРОЕКТ' ? 'type-project' : '');
 
     // Группировка по разделам (.portal-meta.json → section). Разделы — заголовки-
     // разделители, всегда развёрнуты; без раздела — плоский список без заголовка
@@ -1042,7 +1043,7 @@ async function refreshProjects() {
 
     const rowHtml = (p) => `
       <tr data-project="${escapeHtml(p.name)}">
-        <td><span class="pill pill-type">ПРОЕКТ</span></td>
+        <td><span class="pill pill-type ${typeClass(p.type)}">${escapeHtml(p.type)}</span></td>
         <td><span class="pill ${statusClass(p.status)}">${escapeHtml(p.status)}</span></td>
         <td class="td-name">${escapeHtml(p.name)}</td>
         <td>${escapeHtml(p.owner)}</td>
