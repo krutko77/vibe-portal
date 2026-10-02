@@ -101,6 +101,7 @@ body.app-bg {
   height: 10px; border-radius: 3px;
   background: hsl(var(--border) / 0.5);
   overflow: hidden;
+  max-width: 500px; margin: 0 auto;
 }
 .disk-usage-fill {
   height: 100%; width: 0%;
@@ -111,7 +112,7 @@ body.app-bg {
 .disk-usage-fill.danger { background: hsl(var(--destructive)); }
 .disk-usage-stats {
   display: flex; justify-content: space-between; gap: 10px;
-  margin-top: 12px;
+  max-width: 500px; margin: 12px auto 0;
 }
 .disk-usage-stat {
   display: flex; flex-direction: column; gap: 3px;
@@ -179,28 +180,19 @@ body.app-bg {
   border: 1px solid hsl(var(--border));
   padding: 14px 14px 10px;
 }
-.vps-metric-card-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.vps-metric-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .vps-metric-cpu-spec { font-family: var(--font-mono); font-size: 11px; color: hsl(var(--muted-foreground)); }
-.vps-metric-chart.cpu { background: none; border: none; height: 150px; }
-#vpsCpuTooltip .vps-tooltip-row i { border-radius: 1px; width: 10px; height: 2px; }
+.vps-metric-chart.cpu, .vps-metric-chart.mem { background: none; border: none; height: 150px; }
+#vpsCpuTooltip .vps-tooltip-row i, #vpsMemTooltip .vps-tooltip-row i { border-radius: 1px; width: 10px; height: 2px; }
+/* В карточке RAM легенда едет к правому краю строки заголовка (как на
+   дашборде Timeweb), а не идёт отдельной строкой под заголовком. */
+.vps-metric-card-header .vps-metric-legend { margin-left: auto; margin-bottom: 0; }
 
-/* Блоки графиков CPU/RAM */
-.vps-metric-block { margin-top: 18px; }
-.vps-metric-header {
-  display: flex; justify-content: space-between; align-items: baseline;
-  margin-bottom: 6px;
-}
 .vps-metric-title {
   font-family: var(--font-mono); font-size: 11px; font-weight: 700;
   letter-spacing: .04em;
   color: hsl(var(--foreground));
 }
-.vps-metric-nums {
-  font-family: var(--font-mono); font-size: 10px;
-  color: hsl(var(--muted-foreground));
-  letter-spacing: .02em;
-}
-.vps-metric-nums b { color: hsl(var(--foreground)); font-weight: 700; }
 
 /* Легенда RAM (Использовано / Использовано с кэшем) */
 .vps-metric-legend { display: flex; gap: 14px; margin-bottom: 6px; }
@@ -400,7 +392,7 @@ body:not(.is-admin) .admin-only { display: none !important; }
   justify-content: space-between;
   flex-wrap: wrap; gap: 8px 16px;
   margin: 0 0 14px;
-  padding-bottom: 10px;
+  padding: 14px 18px;
   border-bottom: 1px solid hsl(var(--border));
 }
 .section-head-left { display: flex; align-items: baseline; gap: 14px; }

@@ -104,148 +104,20 @@ function fmtBytesGb(bytes) {
   return (bytes / (1024 ** 3)).toFixed(1) + ' ГБ';
 }
 
-// Отрисовка линейного/area-графика CPU/RAM (% за период), без внешних библиотек.
-// Поддерживает несколько серий на одном графике (RAM: «использовано» +
-// «использовано с кэшем») и hover-тултип с крестиком-прицелом, как на Timeweb.
+// Общие хелперы графиков CPU/RAM (SVG-отрисовка без внешних библиотек).
 const VPS_CHART_NS = 'http://www.w3.org/2000/svg';
-const VPS_CHART_W = 600, VPS_CHART_H = 120, VPS_CHART_PAD = 6;
-
-function vpsChartX(i, n) {
-  return (i / (n - 1)) * VPS_CHART_W;
-}
-function vpsChartY(v) {
-  return VPS_CHART_H - VPS_CHART_PAD - (Math.max(0, Math.min(100, v)) / 100) * (VPS_CHART_H - 2 * VPS_CHART_PAD);
-}
-function vpsFmtAxisTime(ts, range) {
-  const d = new Date(ts);
-  return range === 'week'
-    ? d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
-    : d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-}
 function vpsFmtTooltipTime(ts) {
   const d = new Date(ts);
   return d.toLocaleString('ru-RU', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
 }
 
-// series: [{ points, valueKey, lineClass, areaClass?, label, color }]
-// Первая серия в массиве рисуется снизу (фон), остальные — поверх.
-function renderVpsChart(svg, tooltipEl, series, range) {
-  svg.innerHTML = '';
-  svg.__vps = null;
-  const base = series[0] && series[0].points || [];
-  if (base.length < 2) {
-    const text = document.createElementNS(VPS_CHART_NS, 'text');
-    text.setAttribute('x', VPS_CHART_W / 2);
-    text.setAttribute('y', VPS_CHART_H / 2);
-    text.setAttribute('text-anchor', 'middle');
-    text.setAttribute('class', 'vps-chart-empty');
-    text.textContent = 'нет данных за период';
-    svg.appendChild(text);
-    if (tooltipEl) tooltipEl.classList.add('hidden');
-    return;
-  }
-  const n = base.length;
-
-  [0, 50, 100].forEach(v => {
-    const line = document.createElementNS(VPS_CHART_NS, 'line');
-    line.setAttribute('x1', 0); line.setAttribute('x2', VPS_CHART_W);
-    line.setAttribute('y1', vpsChartY(v)); line.setAttribute('y2', vpsChartY(v));
-    line.setAttribute('class', 'vps-chart-grid');
-    svg.appendChild(line);
-  });
-
-  series.forEach(s => {
-    const path = s.points
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${vpsChartX(i, n).toFixed(1)},${vpsChartY(p[s.valueKey]).toFixed(1)}`)
-      .join(' ');
-    if (s.areaClass) {
-      const area = document.createElementNS(VPS_CHART_NS, 'path');
-      area.setAttribute('d', `${path} L ${VPS_CHART_W},${VPS_CHART_H} L 0,${VPS_CHART_H} Z`);
-      area.setAttribute('class', 'vps-chart-area ' + s.areaClass);
-      svg.appendChild(area);
-    }
-    const line = document.createElementNS(VPS_CHART_NS, 'path');
-    line.setAttribute('d', path);
-    line.setAttribute('class', 'vps-chart-line ' + s.lineClass);
-    svg.appendChild(line);
-  });
-
-  const first = document.createElementNS(VPS_CHART_NS, 'text');
-  first.setAttribute('x', 2); first.setAttribute('y', VPS_CHART_H - 2);
-  first.setAttribute('class', 'vps-chart-axis-label');
-  first.textContent = vpsFmtAxisTime(base[0].t, range);
-  svg.appendChild(first);
-
-  const last = document.createElementNS(VPS_CHART_NS, 'text');
-  last.setAttribute('x', VPS_CHART_W - 2); last.setAttribute('y', VPS_CHART_H - 2);
-  last.setAttribute('text-anchor', 'end');
-  last.setAttribute('class', 'vps-chart-axis-label');
-  last.textContent = vpsFmtAxisTime(base[base.length - 1].t, range);
-  svg.appendChild(last);
-
-  if (!tooltipEl) return;
-
-  const crosshair = document.createElementNS(VPS_CHART_NS, 'line');
-  crosshair.setAttribute('y1', 0); crosshair.setAttribute('y2', VPS_CHART_H);
-  crosshair.setAttribute('class', 'vps-chart-crosshair hidden');
-  svg.appendChild(crosshair);
-
-  const dots = series.map(s => {
-    const dot = document.createElementNS(VPS_CHART_NS, 'circle');
-    dot.setAttribute('r', 3);
-    dot.setAttribute('class', 'vps-chart-dot hidden');
-    dot.style.fill = s.color;
-    svg.appendChild(dot);
-    return dot;
-  });
-
-  svg.__vps = { series, n, crosshair, dots, tooltipEl, range };
-  svg.onmousemove = vpsHandleHover;
-  svg.onmouseleave = vpsHideHover;
-}
-
-function vpsHandleHover(ev) {
-  const svg = ev.currentTarget;
-  const ctx = svg.__vps;
-  if (!ctx) return;
-  const rect = svg.getBoundingClientRect();
-  const relX = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
-  const idx = Math.round(relX * (ctx.n - 1));
-  const x = vpsChartX(idx, ctx.n);
-
-  ctx.crosshair.setAttribute('x1', x); ctx.crosshair.setAttribute('x2', x);
-  ctx.crosshair.classList.remove('hidden');
-
-  const rows = [];
-  ctx.series.forEach((s, i) => {
-    const v = s.points[idx][s.valueKey];
-    ctx.dots[i].setAttribute('cx', x);
-    ctx.dots[i].setAttribute('cy', vpsChartY(v));
-    ctx.dots[i].classList.remove('hidden');
-    rows.push(`<div class="vps-tooltip-row"><i style="background:${s.color}"></i>${s.label}: <b>${v}%</b></div>`);
-  });
-
-  ctx.tooltipEl.innerHTML = `<div class="vps-tooltip-time">${vpsFmtTooltipTime(ctx.series[0].points[idx].t)}</div>` + rows.join('');
-  ctx.tooltipEl.classList.remove('hidden');
-
-  const left = (x / VPS_CHART_W) * rect.width;
-  const clamped = Math.max(50, Math.min(rect.width - 50, left));
-  ctx.tooltipEl.style.left = clamped + 'px';
-}
-
-function vpsHideHover(ev) {
-  const ctx = ev.currentTarget.__vps;
-  if (!ctx) return;
-  ctx.crosshair.classList.add('hidden');
-  ctx.dots.forEach(d => d.classList.add('hidden'));
-  ctx.tooltipEl.classList.add('hidden');
-}
-
-// ── График «Нагрузка на процессор» — отдельная раскладка 1:1 с дашбордом
-// Timeweb Cloud: подписи по Y слева (фикс. 0-100% либо авто под фактический
-// максимум — переключатель «Показывать …») и несколько подписей по X вместо
-// двух крайних, как в общем renderVpsChart() (тот остаётся как есть — им
-// рисуется RAM, которую этот редизайн не затрагивает).
+// ── График «Нагрузка на процессор» — раскладка 1:1 с дашбордом Timeweb
+// Cloud: подписи по Y слева (фикс. 0-100% либо авто под фактический
+// максимум — переключатель «Показывать …») и несколько подписей по X.
+// Геометрия и X-тайм-хелперы (vpsCpuX/vpsCpuY/vpsCpuFmtAxisTime/vpsCpuBuildTicks)
+// домен-агностичны (Y-домен передаётся параметром) и переиспользуются ниже
+// графиком RAM (renderVpsMemChart) — своя у него только шкала Y (ГБ, не %)
+// и две серии вместо одной.
 const VPS_CPU_PLOT_W = 600, VPS_CPU_PLOT_H = 118;
 const VPS_CPU_LEFT = 36, VPS_CPU_TOP = 4, VPS_CPU_BOTTOM = 18;
 const VPS_CPU_W = VPS_CPU_LEFT + VPS_CPU_PLOT_W;
@@ -256,17 +128,18 @@ let vpsCpuScaleMode = 'fixed';
 let vpsCpuLastPoints = [];
 let vpsCpuLastRange = '24h';
 
-// Верхняя граница шкалы для режима «автоматическая»: с запасом ~15% над
-// фактическим максимумом, округлённая до «красивого» числа (1/2/2.5/5/10 × 10^n).
+// Верхняя граница шкалы для режима «динамическая»: с запасом ~15% над
+// фактическим максимумом, округлённая до «красивого» числа (1/2/2.5/5/10 × 10^n),
+// но не выше 100% (ось нагрузки не должна уходить за физический предел).
 function vpsCpuNiceMax(max) {
   if (max <= 0) return 10;
   const rough = max * 1.15;
   const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
   for (const step of [1, 2, 2.5, 5, 10]) {
     const candidate = step * magnitude;
-    if (candidate >= rough) return candidate;
+    if (candidate >= rough) return Math.min(100, candidate);
   }
-  return 10 * magnitude;
+  return Math.min(100, 10 * magnitude);
 }
 
 function vpsCpuX(i, n) {
@@ -463,6 +336,160 @@ function vpsCpuHideHover(ev) {
   ctx.tooltipEl.classList.add('hidden');
 }
 
+// ── График «Оперативная память» — та же раскладка, что у CPU (см. выше),
+// но шкала Y — ГБ до физического потолка сервера (totalGb — «нельзя больше
+// установленной памяти», по аналогии с CPU-потолком в 100%, см. vpsCpuNiceMax)
+// и две серии (использовано / использовано с кэшем) вместо одной.
+const VPS_MEM_GRID_STEPS_GB = [0.25, 0.5, 1, 2, 4, 5, 8, 10, 16, 20, 32, 50, 64, 100, 128];
+function vpsMemGridStep(domainMax) {
+  for (const step of VPS_MEM_GRID_STEPS_GB) {
+    if (domainMax / step <= 6) return step;
+  }
+  return VPS_MEM_GRID_STEPS_GB[VPS_MEM_GRID_STEPS_GB.length - 1];
+}
+function vpsMemFmtGb(v) {
+  const r = Math.round(v * 10) / 10;
+  return (Number.isInteger(r) ? r : r.toFixed(1)) + ' ГБ';
+}
+
+const VPS_MEM_SERIES = [
+  { key: 'vCachedGb', lineClass: 'ram-cached-line', areaClass: 'ram-cached-area', label: 'Использовано с кэшем', color: 'hsl(160 60% 45%)' },
+  { key: 'vGb', lineClass: 'ram-used-line', areaClass: null, label: 'Использовано', color: 'hsl(280 75% 65%)' },
+];
+
+function renderVpsMemChart(points, range, totalGb) {
+  const svg = $('#vpsMemChart');
+  const tooltipEl = $('#vpsMemTooltip');
+  svg.setAttribute('viewBox', `0 0 ${VPS_CPU_W} ${VPS_CPU_H}`);
+  svg.innerHTML = '';
+  svg.__vpsMem = null;
+  svg.onmousemove = null; svg.onmouseleave = null;
+
+  if (points.length < 2) {
+    const text = document.createElementNS(VPS_CHART_NS, 'text');
+    text.setAttribute('x', VPS_CPU_W / 2);
+    text.setAttribute('y', VPS_CPU_H / 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('class', 'vps-chart-empty');
+    text.textContent = 'нет данных за период';
+    svg.appendChild(text);
+    tooltipEl.classList.add('hidden');
+    return;
+  }
+
+  const n = points.length;
+  const domainMax = totalGb > 0
+    ? totalGb
+    : Math.max(1, Math.ceil(Math.max(...points.map(p => Math.max(p.vGb, p.vCachedGb))) * 1.15));
+  const step = vpsMemGridStep(domainMax);
+
+  for (let v = 0; v <= domainMax + 1e-9; v += step) {
+    const y = vpsCpuY(v, domainMax);
+    const grid = document.createElementNS(VPS_CHART_NS, 'line');
+    grid.setAttribute('x1', VPS_CPU_LEFT); grid.setAttribute('x2', VPS_CPU_W);
+    grid.setAttribute('y1', y); grid.setAttribute('y2', y);
+    grid.setAttribute('class', 'vps-chart-grid');
+    svg.appendChild(grid);
+
+    const label = document.createElementNS(VPS_CHART_NS, 'text');
+    label.setAttribute('x', VPS_CPU_LEFT - 6);
+    label.setAttribute('y', y + 3);
+    label.setAttribute('text-anchor', 'end');
+    label.setAttribute('class', 'vps-chart-axis-label');
+    label.textContent = vpsMemFmtGb(v);
+    svg.appendChild(label);
+  }
+
+  VPS_MEM_SERIES.forEach(s => {
+    const path = points
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${vpsCpuX(i, n).toFixed(1)},${vpsCpuY(p[s.key], domainMax).toFixed(1)}`)
+      .join(' ');
+    if (s.areaClass) {
+      const area = document.createElementNS(VPS_CHART_NS, 'path');
+      area.setAttribute('d', `${path} L ${VPS_CPU_W},${VPS_CPU_TOP + VPS_CPU_PLOT_H} L ${VPS_CPU_LEFT},${VPS_CPU_TOP + VPS_CPU_PLOT_H} Z`);
+      area.setAttribute('class', 'vps-chart-area ' + s.areaClass);
+      svg.appendChild(area);
+    }
+    const line = document.createElementNS(VPS_CHART_NS, 'path');
+    line.setAttribute('d', path);
+    line.setAttribute('class', 'vps-chart-line ' + s.lineClass);
+    svg.appendChild(line);
+  });
+
+  const firstT = points[0].t, lastT = points[n - 1].t;
+  const ticks = vpsCpuBuildTicks(firstT, lastT, range);
+  const EDGE_PX = 24;
+  ticks.forEach(t => {
+    const frac = lastT === firstT ? 0 : (t - firstT) / (lastT - firstT);
+    const x = VPS_CPU_LEFT + frac * VPS_CPU_PLOT_W;
+    const anchor = x <= VPS_CPU_LEFT + EDGE_PX ? 'start' : x >= VPS_CPU_W - EDGE_PX ? 'end' : 'middle';
+    const label = document.createElementNS(VPS_CHART_NS, 'text');
+    label.setAttribute('x', x);
+    label.setAttribute('y', VPS_CPU_H - 4);
+    label.setAttribute('text-anchor', anchor);
+    label.setAttribute('class', 'vps-chart-axis-label');
+    label.textContent = vpsCpuFmtAxisTime(t, range);
+    svg.appendChild(label);
+  });
+
+  const crosshair = document.createElementNS(VPS_CHART_NS, 'line');
+  crosshair.setAttribute('y1', VPS_CPU_TOP); crosshair.setAttribute('y2', VPS_CPU_TOP + VPS_CPU_PLOT_H);
+  crosshair.setAttribute('class', 'vps-chart-crosshair hidden');
+  svg.appendChild(crosshair);
+
+  const dots = VPS_MEM_SERIES.map(s => {
+    const dot = document.createElementNS(VPS_CHART_NS, 'circle');
+    dot.setAttribute('r', 3);
+    dot.setAttribute('class', 'vps-chart-dot hidden');
+    dot.style.fill = s.color;
+    svg.appendChild(dot);
+    return dot;
+  });
+
+  svg.__vpsMem = { points, n, domainMax, crosshair, dots, tooltipEl };
+  svg.onmousemove = vpsMemHandleHover;
+  svg.onmouseleave = vpsMemHideHover;
+}
+
+function vpsMemHandleHover(ev) {
+  const svg = ev.currentTarget;
+  const ctx = svg.__vpsMem;
+  if (!ctx) return;
+  const rect = svg.getBoundingClientRect();
+  const plotLeftPx = (VPS_CPU_LEFT / VPS_CPU_W) * rect.width;
+  const plotWidthPx = rect.width - plotLeftPx;
+  const relX = Math.max(0, Math.min(1, (ev.clientX - rect.left - plotLeftPx) / plotWidthPx));
+  const idx = Math.round(relX * (ctx.n - 1));
+  const x = vpsCpuX(idx, ctx.n);
+
+  ctx.crosshair.setAttribute('x1', x); ctx.crosshair.setAttribute('x2', x);
+  ctx.crosshair.classList.remove('hidden');
+
+  const rows = [];
+  VPS_MEM_SERIES.forEach((s, i) => {
+    const v = ctx.points[idx][s.key];
+    ctx.dots[i].setAttribute('cx', x);
+    ctx.dots[i].setAttribute('cy', vpsCpuY(v, ctx.domainMax));
+    ctx.dots[i].classList.remove('hidden');
+    rows.push(`<div class="vps-tooltip-row"><i style="background:${s.color}"></i>${s.label}: <b>${vpsMemFmtGb(v)}</b></div>`);
+  });
+
+  ctx.tooltipEl.innerHTML = `<div class="vps-tooltip-time">${vpsFmtTooltipTime(ctx.points[idx].t)}</div>` + rows.join('');
+  ctx.tooltipEl.classList.remove('hidden');
+
+  const left = (x / VPS_CPU_W) * rect.width;
+  const clamped = Math.max(50, Math.min(rect.width - 50, left));
+  ctx.tooltipEl.style.left = clamped + 'px';
+}
+
+function vpsMemHideHover(ev) {
+  const ctx = ev.currentTarget.__vpsMem;
+  if (!ctx) return;
+  ctx.crosshair.classList.add('hidden');
+  ctx.dots.forEach(d => d.classList.add('hidden'));
+  ctx.tooltipEl.classList.add('hidden');
+}
+
 // ── Инлайн-дропдаун («Статистика за …», «Показывать …») — кликабельный текст
 // со стрелкой вместо нативного <select>, попап со списком ниже.
 function wireInlineSelect(id, onChange) {
@@ -490,27 +517,27 @@ function wireInlineSelect(id, onChange) {
   return { setValue };
 }
 
-let vpsMetricsRange = '24h';
+let vpsMetricsRange = 'month';
+// Заказанный объём RAM сервера (целое число ГБ, из /api/vps-disk → ramMb) —
+// потолок шкалы графика «Оперативная память». Обновляется при каждом
+// открытии модалки (см. vpsDiskBtn), т.е. подхватывает смену конфигурации
+// сервера без релиза панели.
+let vpsRamTotalGb = 0;
 
 async function loadVpsMetrics(range) {
   vpsMetricsRange = range;
   $('#vpsMetricsHint').textContent = '';
   try {
     const { cpu, mem } = await api('/api/vps-metrics?range=' + range);
-    $('#vpsMemNow').textContent = mem.now + '%';
-    $('#vpsMemAvg').textContent = mem.avg + '%';
-    $('#vpsMemMax').textContent = mem.max + '%';
+    const totalGb = vpsRamTotalGb || mem.totalGb;
+    $('#vpsMemTotal').textContent = totalGb ? totalGb + ' ГБ' : '';
 
     renderVpsCpuChart(cpu.points, range);
-
-    renderVpsChart($('#vpsMemChart'), $('#vpsMemTooltip'), [
-      { points: mem.points, valueKey: 'vCached', lineClass: 'ram-cached-line', areaClass: 'ram-cached-area', label: 'Использовано с кэшем', color: 'hsl(160,60%,45%)' },
-      { points: mem.points, valueKey: 'v', lineClass: 'ram-used-line', areaClass: null, label: 'Использовано', color: 'hsl(280,75%,65%)' },
-    ], range);
+    renderVpsMemChart(mem.points, range, totalGb);
   } catch (e) {
     $('#vpsMetricsHint').textContent = 'Не удалось загрузить нагрузку: ' + e.message;
     renderVpsCpuChart([], range);
-    renderVpsChart($('#vpsMemChart'), $('#vpsMemTooltip'), [{ points: [], valueKey: 'v' }], range);
+    renderVpsMemChart([], range, 0);
   }
 }
 
@@ -1130,7 +1157,7 @@ async function refreshProjects() {
         window.location.href = '/api/projects/' + encodeURIComponent(name) + '/download';
       };
       $('[data-action="delete"]', tr).onclick = async () => {
-        if (!confirm(`Удалить проект «${name}»? Он будет перемещён в .deleted/ внутри workspace.`)) return;
+        if (!confirm(`Удалить проект «${name}»? Он переедет в Корзину (🗑 Корзина сверху) на 30 дней, потом будет стёрт навсегда.`)) return;
         try {
           await api('/api/projects/' + encodeURIComponent(name), { method: 'DELETE' });
           refreshProjects();
@@ -1138,6 +1165,67 @@ async function refreshProjects() {
       };
     });
   } catch {}
+}
+
+// ── Корзина (удалённые проекты) ─────────────────────────────
+
+async function refreshTrash() {
+  const wrap = $('#trash-list');
+  wrap.innerHTML = '<div class="empty">загрузка…</div>';
+  $('#trash-purge-all').disabled = true;
+  try {
+    const { items, retentionDays } = await api('/api/trash');
+    $('#trash-retention-days').textContent = retentionDays;
+    $('#trash-purge-all').disabled = !items.length;
+    if (!items.length) {
+      wrap.innerHTML = '<div class="empty">корзина пуста</div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <table class="projects-table">
+        <thead>
+          <tr>
+            <th class="th-name">Проект</th>
+            <th>Удалён</th>
+            <th>Осталось</th>
+            <th class="th-actions">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(it => `
+            <tr data-id="${escapeHtml(it.id)}">
+              <td class="td-name">${escapeHtml(it.name)}</td>
+              <td>${fmtDate(it.deletedAt)}</td>
+              <td>${it.daysLeft} дн.</td>
+              <td class="td-actions">
+                <div class="actions">
+                  <button class="btn btn-sm" data-action="restore">Восстановить</button>
+                  <button class="btn btn-sm btn-danger" data-action="purge">Удалить навсегда</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+    $$('tbody tr', wrap).forEach(row => {
+      const id = row.dataset.id;
+      $('[data-action="restore"]', row).onclick = async () => {
+        try {
+          await api('/api/trash/' + encodeURIComponent(id) + '/restore', { method: 'POST' });
+          refreshTrash();
+          refreshProjects();
+        } catch (e) { alert(e.message); }
+      };
+      $('[data-action="purge"]', row).onclick = async () => {
+        if (!confirm('Удалить проект из корзины навсегда? Это нельзя отменить.')) return;
+        try {
+          await api('/api/trash/' + encodeURIComponent(id), { method: 'DELETE' });
+          refreshTrash();
+        } catch (e) { alert(e.message); }
+      };
+    });
+  } catch (e) {
+    wrap.innerHTML = `<div class="empty">не удалось загрузить: ${escapeHtml(e.message)}</div>`;
+  }
 }
 
 
@@ -1727,7 +1815,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('#vpsDiskTotal').textContent = '…';
     $('#vpsDiskPct').textContent = '…';
     try {
-      const { total, used, avail, percent, cpuCount, cpuFrequency } = await api('/api/vps-disk');
+      const { total, used, avail, percent, cpuCount, cpuFrequency, ramMb } = await api('/api/vps-disk');
       const fill = $('#vpsDiskFill');
       fill.style.width = percent + '%';
       fill.classList.toggle('warn', percent >= 80 && percent < 90);
@@ -1737,6 +1825,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#vpsDiskTotal').textContent = fmtBytesGb(total);
       $('#vpsDiskPct').textContent = percent + '%';
       $('#vpsCpuSpec').textContent = cpuCount && cpuFrequency ? `${cpuCount} x ${cpuFrequency} ГГц` : '';
+      vpsRamTotalGb = ramMb ? Math.round(ramMb / 1024) : 0;
     } catch (e) {
       $('#vpsDiskUsed').textContent = 'ошибка';
       $('#vpsDiskPct').textContent = e.message;
@@ -1815,6 +1904,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     navigator.clipboard?.writeText(t.value).catch(() => {});
   });
   $('#ssh-regen')?.addEventListener('click', doRegenSshKey);
+
+  // Корзина
+  $('#btn-trash')?.addEventListener('click', () => { openModal('modal-trash'); refreshTrash(); });
+  $('#trash-purge-all')?.addEventListener('click', async () => {
+    if (!confirm('Удалить из корзины навсегда ВСЕ проекты? Это нельзя отменить.')) return;
+    try {
+      await api('/api/trash', { method: 'DELETE' });
+      refreshTrash();
+    } catch (e) { alert(e.message); }
+  });
 
   // Поп-ап «Открыть проект в VS Code» (кнопка 💻 на проекте)
   $('#pv-open')?.addEventListener('click', () => { if (_pvUri) window.location.href = _pvUri; });

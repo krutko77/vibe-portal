@@ -209,7 +209,10 @@
             <button class="btn btn-primary" id="btn-empty">+ Пустой</button>
             <button class="btn btn-primary" id="btn-create">+ Из шаблона</button>
             <button class="btn" id="btn-ssh" title="Работать в десктопном VS Code по SSH">💻 Десктоп VS Code</button>
-            <a class="btn" id="btn-workspace-dl" href="/api/workspace/download" title="Скачать все проекты одним архивом">↓ Все проекты</a>
+            <a class="btn" id="btn-workspace-dl" href="/api/workspace/download" title="Скачать все проекты одним архивом">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Все проекты
+            </a>
+            <button class="btn" id="btn-trash" title="Удалённые проекты (хранятся 30 дней)">🗑 Корзина</button>
           </div>
         </div>
         <div class="projects-table-wrap" id="projectsList"></div>
@@ -266,7 +269,7 @@
         </div>
         <div class="page-sect" id="a-projects">
           <div class="page-sect-no">3. ПРОЕКТЫ</div>
-          <p>Таблица: <em>Тип, Статус, Название, Автор, Дата, Действия</em>. По кнопкам: 📁 Файлы, CLAUDE (чат по проекту), VS Code, 🗑 Удалить (в архив <code>.deleted/</code>).</p>
+          <p>Таблица: <em>Тип, Статус, Название, Автор, Дата, Действия</em>. По кнопкам: 📁 Файлы, CLAUDE (чат по проекту), VS Code, 🗑 Удалить (в Корзину — кнопка «🗑 Корзина» сверху; оттуда можно восстановить, автоматически стирается через 30 дней).</p>
         </div>
         <div class="page-sect" id="a-create">
           <div class="page-sect-no">4. СОЗДАНИЕ ПРОЕКТА</div>
@@ -2710,10 +2713,10 @@ EU-VPS (для прокси):
               <div class="vps-inline-select-menu">
                 <button type="button" data-value="1h">час</button>
                 <button type="button" data-value="6h">6 часов</button>
-                <button type="button" data-value="24h" data-default="1">день</button>
+                <button type="button" data-value="24h">день</button>
                 <button type="button" data-value="week">неделю</button>
                 <button type="button" data-value="2w">2 недели</button>
-                <button type="button" data-value="month">месяц</button>
+                <button type="button" data-value="month" data-default="1">месяц</button>
               </div>
             </div>
           </div>
@@ -2726,7 +2729,7 @@ EU-VPS (для прокси):
               </button>
               <div class="vps-inline-select-menu">
                 <button type="button" data-value="fixed" data-default="1">фиксированную шкалу</button>
-                <button type="button" data-value="auto">автоматическую шкалу</button>
+                <button type="button" data-value="auto">динамическую шкалу</button>
               </div>
             </div>
           </div>
@@ -2743,17 +2746,17 @@ EU-VPS (для прокси):
           </div>
         </div>
 
-        <div class="vps-metric-block">
-          <div class="vps-metric-header">
+        <div class="vps-metric-card">
+          <div class="vps-metric-card-header">
             <span class="vps-metric-title">Оперативная память</span>
-            <span class="vps-metric-nums">сейчас <b id="vpsMemNow">—</b> · среднее <b id="vpsMemAvg">—</b> · макс <b id="vpsMemMax">—</b></span>
-          </div>
-          <div class="vps-metric-legend">
-            <span class="vps-legend-item"><i class="vps-legend-dot ram-used"></i>Использовано</span>
-            <span class="vps-legend-item"><i class="vps-legend-dot ram-cached"></i>Использовано с кэшем</span>
+            <span class="vps-metric-cpu-spec" id="vpsMemTotal"></span>
+            <div class="vps-metric-legend">
+              <span class="vps-legend-item"><i class="vps-legend-dot ram-used"></i>Использовано</span>
+              <span class="vps-legend-item"><i class="vps-legend-dot ram-cached"></i>Использовано с кэшем</span>
+            </div>
           </div>
           <div class="vps-chart-wrap">
-            <svg class="vps-metric-chart mem" id="vpsMemChart" viewBox="0 0 600 120" preserveAspectRatio="none"></svg>
+            <svg class="vps-metric-chart mem" id="vpsMemChart" viewBox="0 0 640 158" preserveAspectRatio="none"></svg>
             <div class="vps-chart-tooltip hidden" id="vpsMemTooltip"></div>
           </div>
         </div>
@@ -2810,6 +2813,27 @@ EU-VPS (для прокси):
       <div class="modal-footer">
         <button class="btn btn-ghost" data-close="modal-newproject">Отмена</button>
         <button class="btn btn-primary" id="newproject-submit">Создать проект →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Корзина (удалённые проекты) ───────────────────── -->
+  <div class="modal-overlay hidden" id="modal-trash" role="dialog" aria-modal="true">
+    <div class="modal" style="max-width:720px">
+      <div class="modal-header">
+        <span class="modal-title">Корзина <span class="section-path">.deleted/</span></span>
+        <button class="modal-close" data-close="modal-trash" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="section-head">
+        <div style="display:flex;align-items:center">
+          <span style="font-size:12px;line-height:26px;color:hsl(var(--muted-foreground))">
+            Хранится <strong id="trash-retention-days">30</strong> дней, потом стирается навсегда
+          </span>
+        </div>
+        <button class="btn btn-sm btn-danger" id="trash-purge-all">Удалить навсегда всё</button>
+      </div>
+      <div class="projects-table-wrap" id="trash-list" style="margin:0 20px 20px;width:auto">
+        <div class="empty">загрузка…</div>
       </div>
     </div>
   </div>

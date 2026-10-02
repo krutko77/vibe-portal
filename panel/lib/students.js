@@ -166,6 +166,91 @@ export async function deleteStudent(username) {
   saveUsers(state);
 }
 
+// ---------- Корзина проектов ----------
+// Удаление проекта (DELETE /api/projects/:name, server.js) не стирает папку,
+// а переносит её в <workspace>/.deleted/<name>-<ts>мс — это и есть «Корзина»,
+// видимая ученику через /api/trash. Имя исходного проекта и момент удаления
+// кодируются прямо в имени папки конкатенацией (а не сайдкар-файлом) — для
+// уже существующих записей (их создаёт тот же `${name}-${Date.now()}`) не
+// нужна миграция, парсинг работает одинаково для старых и новых. Хранится
+// TRASH_RETENTION_DAYS (30) дней, потом purgeExpiredTrash() стирает навсегда
+// (дёргается из startReaper(), раз в 5 минут).
+export const TRASH_RETENTION_DAYS = parseInt(process.env.TRASH_RETENTION_DAYS || '30', 10);
+// Имя проекта ограничено тем же charset, что и в server.js (`/^[a-zA-Z0-9._-]+$/`)
+// — без `/`, иначе `id` из URL (restoreTrash/purgeTrashItem) открыл бы path traversal.
+const TRASH_ENTRY_RE = /^([a-zA-Z0-9._-]+)-(\d{13,})$/;
+
+function trashDir(username) {
+  return path.join(workspaceDir(username), '.deleted');
+}
+
+function parseTrashEntry(id) {
+  const m = TRASH_ENTRY_RE.exec(id);
+  if (!m) return null;
+  return { id, name: m[1], deletedAt: Number(m[2]) };
+}
+
+export function listTrash(username) {
+  let entries;
+  try { entries = fs.readdirSync(trashDir(username), { withFileTypes: true }); } catch { return []; }
+  return entries
+    .filter(d => d.isDirectory())
+    .map(d => parseTrashEntry(d.name))
+    .filter(Boolean)
+    .map(e => ({
+      id: e.id,
+      name: e.name,
+      deletedAt: new Date(e.deletedAt).toISOString(),
+      daysLeft: Math.max(0, TRASH_RETENTION_DAYS - Math.floor((Date.now() - e.deletedAt) / 86400000)),
+    }))
+    .sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+}
+
+export function restoreTrash(username, id) {
+  const entry = parseTrashEntry(id);
+  if (!entry) throw new Error('invalid trash id');
+  const src = path.join(trashDir(username), id);
+  if (!fs.existsSync(src)) throw new Error('no such item in trash');
+  const ws = workspaceDir(username);
+  // Коллизия с уже существующим проектом того же имени — восстанавливаем под
+  // новым именем, а не затираем.
+  const destName = fs.existsSync(path.join(ws, entry.name))
+    ? `${entry.name}-restored-${Date.now()}` : entry.name;
+  fs.renameSync(src, path.join(ws, destName));
+  return destName;
+}
+
+export function purgeAllTrash(username) {
+  fs.rmSync(trashDir(username), { recursive: true, force: true });
+}
+
+export function purgeTrashItem(username, id) {
+  const entry = parseTrashEntry(id);
+  if (!entry) throw new Error('invalid trash id');
+  const dir = path.join(trashDir(username), id);
+  if (!fs.existsSync(dir)) throw new Error('no such item in trash');
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+// Бэкграунд: безвозвратно стирает записи корзины старше TRASH_RETENTION_DAYS
+// во всех workspace известных учеников. Дёргается из startReaper().
+function purgeExpiredTrash() {
+  const state = loadUsers();
+  for (const username of Object.keys(state.users)) {
+    let entries;
+    try { entries = fs.readdirSync(trashDir(username), { withFileTypes: true }); } catch { continue; }
+    for (const d of entries) {
+      if (!d.isDirectory()) continue;
+      const entry = parseTrashEntry(d.name);
+      if (!entry) continue;
+      if ((Date.now() - entry.deletedAt) / 86400000 >= TRASH_RETENTION_DAYS) {
+        fs.rmSync(path.join(trashDir(username), d.name), { recursive: true, force: true });
+        console.log(`[trash] purged ${username}/${d.name} (>${TRASH_RETENTION_DAYS}d)`);
+      }
+    }
+  }
+}
+
 // Смена пароля существующего ученика. htpasswd -bB перезаписывает запись,
 // контейнер/сессии не трогаем — следующий вход пойдёт с новым паролем.
 // htpasswdSet валидирует логин и длину пароля (>= 6).
@@ -404,5 +489,6 @@ export async function reapIdleContainers() {
 export function startReaper() {
   setInterval(() => {
     reapIdleContainers().catch(e => console.error('[reaper]', e.message));
+    try { purgeExpiredTrash(); } catch (e) { console.error('[trash]', e.message); }
   }, 5 * 60 * 1000);
 }

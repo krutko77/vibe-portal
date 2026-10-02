@@ -8,6 +8,11 @@
 //   GET    /api/templates       список шаблонов
 //   GET    /api/projects        проекты ученика (из его workspace)
 //   POST   /api/projects/from-template  { template, name } → копия шаблона в workspace
+//   DELETE /api/projects/:name             → в Корзину (.deleted/), не навсегда
+//   GET    /api/trash                      Корзина: список удалённых проектов
+//   DELETE /api/trash                      очистить Корзину (удалить всё навсегда)
+//   POST   /api/trash/:id/restore          восстановить проект из Корзины
+//   DELETE /api/trash/:id                  удалить проект из Корзины навсегда
 //   POST   /api/container/start            старт своего контейнера
 //   POST   /api/container/stop             стоп
 //   POST   /api/touch                      heartbeat (вызывается из /code/ страницы)
@@ -35,6 +40,7 @@ import {
   createStudent, deleteStudent, setStudentPassword, listStudents,
   dockerStart, dockerStop, containerStatus, workspaceDir,
   touchActivity, startReaper, provisionSsh,
+  listTrash, restoreTrash, purgeTrashItem, purgeAllTrash, TRASH_RETENTION_DAYS,
 } from './lib/students.js';
 import { sshConfig, privateKey, regenerateKeys } from './lib/ssh-access.js';
 import { homeDirFor } from './lib/home-dir.js';
@@ -325,6 +331,35 @@ app.delete('/api/projects/:name', requireAuth, (req, res) => {
   const archive = path.join(archiveDir, `${name}-${Date.now()}`);
   fs.renameSync(target, archive);
   res.json({ ok: true, archivedTo: archive });
+});
+
+// ---------- Корзина проектов ----------
+
+app.get('/api/trash', requireAuth, (req, res) => {
+  res.json({ items: listTrash(req.session.user), retentionDays: TRASH_RETENTION_DAYS });
+});
+
+app.delete('/api/trash', requireAuth, (req, res) => {
+  purgeAllTrash(req.session.user);
+  res.json({ ok: true });
+});
+
+app.post('/api/trash/:id/restore', requireAuth, (req, res) => {
+  try {
+    const name = restoreTrash(req.session.user, req.params.id);
+    res.json({ ok: true, name });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.delete('/api/trash/:id', requireAuth, (req, res) => {
+  try {
+    purgeTrashItem(req.session.user, req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
 });
 
 // ---------- file explorer (user) ----------

@@ -50,8 +50,13 @@ ssh -i setup_key -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 root@<
 
 ```bash
 ssh -i setup_key root@<IP> "apt-get update && apt-get install -y --no-install-recommends \
-  docker.io nginx git curl openssl unzip apache2-utils iptables-persistent"
+  docker.io nginx git curl openssl zip unzip apache2-utils openssh-client iptables-persistent"
 ```
+
+`zip` обязателен — без него сломаются все кнопки скачивания в панели (включая
+саму `download-portal`/`download-kb`, которыми пользуется этот же установщик,
+если пользователь решит пересобрать свою копию ещё раз). `openssh-client`
+(даёт `ssh-keygen`) — для фичи «Десктоп VS Code по SSH» в панели.
 
 Node.js 22 (если устарел или нет):
 ```bash
@@ -97,7 +102,8 @@ ssh -i setup_key root@<IP> "mkdir -p \
   /data/config/sessions-vibe \
   /data/config/transcripts \
   /data/config/ssh \
-  /data/config/vscode-server"
+  /data/config/vscode-server && \
+  chmod 700 /data/config/auth /data/config/env"
 ```
 
 Создать `vibe-panel.env` с SESSION_SECRET:
@@ -133,6 +139,12 @@ ssh -i setup_key root@<IP> "cd /opt/vibe-portal/workspace-image && docker build 
 ```bash
 ssh -i setup_key root@<IP> "cp /opt/vibe-portal/systemd/*.service /etc/systemd/system/ && systemctl daemon-reload"
 ```
+Копируются все юниты, но включать (Шаг 7) нужно только `vibe-panel` и
+`anthropic-shim` (`vibe-iptables` — в Шаге 9). `vibe-admin-code.service` и
+`vibe-deploy.service` — специфика сервера Kiselev Group (admin-код-сервер
+и деплой личных проектов на тот же хост), для копии ученика они не нужны и
+намеренно не включаются — не пытайся их `enable`/чинить, если увидишь
+`inactive`.
 
 Установить зависимости Node.js для панели и шима:
 ```bash
@@ -252,6 +264,17 @@ ssh -i setup_key root@<IP> "bash /opt/vibe-portal/scripts/setup-iptables.sh && \
 ```bash
 ssh -i setup_key root@<IP> "bash /opt/vibe-portal/scripts/create-admin.sh <LOGIN> <PASSWORD>"
 ```
+
+⚠ **Обязательно следующим шагом** — контейнер, который создаёт сам
+`create-admin.sh`, устаревший (старые лимиты памяти/CPU, нет SSH-маунтов для
+десктопного VS Code, и главное — смотрит на `/opt/dev-portal/templates`,
+которого на этом сервере **нет вообще**, так что шаблоны будут пустыми).
+Снести его и дать панели создать правильный при первом входе:
+```bash
+ssh -i setup_key root@<IP> "docker rm -f vibe-<LOGIN>"
+```
+Дальше — зайти в UI под этим логином/паролем, панель сама поднимет контейнер
+по актуальной конфигурации (с реальными шаблонами и правильными лимитами).
 
 ---
 

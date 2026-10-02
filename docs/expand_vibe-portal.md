@@ -32,6 +32,11 @@
   VS Code).
 - `iptables` (legacy или nf_tables-совместимый — скрипт изоляции зовёт `iptables`
   напрямую).
+- `code-server` **на хосте** (не только внутри образа ученика!) — отдельный
+  экземпляр нужен `vibe-admin-code.service` (браузерный VS Code admin'а на
+  `/admin-code/`, слушает `127.0.0.1:8300`, root — `/opt/vibe-portal`). Ставится
+  не из `apt`, а официальным скриптом (тем же, что бейкается в
+  `workspace-image/Dockerfile`).
 
 ```bash
 apt-get update
@@ -41,8 +46,20 @@ apt-get install -y docker.io nginx certbot python3-certbot-nginx \
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 
+curl -fsSL https://code-server.dev/install.sh | sh
+
 systemctl enable --now docker
 ```
+
+**Фаервол / security group облачного провайдера.** Кроме очевидных 80/443
+(nginx), контейнеры учеников публикуют desktop-SSH наружу на диапазоне
+**8400-8499/tcp** (`CLAUDE.md` → «Десктопный VS Code по SSH», по одному порту
+на ученика, `panel/lib/students.js → allocateSshPort()`). На хосте это
+принимает сам Docker (port publish), локальный `iptables`/`ufw` тут ни при
+чём — но облачный firewall/security group перед сервером этот диапазон по
+умолчанию обычно дропает. Если он нужен — открыть заранее; если нет — десктопный
+VS Code по SSH у учеников просто не будет работать (code-server в браузере
+при этом не пострадает, он не выходит за nginx).
 
 ## 2. Клонировать репозиторий
 
@@ -75,8 +92,12 @@ docker build -t vibe-workspace:dev .
 ```
 
 Образ = Debian 12 + Node 22 + code-server + `@anthropic-ai/claude-code` +
-`openssh-server` + `php-cli` (см. `Dockerfile` — комментарии там объясняют,
-почему `HOME` не бейкается, а передаётся явно при `docker create`).
+`openssh-server` + `php-cli` + системные библиотеки для headless-браузеров
+(`npx playwright install-deps chromium` — нужны скиллам вроде
+webapp-testing/superpowers, которые сами ставят Playwright/Puppeteer внутри
+проекта ученика, без sudo доустановить `.so`-шки иначе было бы нечем) —
+см. `Dockerfile`, комментарии там же объясняют, почему `HOME` не бейкается,
+а передаётся явно при `docker create`.
 
 Пересобирать после `git pull`, если менялся `workspace-image/Dockerfile`.
 
@@ -121,6 +142,7 @@ HTTPS_PROXY=http://user:pass@host:port
 ```
 SESSION_SECRET=<случайная длинная строка>
 SSH_PUBLIC_HOST=vibe.kiselevgroup.com
+TIMEWEB_API_TOKEN=<опционально, см. ниже>
 ```
 
 `SESSION_SECRET` — обязателен, панель падает при старте без него
@@ -132,6 +154,19 @@ SSH_PUBLIC_HOST=vibe.kiselevgroup.com
 ```bash
 openssl rand -hex 32
 ```
+
+**`TIMEWEB_API_TOKEN` — опционален, завязан на конкретного хостера.**
+Виджет «Нагрузка на процессор» в админском дашборде (`GET /api/vps-metrics`,
+`panel/lib/vps-metrics.js`) не сам снимает метрики, а тянет готовую историю
+CPU/RAM из API **Timeweb Cloud** по `TIMEWEB_SERVER_ID` (дефолт в коде —
+`8414777`, ID **этого конкретного сервера**, не универсальный). Без токена
+(или на хостинге не Timeweb) эндпоинт просто отвечает `502` — остальной портал
+не затронут, но виджет будет показывать ошибку. На новом сервере: если он тоже
+на Timeweb Cloud — завести токен в их панели и переопределить
+`TIMEWEB_SERVER_ID` под ID нового сервера (env-переменная, не в этом файле, а
+`Environment=` в `vibe-panel.service`, либо тоже вынести в `.env`); если у
+другого хостера — фичу можно просто оставить нерабочей (не блокирует ничего
+другого) или выпилить вызов на фронте.
 
 ## 7. systemd-юниты
 
@@ -158,10 +193,20 @@ curl http://127.0.0.1:8190/_shim/health
 iptables -nL VIBE-FILTER --line-numbers   # правила должны быть, счётчики появятся после первого трафика
 ```
 
-Не копировать/не включать: `systemd/sync-claude-creds.service` — легаси,
-отключён в проде (см. `CLAUDE.md` → «Единый OAuth-файл»), не нужен при
-установке с нуля. `systemd/keepalive-claude.service` — опционален (поддержание
-живости OAuth-токена хостового `claude`, не строго обязателен для работы шима).
+Не копировать/не включать: `systemd/sync-claude-creds.service` (и его
+`.timer`) — легаси, отключён в проде (см. `CLAUDE.md` → «Единый OAuth-файл»),
+не нужен при установке с нуля.
+
+`systemd/keepalive-claude.service` — опционален (поддержание живости
+OAuth-токена хостового `claude`, не строго обязателен для работы шима). Это
+`Type=oneshot` — сам по себе ничего не делает, его дёргает по расписанию
+`keepalive-claude.timer`. Если решили включать — копировать и enable'ить
+**таймер**, не сервис напрямую:
+```bash
+cp /opt/vibe-portal/systemd/keepalive-claude.{service,timer} /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now keepalive-claude.timer
+```
 
 ## 8. nginx + TLS
 
@@ -233,6 +278,14 @@ curl -k -sS -o /dev/null -w '%{http_code}\n' https://<ваш IP>/admin-code/    
 («небезопасно») — это ожидаемо и не чинится без реального домена + CA.
 Если нужен полноценный сертификат без предупреждений — единственный путь:
 завести домен, направить его на IP, и использовать `certbot` как в разделе 8.
+
+⚠️ **Этот шаблон уже разошёлся с `vibe.kiselevgroup.com`.** В основном
+доменном конфиге (раздел 8) со временем добавились `location = /security.html`
+(статика `public-docs/security.html` вне express) и заголовки
+`X-Forwarded-Host`/`X-Forwarded-Prefix` на обоих `location`-блоках — в
+`201.51.4.183` их нет. Для голого-IP сетапа это не критично (ничего не падает),
+но если нужна полная идентичность поведения — перенести оба куска руками
+из `nginx/vibe.kiselevgroup.com` при копировании шаблона.
 
 ## 9. Бутстрап первого admin'а
 
@@ -366,12 +419,21 @@ npm --prefix /opt/vibe-portal/deploy-service install
 cp /opt/vibe-portal/systemd/vibe-deploy.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now vibe-deploy
-mkdir -p /etc/vibe-deploy
+# /etc/vibe-deploy/registry.json и DEPLOY_BASE (/opt/vibe-deploys) сервис
+# создаёт сам при первом деплое — руками mkdir не нужен.
 # зарегистрировать существующие production-деплои вручную —
 # см. /etc/vibe-deploy/registry.json на текущем проде как пример формата
 # (type:"node" — Node+pm2; type:"php" — php-fpm/статика, поля
 # src_subdir/exclude — см. CLAUDE.md § deploy-service).
 ```
+
+⚠️ **`DOMAIN_SUFFIX`/`CERTBOT_EMAIL` в `vibe-deploy.service` захардкожены под
+этот конкретный бизнес** (`.es-trans.ru`, `admin@kiselevgroup.com`) — сервис
+принимает только домены с этим суффиксом (`handleDeploy` отбивает остальные).
+На новом сервере для **другого** клиента/бизнеса — поправить оба
+`Environment=` в юните на актуальные домен-суффикс и email ДО
+`daemon-reload`/`enable`, иначе деплои будут либо отклоняться (чужой суффикс),
+либо certbot попытается подтвердить чужим email.
 
 `setup-iptables.sh` уже открывает `DEPLOY_PORT` (по умолчанию 8191) на
 `SHIM_IP` — отдельно ничего добавлять не нужно, юнит сам слушает
@@ -613,3 +675,38 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
 - Ширина таблицы «Мои проекты» — `max-width:1200px` (было 972px по умолчанию
   у `.section-block`), задано инлайн-стилем в `panel/public/index.html`, а не
   правкой общего класса — если понадобится ещё расширить, менять там же.
+
+## 15. Фичи, которые приезжают сами с `git clone` — ничего доразворачивать не нужно
+
+Ниже — функциональность, которая целиком живёт в `panel/public/*` +
+`panel/lib/*.js` + `panel/server.js` и edет в репозитории как обычный код.
+На новом сервере она появляется **автоматически** после шага 2 (`git clone`)
+и рестарта `vibe-panel` — отдельных шагов установки, миграций или
+бэкфилла для перечисленного ниже в этом раннбуке больше нет нигде, и не
+нужно искать:
+
+- **Корзина проектов** (`panel/lib/students.js` — `listTrash`/`restoreTrash`/
+  `purgeExpiredTrash` и др.). Хранилище — тот же `<workspace>/<user>/.deleted/`,
+  который создаёт `DELETE /api/projects/:name`; автопокупка истёкших (по
+  умолчанию 30 дней, `TRASH_RETENTION_DAYS`) подвешена на тот же 5-минутный
+  `setInterval`, что и idle-reaper (`startReaper()`) — отдельного таймера
+  заводить не нужно.
+- **Рейтинг/дашборд учеников** (`/dashboard.html`, агрегаты в `students.js`:
+  `loginCount`/`dailyLogins`/`dailyCounts()`). Доступен любому залогиненному
+  ученику, бэкфилла нет — просто начинает копиться с момента первого входа
+  на новом сервере.
+- **Десктопный VS Code по SSH** (`panel/lib/ssh-access.js`). Ключи/host-key
+  провижатся лениво при первом клике «💻 Десктоп VS Code» в UI — директории
+  `/data/config/ssh` и `/data/config/vscode-server` уже созданы в шаге 3,
+  больше ничего не нужно (кроме открытого диапазона портов 8400-8499, см.
+  предупреждение в §1).
+- **Несколько окон под одной учёткой** (`panel/lib/code-slots.js`, слоты
+  поверх `code-server`, уже встроенного в образ ученика) — работает сразу,
+  доп. процессы поднимаются лениво через `docker exec -d` при второй
+  одновременной сессии логина.
+- **«База знаний»** (`content/`, роут `/content` в `panel/server.js`) — уже
+  в репозитории, статика раздаётся express'ом из коробки.
+
+Единственное, что в этом списке реально завязано на конкретный сервер (а не
+просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджета нагрузки
+на CPU, см. §6.3.

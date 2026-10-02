@@ -91,13 +91,22 @@ export async function getVpsMetrics(range) {
 
   const [ramBody, cpuBody] = await Promise.all([fetchJson(ramUrl), fetchJson(cpuUrl)]);
 
+  // vGb/vCachedGb — абсолютные значения (ГБ) для оси Y в стиле Timeweb-дашборда
+  // (там шкала RAM не в %, а в ГБ, до физического потолка сервера — см. totalGb
+  // ниже и `renderVpsMemChart` на фронте). total/used/used_cached от API — в МБ.
   const ramRaw = (ramBody.ram || [])
     .map(p => ({
       t: new Date(p.logged_at).getTime(),
       v: p.total ? Math.round((p.used / p.total) * 100) : 0,
       vCached: p.total ? Math.round(Math.max(0, Math.min(p.total, p.used_cached)) / p.total * 100) : 0,
+      vGb: Math.round((p.used / 1024) * 100) / 100,
+      vCachedGb: Math.round((Math.max(0, Math.min(p.total, p.used_cached)) / 1024) * 100) / 100,
     }))
     .reverse();
+  // Самая свежая точка (до .reverse() — первая в ответе API) несёт total
+  // сервера; он не меняется в рамках диапазона, хватает одного значения.
+  const ramTotalMb = ramBody.ram?.[0]?.total || 0;
+  const ramTotalGb = Math.round((ramTotalMb / 1024) * 10) / 10;
 
   const cpuList = cpuBody.statistics?.[0]?.list || [];
   const cpuRaw = cpuList.map(p => ({
@@ -107,7 +116,7 @@ export async function getVpsMetrics(range) {
 
   const data = {
     cpu: { points: downsample(cpuRaw, 1), ...stats(cpuRaw, 1) },
-    mem: { points: downsample(ramRaw), ...stats(ramRaw) },
+    mem: { points: downsample(ramRaw, 2), ...stats(ramRaw), totalGb: ramTotalGb },
   };
 
   cache.set(key, { at: Date.now(), data });
@@ -134,11 +143,15 @@ export async function getVpsDisk() {
   const avail = total - used;
   const percent = Math.ceil((used / total) * 100);
   // cpu/cpu_frequency — для подписи «N x X.X ГГц» в карточке нагрузки CPU,
-  // как на дашборде Timeweb Cloud.
+  // как на дашборде Timeweb Cloud. ram — заказанный объём памяти (МБ, ровное
+  // число вроде 4096), в отличие от факт. «видимого ОС» total из /statistics
+  // (3891 МБ — часть зарезервирована под гипервизор) — для шкалы графика RAM
+  // нужен именно заказанный объём, как и на дашборде Timeweb.
   const data = {
     total, used, avail, percent,
     cpuCount: body.server?.cpu ?? null,
     cpuFrequency: body.server?.cpu_frequency ?? null,
+    ramMb: body.server?.ram ?? null,
   };
 
   diskCache = { at: Date.now(), data };
