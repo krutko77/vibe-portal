@@ -250,7 +250,6 @@ const VPS_CPU_PLOT_W = 600, VPS_CPU_PLOT_H = 118;
 const VPS_CPU_LEFT = 36, VPS_CPU_TOP = 4, VPS_CPU_BOTTOM = 18;
 const VPS_CPU_W = VPS_CPU_LEFT + VPS_CPU_PLOT_W;
 const VPS_CPU_H = VPS_CPU_TOP + VPS_CPU_PLOT_H + VPS_CPU_BOTTOM;
-const VPS_CPU_X_TICKS = 6;
 const VPS_CPU_COLOR = 'hsl(217 91% 60%)';
 
 let vpsCpuScaleMode = 'fixed';
@@ -278,9 +277,67 @@ function vpsCpuY(v, domainMax) {
 }
 function vpsCpuFmtAxisTime(ts, range) {
   const d = new Date(ts);
-  return (range === 'week' || range === '2w' || range === 'month')
-    ? d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })
-    : d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  if (range === 'week' || range === '2w' || range === 'month') {
+    const date = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+    return `${date} ${time}`;
+  }
+  return time;
+}
+
+// ── «Красивые» тики по оси X — как в дашборде Timeweb: шаг подбирается из
+// стандартного набора (минуты/часы/дни) под количество подписей, ожидаемое
+// для периода, и привязывается к круглой границе (минуте/часу/местной
+// полуночи), а не к позиции точки в массиве данных — иначе при даунсэмплинге
+// подписи «плавают» и их всегда одинаковое число штук независимо от длины
+// периода.
+const VPS_CPU_TICK_TARGETS = { '1h': 7, '6h': 7, '24h': 8, week: 4, '2w': 5, month: 6 };
+const VPS_CPU_STEP_CANDIDATES_MS = [1, 2, 5, 10, 15, 30].map(m => m * 60_000)
+  .concat([1, 2, 3, 4, 6, 12].map(h => h * 3_600_000))
+  .concat([1, 2, 3, 6, 7, 14, 30].map(d => d * 86_400_000));
+
+function vpsCpuNiceStepMs(spanMs, targetCount) {
+  const ideal = spanMs / Math.max(1, targetCount - 1);
+  let best = VPS_CPU_STEP_CANDIDATES_MS[0];
+  let bestDiff = Infinity;
+  for (const step of VPS_CPU_STEP_CANDIDATES_MS) {
+    const diff = Math.abs(step - ideal);
+    if (diff < bestDiff) { best = step; bestDiff = diff; }
+  }
+  return best;
+}
+
+// Округляет вниз к круглой границе: для шага короче суток — к началу текущих
+// местных суток + кратное шагу число минут/часов; для шага от суток и
+// длиннее — к местной полуночи, кратной шагу дней от эпохи (чтобы сетка не
+// «плавала» между перерисовками).
+function vpsCpuFloorToStep(ts, stepMs) {
+  const DAY_MS = 86_400_000;
+  if (stepMs < DAY_MS) {
+    const d = new Date(ts);
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    return dayStart + Math.floor((ts - dayStart) / stepMs) * stepMs;
+  }
+  const days = Math.round(stepMs / DAY_MS);
+  const midnight = new Date(ts);
+  midnight.setHours(0, 0, 0, 0);
+  const epochDay = Math.floor(midnight.getTime() / DAY_MS);
+  const rem = ((epochDay % days) + days) % days;
+  midnight.setDate(midnight.getDate() - rem);
+  return midnight.getTime();
+}
+
+// Таймстемпы тиков от первой до последней точки графика, с шагом,
+// подобранным под ожидаемое число подписей для периода.
+function vpsCpuBuildTicks(firstT, lastT, range) {
+  const target = VPS_CPU_TICK_TARGETS[range] || 6;
+  if (lastT <= firstT) return [firstT];
+  const stepMs = vpsCpuNiceStepMs(lastT - firstT, target);
+  let t = vpsCpuFloorToStep(firstT, stepMs);
+  if (t < firstT) t += stepMs;
+  const ticks = [];
+  for (; t <= lastT; t += stepMs) ticks.push(t);
+  return ticks.length ? ticks : [firstT];
 }
 
 function renderVpsCpuChart(points, range) {
@@ -340,18 +397,21 @@ function renderVpsCpuChart(points, range) {
   line.setAttribute('class', 'vps-chart-line cpu-line');
   svg.appendChild(line);
 
-  const tickCount = Math.min(VPS_CPU_X_TICKS, n);
-  for (let i = 0; i < tickCount; i++) {
-    const idx = tickCount === 1 ? 0 : Math.round(i * (n - 1) / (tickCount - 1));
-    const x = vpsCpuX(idx, n);
+  const firstT = points[0].t, lastT = points[n - 1].t;
+  const ticks = vpsCpuBuildTicks(firstT, lastT, range);
+  const EDGE_PX = 24;
+  ticks.forEach(t => {
+    const frac = lastT === firstT ? 0 : (t - firstT) / (lastT - firstT);
+    const x = VPS_CPU_LEFT + frac * VPS_CPU_PLOT_W;
+    const anchor = x <= VPS_CPU_LEFT + EDGE_PX ? 'start' : x >= VPS_CPU_W - EDGE_PX ? 'end' : 'middle';
     const label = document.createElementNS(VPS_CHART_NS, 'text');
     label.setAttribute('x', x);
     label.setAttribute('y', VPS_CPU_H - 4);
-    label.setAttribute('text-anchor', i === 0 ? 'start' : i === tickCount - 1 ? 'end' : 'middle');
+    label.setAttribute('text-anchor', anchor);
     label.setAttribute('class', 'vps-chart-axis-label');
-    label.textContent = vpsCpuFmtAxisTime(points[idx].t, range);
+    label.textContent = vpsCpuFmtAxisTime(t, range);
     svg.appendChild(label);
-  }
+  });
 
   const crosshair = document.createElementNS(VPS_CHART_NS, 'line');
   crosshair.setAttribute('y1', VPS_CPU_TOP); crosshair.setAttribute('y2', VPS_CPU_TOP + VPS_CPU_PLOT_H);
