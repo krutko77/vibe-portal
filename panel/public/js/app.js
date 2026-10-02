@@ -333,10 +333,8 @@ function vpsCpuBuildTicks(firstT, lastT, range) {
   const target = VPS_CPU_TICK_TARGETS[range] || 6;
   if (lastT <= firstT) return [firstT];
   const stepMs = vpsCpuNiceStepMs(lastT - firstT, target);
-  let t = vpsCpuFloorToStep(firstT, stepMs);
-  if (t < firstT) t += stepMs;
   const ticks = [];
-  for (; t <= lastT; t += stepMs) ticks.push(t);
+  for (let t = vpsCpuFloorToStep(lastT, stepMs); t >= firstT; t -= stepMs) ticks.unshift(t);
   return ticks.length ? ticks : [firstT];
 }
 
