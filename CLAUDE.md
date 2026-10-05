@@ -128,7 +128,10 @@ Reverse-proxy на хосте `:8190`, который:
    использует хостовый `claude`** (единый источник истины, см. ниже).
 3. Добавляет `anthropic-beta: oauth-2025-04-20` если клиент не прислал.
 4. Форвардит в `api.anthropic.com` через `HTTPS_PROXY` (внешний HTTP-прокси
-   адрес и креды — в `/data/config/env/proxy.env`).
+   адрес и креды — в `/data/config/env/proxy.env`). **Прокси обязателен**:
+   весь outbound шима (апстрим, OAuth refresh, `/_shim/usage`) идёт через один
+   `ProxyAgent`; без `HTTPS_PROXY` шим не стартует (FATAL в журнале, exit 1) —
+   прямых запросов к Anthropic нет (с 2026-10-05).
 5. Авто-рефрешит OAuth-токен через `POST https://platform.claude.com/v1/oauth/token`
    за минуту до истечения. Сохраняет обновлённые токены обратно в файл.
    Перечитывает файл с диска по `mtime` перед каждым refresh и при ошибке

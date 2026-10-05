@@ -15,13 +15,14 @@
 //   LISTEN_PORT       — порт (по умолчанию 8090)
 //   ALLOWED_CIDRS     — список разрешённых source CIDR через запятую (пусто = все)
 //   UPSTREAM_HOST     — куда форвардить (api.anthropic.com)
-//   HTTPS_PROXY       — обычный HTTPS_PROXY для outbound
+//   HTTPS_PROXY       — HTTPS_PROXY для outbound. ОБЯЗАТЕЛЕН: без него шим не
+//                       стартует (прямые запросы к Anthropic запрещены)
 //   OAUTH_CLIENT_ID   — client_id для refresh (default из claude-cli)
 
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ProxyAgent, Agent, fetch as undiciFetch } from 'undici';
+import { ProxyAgent, fetch as undiciFetch } from 'undici';
 import * as transcript from './transcript.js';
 import { checkLimit, recordUsage } from './token-limits.js';
 
@@ -31,6 +32,15 @@ const LISTEN_HOST = process.env.LISTEN_HOST || '127.0.0.1';
 const LISTEN_PORT = parseInt(process.env.LISTEN_PORT || '8090', 10);
 const UPSTREAM_HOST = process.env.UPSTREAM_HOST || 'api.anthropic.com';
 const HTTPS_PROXY = process.env.HTTPS_PROXY || process.env.HTTPS_PROXY_URL || '';
+// Весь outbound (OAuth refresh, апстрим /v1/*, /_shim/usage) — только через
+// прокси. Без HTTPS_PROXY не стартуем вовсе: тихий фолбэк на прямое соединение
+// запрещён (2026-10-05). systemd (Restart=always) будет перезапускать, пока
+// прокси не вернут в env — в журнале видна причина.
+if (!HTTPS_PROXY) {
+  console.error('[shim] FATAL: HTTPS_PROXY не задан — прямые запросы к Anthropic запрещены, выходим');
+  process.exit(1);
+}
+const outboundDispatcher = new ProxyAgent(HTTPS_PROXY);
 const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID
   || '9d1c250a-e61b-44d9-88ed-5944d1962f5e'; // claude-code client id
 const OAUTH_TOKEN_URL = 'https://platform.claude.com/v1/oauth/token';
@@ -114,7 +124,7 @@ async function refreshIfNeeded() {
 
   refreshing = (async () => {
     log('refreshing OAuth token…');
-    const dispatcher = HTTPS_PROXY ? new ProxyAgent(HTTPS_PROXY) : new Agent();
+    const dispatcher = outboundDispatcher;
     const resp = await undiciFetch(OAUTH_TOKEN_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'accept': 'application/json' },
@@ -142,7 +152,7 @@ async function refreshIfNeeded() {
 
 // ---------- proxy логика ----------
 
-const upstreamDispatcher = HTTPS_PROXY ? new ProxyAgent(HTTPS_PROXY) : new Agent();
+const upstreamDispatcher = outboundDispatcher;
 
 const STRIP_REQ_HEADERS = new Set([
   'host', 'connection', 'authorization', 'x-api-key',
@@ -439,7 +449,7 @@ const server = http.createServer((req, res) => {
 server.listen(LISTEN_PORT, LISTEN_HOST, () => {
   log(`listening on ${LISTEN_HOST}:${LISTEN_PORT}`);
   log(`upstream: https://${UPSTREAM_HOST}`);
-  log(`proxy: ${HTTPS_PROXY || '(direct)'}`);
+  log(`proxy: ${HTTPS_PROXY.replace(/\/\/[^@/]*@/, '//***@')}`);
   log(`allowed cidrs: ${ALLOWED_CIDRS.join(', ') || '(any)'}`);
 });
 

@@ -136,6 +136,20 @@ chmod 600 /root/.claude/.credentials.json
 HTTPS_PROXY=http://user:pass@host:port
 ```
 
+**Обязателен для `anthropic-shim`** (с 2026-10-05): без `HTTPS_PROXY` шим не
+стартует — пишет в журнал `FATAL: HTTPS_PROXY не задан…` и выходит с кодом 1,
+systemd (`Restart=always`) перезапускает его каждые 5 с, пока прокси не появится.
+Тихого фолбэка на прямое соединение с Anthropic больше нет: весь outbound шима
+(OAuth refresh на `platform.claude.com`, апстрим `api.anthropic.com/v1/*`,
+лимиты `/api/oauth/usage` для виджета «Лимиты Claude») идёт через один общий
+`ProxyAgent` (`outboundDispatcher` в `shim/server.js`). Прокси должен пускать
+CONNECT к `api.anthropic.com:443` и `platform.claude.com:443`. Тот же файл
+подключён и к `vibe-panel` (статус Claude, см. §15). Проверка:
+```bash
+journalctl -u anthropic-shim -n 20 --no-pager -o cat | grep 'proxy:'   # proxy: http://***@host:port
+curl -s http://127.0.0.1:8190/_shim/usage | head -c 80                 # JSON с limits
+```
+
 ### 6.3 Секрет сессий панели
 
 `/data/config/env/vibe-panel.env`:
