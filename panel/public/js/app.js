@@ -1058,6 +1058,15 @@ const fmtDt = (iso) => iso ? new Date(iso).toLocaleString('ru-RU', {
   day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
 }) : '';
 
+// логотип Claude — берём тот же SVG, что в чипе навбара (один источник, без дубля path)
+function csLogoSvg(size) {
+  const svg = $('#claudeStatusBtn .cs-chip-logo')?.cloneNode(true);
+  if (!svg) return '';
+  svg.setAttribute('width', size); svg.setAttribute('height', size);
+  svg.setAttribute('class', 'cs-logo');
+  return svg.outerHTML;
+}
+
 let CLAUDE_STATUS = null;
 let csLoading = false;
 
@@ -1127,7 +1136,7 @@ function renderClaudeStatusModal(err) {
   body.innerHTML = `
     <div class="cs-card" data-lvl="${lvl}">
       <div class="cs-card-head">
-        <span class="cs-logo">✻</span>
+        ${csLogoSvg(26)}
         <div class="cs-card-title">
           <div class="cs-card-name">Claude</div>
           <div class="cs-sub">${summary} · обновлено ${fmtDt(s.updatedAt)}</div>

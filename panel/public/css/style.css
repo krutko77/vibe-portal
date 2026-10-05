@@ -2700,7 +2700,7 @@ body.has-right-chat .usage-widget { max-width: none; }
   padding: 12px 14px;
   border-bottom: 1px solid hsl(var(--border));
 }
-.cs-logo { font-size: 22px; line-height: 1; color: hsl(15 63% 60%); }
+.cs-logo { flex: none; display: block; border-radius: 5px; }
 .cs-card-title { flex: 1 1 200px; min-width: 0; }
 .cs-card-name { font-size: 14px; font-weight: 700; color: hsl(var(--foreground)); }
 .cs-sub { font-size: 10px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
