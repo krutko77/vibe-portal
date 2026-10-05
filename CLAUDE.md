@@ -192,6 +192,7 @@ systemctl restart anthropic-shim
 | POST | `/api/ssh-key/regenerate` | user | перевыпуск ключа (старый перестаёт пускать; host-key не меняется) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
 | GET | `/api/claude-usage` | admin | Лимиты подписки Claude (сессия 5 ч / неделя, %) через шим `/_shim/usage` |
+| GET | `/api/claude-status` | user | Официальный статус сервисов Claude (status.claude.com, кэш 60 с) |
 | GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
 | GET | `/api/transcripts/_feed` | admin | вся лента диалогов (опц. `?user=`), для `/logs.html` |
 | GET | `/api/transcripts/:u` | admin | записи ученика за дату (`?date=`) |
@@ -205,6 +206,15 @@ systemctl restart anthropic-shim
   шима, поэтому пишут сами через `transcripts.write()` (поле `source`:
   `project-chat`/`user-chat`; без поля = VS Code). В логах источник виден бейджем.
 Бэкфилла нет — пишется с момента внедрения, вперёд.
+
+**Статус Claude (`lib/claude-status.js`, чип «Статус Claude» в навбаре).** Для
+всех залогиненных: цветная точка (зелёная / жёлтая / красная) + модалка со
+службами, активными инцидентами (с лентой апдейтов) и плановым обслуживанием —
+по `https://status.claude.com/api/v2/summary.json`. Запрос идёт **напрямую, без
+`HTTPS_PROXY`**: прокси из `proxy.env` отвечает 403 на CONNECT к
+status.claude.com (проверено 2026-10-05), а Node `fetch` прокси из env сам не
+берёт. Кэш 60 с на панели, при ошибке — последнее известное с `stale:true`;
+фронт опрашивает раз в 2 мин, пока вкладка видима.
 
 **Автокомпакт project-chat (`lib/project-chat.js`).** `--resume` тащит всю
 историю; за 200K модель просит 1M-контекст, которого на OAuth-подписке нет →
