@@ -6,7 +6,13 @@
 //
 // Кэш 60 с (статус-страница обновляется не чаще), при ошибке апстрима отдаём
 // последнее известное с stale:true — как /_shim/usage.
+//
+// ВЫКЛЮЧЕНО по умолчанию (2026-10-05): прямые запросы с портала к
+// status.claude.com временно запрещены — ждём, пока прокси разрешат этот хост.
+// Пока CLAUDE_STATUS_ENABLED != '1', наружу не уходит ни одного запроса,
+// API отвечает { disabled: true }, чип в навбаре серый.
 
+export const CLAUDE_STATUS_ENABLED = process.env.CLAUDE_STATUS_ENABLED === '1';
 const SUMMARY_URL = process.env.CLAUDE_STATUS_URL || 'https://status.claude.com/api/v2/summary.json';
 const PAGE_URL = 'https://status.claude.com';
 const CACHE_MS = 60_000;
@@ -66,6 +72,7 @@ async function load() {
 }
 
 export async function getClaudeStatus({ force = false } = {}) {
+  if (!CLAUDE_STATUS_ENABLED) return { disabled: true };
   if (!force && cache && Date.now() - cache.at < CACHE_MS) {
     return { ...cache.data, fetchedAt: new Date(cache.at).toISOString(), stale: false };
   }

@@ -781,6 +781,20 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
   ```
   Если в модалке «Не удалось загрузить: fetch failed» — с сервера нет
   прямого доступа к status.claude.com (см. выше).
+  🔌 **ВЫКЛЮЧЕНО с 2026-10-05.** Прямые запросы с портала к status.claude.com
+  запрещены, пока прокси не начнёт пропускать этот хост. Выключатель —
+  env `CLAUDE_STATUS_ENABLED` (по умолчанию выключено; включается только
+  значением `1`). В выключенном состоянии `getClaudeStatus()` сразу отдаёт
+  `{disabled:true}`, наружу не уходит ни одного запроса, чип в навбаре
+  полупрозрачный (`data-ind="off"`), модалка показывает «Проверка статуса
+  временно отключена» со ссылкой на status.claude.com, фронт статус не
+  опрашивает. Чтобы снова включить (после того как прокси разрешат и
+  `fetch` переведут на `ProxyAgent`), добавить `CLAUDE_STATUS_ENABLED=1` в
+  `/data/config/env/vibe-panel.env` и выполнить `systemctl restart vibe-panel`.
+  Проверка, что сейчас выключено:
+  ```bash
+  cd /opt/vibe-portal/panel && node -e "import('./lib/claude-status.js').then(m=>m.getClaudeStatus()).then(console.log)"  # { disabled: true }
+  ```
 
 Единственное, что в этом списке реально завязано на конкретный сервер (а не
 просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджета нагрузки

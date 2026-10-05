@@ -2667,6 +2667,7 @@ body.has-right-chat .usage-widget { max-width: none; }
 .cs-chip[data-ind="maint"] .cs-chip-dot { background: hsl(var(--smui-frost-3)); }
 .cs-chip[data-ind="warn"]  .cs-chip-dot { background: hsl(var(--smui-yellow)); animation: cs-pulse 1.6s ease-in-out infinite; }
 .cs-chip[data-ind="bad"]   .cs-chip-dot { background: hsl(var(--destructive)); animation: cs-pulse 1s ease-in-out infinite; }
+.cs-chip[data-ind="off"] { opacity: .5; }
 .cs-chip[data-ind="warn"] { border-color: hsl(var(--smui-yellow) / .6); }
 .cs-chip[data-ind="bad"]  { border-color: hsl(var(--destructive) / .7); }
 @keyframes cs-pulse { 50% { opacity: .35; } }

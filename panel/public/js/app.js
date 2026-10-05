@@ -1073,6 +1073,11 @@ let csLoading = false;
 function renderClaudeStatusChip(err) {
   const btn = $('#claudeStatusBtn');
   if (!btn) return;
+  if (CLAUDE_STATUS?.disabled) {
+    btn.dataset.ind = 'off';
+    btn.title = 'Статус Claude: проверка временно отключена';
+    return;
+  }
   if (err && !CLAUDE_STATUS) {
     btn.dataset.ind = 'unknown';
     btn.title = 'Статус Claude: не удалось получить (' + err + ')';
@@ -1090,6 +1095,12 @@ function renderClaudeStatusModal(err) {
   const body = $('#csBody');
   if (!body) return;
   const s = CLAUDE_STATUS;
+  if (s?.disabled) {
+    $('#csChecked').textContent = '';
+    body.innerHTML = `<div class="usage-widget-hint">Проверка статуса временно отключена.
+      Смотрите <a class="cs-link" href="https://status.claude.com" target="_blank" rel="noopener">status.claude.com ↗</a></div>`;
+    return;
+  }
   if (!s) {
     body.innerHTML = err
       ? `<div class="usage-widget-hint error">Не удалось загрузить: ${escapeHtml(err)}</div>`
@@ -1154,7 +1165,7 @@ function renderClaudeStatusModal(err) {
 }
 
 async function refreshClaudeStatus() {
-  if (csLoading || !ME) return;
+  if (csLoading || !ME || CLAUDE_STATUS?.disabled) return;
   csLoading = true;
   let err = null;
   try {
