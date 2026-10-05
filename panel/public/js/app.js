@@ -967,8 +967,65 @@ async function refreshAll() {
     refreshProjects(),
     refreshTemplates(),
     ME?.isAdmin ? refreshUsers() : Promise.resolve(),
+    ME?.isAdmin ? refreshClaudeUsage() : Promise.resolve(),
   ]);
 }
+
+// ── Виджет «Лимиты Claude» (admin) ─────────────────────────
+// Проценты лимитов подписки общего аккаунта (то же, что «Account & Usage» в
+// расширении VS Code). Данные — /api/claude-usage → шим (кэш 60с на его стороне).
+
+function fmtResetIn(iso) {
+  if (!iso) return '';
+  const ms = new Date(iso) - Date.now();
+  if (!(ms > 0)) return 'сброс скоро';
+  const min = Math.round(ms / 60000);
+  const d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), m = min % 60;
+  const left = d ? `${d} д ${h} ч` : h ? `${h} ч ${m} мин` : `${m} мин`;
+  const at = new Date(iso).toLocaleString('ru-RU', d
+    ? { weekday: 'short', hour: '2-digit', minute: '2-digit' }
+    : { hour: '2-digit', minute: '2-digit' });
+  return `сброс через ${left} · ${at}`;
+}
+
+let usageLoading = false;
+async function refreshClaudeUsage() {
+  const body = $('#usageBody');
+  if (!body || usageLoading) return;
+  usageLoading = true;
+  $('#usageRefresh')?.classList.add('spin');
+  try {
+    const u = await api('/api/claude-usage');
+    $('#usagePlan').textContent = u.subscriptionType || '';
+    body.innerHTML = u.limits?.length ? u.limits.map(l => {
+      const pct = Math.max(0, Math.min(100, Math.round(l.percent)));
+      const cls = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+      return `<div class="usage-row">
+        <div class="usage-row-top">
+          <span class="usage-row-label">${escapeHtml(l.label)}</span>
+          <span class="usage-row-pct">${pct}%</span>
+        </div>
+        <div class="usage-bar"><div class="usage-bar-fill ${cls}" style="width:${pct}%"></div></div>
+        <div class="usage-row-reset">${escapeHtml(fmtResetIn(l.resetsAt))}</div>
+      </div>`;
+    }).join('') : '<div class="usage-widget-hint">Нет данных о лимитах</div>';
+    const t = new Date(u.fetchedAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    $('#usageFoot').textContent = `обновлено ${t}${u.stale ? ' · устарело, Anthropic не ответил' : ''}`;
+  } catch (e) {
+    if (e.message === 'unauthorized') return;
+    body.innerHTML = `<div class="usage-widget-hint error">Не удалось загрузить: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    usageLoading = false;
+    $('#usageRefresh')?.classList.remove('spin');
+  }
+}
+
+$('#usageRefresh')?.addEventListener('click', refreshClaudeUsage);
+// раз в минуту, только пока админ смотрит на вкладку «Проекты»
+setInterval(() => {
+  if (ME?.isAdmin && document.visibilityState === 'visible'
+      && !$('.view-projects')?.classList.contains('hidden')) refreshClaudeUsage();
+}, 60_000);
 
 // ── Container ──────────────────────────────────────────────
 

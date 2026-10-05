@@ -2552,3 +2552,96 @@ html:not(.dark) .course-placeholder-desc a:hover {
 .kb-search input { flex: 1; background: transparent; border: none; outline: none; color: hsl(var(--foreground)); font-family: var(--font-mono); font-size: 13px; }
 .kb-search .k { font-size: 11px; color: hsl(var(--muted-foreground)); border: 1px solid hsl(var(--border)); padding: 1px 6px; }
 @media (max-width: 760px) { .kb-layout { grid-template-columns: 1fr; } .kb-side { position: static; } }
+
+/* ── Виджет «Лимиты Claude» (admin, справа от таблицы проектов) ──────────
+   Сетка из 3 колонок: таблица остаётся по центру (как без виджета), виджет —
+   в правом поле. Если поля не хватает (узкий экран / открыт боковой чат) —
+   container query складывает в одну колонку, виджет встаёт полосой над таблицей. */
+.view-projects { container-type: inline-size; }
+.projects-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1200px) minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: start;
+}
+.projects-layout > .section-block { grid-column: 2; grid-row: 1; width: 100%; }
+.usage-widget {
+  grid-column: 3; grid-row: 1;
+  justify-self: start;
+  width: 260px;
+  position: sticky; top: 16px;
+  margin-top: 72px; /* вровень с шапкой таблицы, под строкой кнопок */
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+}
+.usage-widget-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.usage-widget-title {
+  font-size: 11px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: hsl(var(--foreground));
+}
+.usage-widget-plan {
+  font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / .5);
+  border-radius: var(--radius);
+  padding: 1px 5px;
+}
+.usage-widget-plan:empty { display: none; }
+.usage-widget-refresh {
+  margin-left: auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0;
+  background: none; border: 1px solid transparent; border-radius: var(--radius);
+  color: hsl(var(--muted-foreground)); cursor: pointer;
+}
+.usage-widget-refresh:hover { border-color: hsl(var(--border)); color: hsl(var(--foreground)); }
+.usage-widget-refresh.spin svg { animation: usage-spin .8s linear infinite; }
+@keyframes usage-spin { to { transform: rotate(360deg); } }
+.usage-widget-body { padding: 12px; display: flex; flex-direction: column; gap: 14px; }
+.usage-row-top {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: 11px; margin-bottom: 6px;
+}
+.usage-row-label { color: hsl(var(--muted-foreground)); }
+.usage-row-pct { font-weight: 600; color: hsl(var(--foreground)); font-variant-numeric: tabular-nums; }
+.usage-bar {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  background: hsl(var(--border) / .6);
+}
+.usage-bar-fill {
+  height: 100%;
+  background: hsl(var(--smui-green));
+  transition: width .3s ease;
+}
+.usage-bar-fill.warn { background: hsl(var(--smui-yellow)); }
+.usage-bar-fill.danger { background: hsl(var(--destructive)); }
+.usage-row-reset { margin-top: 5px; font-size: 10px; color: hsl(var(--muted-foreground)); }
+.usage-widget-hint { font-size: 11px; color: hsl(var(--muted-foreground)); }
+.usage-widget-hint.error { color: hsl(var(--destructive)); }
+.usage-widget-foot {
+  padding: 8px 12px;
+  border-top: 1px solid hsl(var(--border));
+  font-size: 10px; color: hsl(var(--muted-foreground));
+}
+.usage-widget-foot:empty { display: none; }
+
+@container (max-width: 1780px) {
+  .projects-layout { grid-template-columns: minmax(0, 1fr); row-gap: 16px; }
+  .projects-layout > .section-block { grid-column: 1; grid-row: 2; }
+  .usage-widget {
+    grid-column: 1; grid-row: 1;
+    position: static; margin-top: 0;
+    width: 100%; max-width: 1200px; justify-self: center;
+  }
+  .usage-widget-body { flex-direction: row; flex-wrap: wrap; gap: 12px 28px; }
+  .usage-row { flex: 1 1 200px; }
+}
+body.has-left-chat .usage-widget,
+body.has-right-chat .usage-widget { max-width: none; }
+@media (max-width: 1300px) { .usage-widget { max-width: none; } }

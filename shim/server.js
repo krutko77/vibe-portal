@@ -302,6 +302,77 @@ function clientIp(req) {
   return (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
 }
 
+// ---------- лимиты подписки (виджет панели) ----------
+//
+// GET /_shim/usage — проценты лимитов подписки Claude (сессия 5ч, неделя) из
+// того же эндпоинта, что показывает расширение VS Code в «Account & Usage».
+// Ходит шим, т.к. только он владеет OAuth-токеном и его refresh'ем — панель
+// токен не видит. Доступ только с loopback (панель на хосте), не из vibe-net.
+// Кэш 60с: панель опрашивает раз в минуту на вкладку, апстрим не дёргаем зря.
+
+const USAGE_URL = `https://${UPSTREAM_HOST}/api/oauth/usage`;
+const USAGE_TTL_MS = 60_000;
+let usageCache = null; // { at, data }
+let usageInflight = null;
+
+function pickUsage(raw) {
+  const win = (key, label) => raw[key] && typeof raw[key].utilization === 'number'
+    ? { key, label, percent: raw[key].utilization, resetsAt: raw[key].resets_at || null }
+    : null;
+  const limits = [
+    win('five_hour', 'Сессия (5 ч)'),
+    win('seven_day', 'Неделя — все модели'),
+    win('seven_day_sonnet', 'Неделя — Sonnet'),
+    win('seven_day_opus', 'Неделя — Opus'),
+  ].filter(Boolean);
+  const ex = raw.extra_usage;
+  return {
+    subscriptionType: creds?.raw?.claudeAiOauth?.subscriptionType || null,
+    limits,
+    extraUsage: ex && ex.is_enabled
+      ? { utilization: ex.utilization, usedCredits: ex.used_credits, monthlyLimit: ex.monthly_limit, currency: ex.currency }
+      : null,
+  };
+}
+
+async function fetchUsage() {
+  if (usageCache && Date.now() - usageCache.at < USAGE_TTL_MS) return usageCache;
+  if (usageInflight) return usageInflight;
+  usageInflight = (async () => {
+    try { await refreshIfNeeded(); } catch (e) { log(`usage: refresh failed: ${e.message}`); }
+    const resp = await undiciFetch(USAGE_URL, {
+      headers: {
+        authorization: `Bearer ${creds.accessToken}`,
+        'anthropic-beta': 'oauth-2025-04-20',
+        accept: 'application/json',
+      },
+      dispatcher: upstreamDispatcher,
+    });
+    if (!resp.ok) throw new Error(`upstream ${resp.status}`);
+    usageCache = { at: Date.now(), data: pickUsage(await resp.json()) };
+    return usageCache;
+  })().finally(() => { usageInflight = null; });
+  return usageInflight;
+}
+
+async function handleUsage(res) {
+  try {
+    const c = await fetchUsage();
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ ...c.data, fetchedAt: new Date(c.at).toISOString() }));
+  } catch (e) {
+    log(`usage fetch failed: ${e.message}`);
+    // апстрим лёг/429 — лучше отдать последнее известное, чем пустоту
+    if (usageCache) {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ...usageCache.data, fetchedAt: new Date(usageCache.at).toISOString(), stale: true }));
+      return;
+    }
+    res.writeHead(502, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: 'usage_unavailable', message: e.message }));
+  }
+}
+
 async function handle(req, res) {
   const ip = clientIp(req);
 
@@ -315,6 +386,15 @@ async function handle(req, res) {
       validForMs: creds ? (creds.expiresAt - Date.now()) : null,
     }));
     return;
+  }
+
+  if (req.url === '/_shim/usage') {
+    if (!/^127\./.test(ip)) {
+      res.writeHead(403, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: 'shim_forbidden_source', ip }));
+      return;
+    }
+    return handleUsage(res);
   }
 
   if (!isAllowed(ip)) {

@@ -136,6 +136,14 @@ Reverse-proxy на хосте `:8190`, который:
 
 Health: `curl http://127.0.0.1:8190/_shim/health`.
 
+**Лимиты подписки** (`GET /_shim/usage`, только с loopback — из vibe-net 403):
+проценты окна «сессия 5 ч» и «неделя» из `api.anthropic.com/api/oauth/usage`
+(то же, что раздел «Account & Usage» в расширении VS Code; в контейнерах его нет,
+т.к. там claude авторизован шимом как сторонний провайдер, а не через claude.ai).
+Кэш 60 с, при ошибке апстрима отдаёт последнее известное (`stale:true`). Панель
+показывает это admin'у виджетом «Лимиты Claude» справа от таблицы проектов
+(`/api/claude-usage`, опрос раз в минуту, пока открыта вкладка «Проекты»).
+
 **Единый OAuth-файл (важно).** Раньше шим читал отдельную копию
 `/data/config/auth/claude-vibe.credentials.json`, которую таймер
 `sync-claude-creds` копировал из хостовой. Но OAuth refresh-токен
@@ -183,6 +191,7 @@ systemctl restart anthropic-shim
 | GET | `/api/ssh-key` | user | скачать личный приватный ключ (файл для `~/.ssh/`) |
 | POST | `/api/ssh-key/regenerate` | user | перевыпуск ключа (старый перестаёт пускать; host-key не меняется) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
+| GET | `/api/claude-usage` | admin | Лимиты подписки Claude (сессия 5 ч / неделя, %) через шим `/_shim/usage` |
 | GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
 | GET | `/api/transcripts/_feed` | admin | вся лента диалогов (опц. `?user=`), для `/logs.html` |
 | GET | `/api/transcripts/:u` | admin | записи ученика за дату (`?date=`) |

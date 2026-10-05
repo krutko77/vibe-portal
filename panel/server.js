@@ -22,6 +22,7 @@
 //   DELETE /api/students/:u     (admin)
 //   GET    /api/vps-disk        (admin) статистика диска этого VPS (Timeweb Cloud API)
 //   GET    /api/vps-metrics     (admin) история CPU/RAM этого VPS (Timeweb Cloud API)
+//   GET    /api/claude-usage    (admin) лимиты подписки Claude (сессия 5ч / неделя) через шим
 //   /code/<user>/*              прокси в контейнер ученика (auth-gate на сессию)
 
 import express from 'express';
@@ -848,6 +849,23 @@ app.get('/api/vps-metrics', requireAdmin, async (req, res) => {
   const range = VALID_RANGES.includes(req.query.range) ? req.query.range : '24h';
   try {
     res.json(await getVpsMetrics(range));
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// ---------- Лимиты подписки Claude (виджет на странице проектов) ----------
+// Данные отдаёт шим (/_shim/usage, только loopback): токен живёт у него, панель
+// его не видит. Admin-only — это лимиты общего аккаунта, не ученика.
+
+const SHIM_LOCAL_URL = process.env.SHIM_LOCAL_URL || 'http://127.0.0.1:8190';
+
+app.get('/api/claude-usage', requireAdmin, async (req, res) => {
+  try {
+    const r = await fetch(SHIM_LOCAL_URL + '/_shim/usage', { signal: AbortSignal.timeout(20_000) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return res.status(502).json({ error: data.message || `shim ${r.status}` });
+    res.json(data);
   } catch (e) {
     res.status(502).json({ error: e.message });
   }

@@ -202,6 +202,20 @@
 
     <!-- ── view: ПРОЕКТЫ ─────────────────────────────────── -->
     <section class="view view-projects hidden" data-view="projects">
+     <div class="projects-layout">
+      <aside class="usage-widget admin-only" id="usageWidget" aria-label="Лимиты подписки Claude">
+        <div class="usage-widget-head">
+          <span class="usage-widget-title">Лимиты Claude</span>
+          <span class="usage-widget-plan" id="usagePlan"></span>
+          <button class="usage-widget-refresh" id="usageRefresh" title="Обновить">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
+        </div>
+        <div class="usage-widget-body" id="usageBody">
+          <div class="usage-widget-hint">Загрузка…</div>
+        </div>
+        <div class="usage-widget-foot" id="usageFoot"></div>
+      </aside>
       <div class="section-block" style="max-width:1200px">
         <div class="section-head">
           <div class="section-head-left">
@@ -220,6 +234,7 @@
         </div>
         <div class="projects-table-wrap" id="projectsList"></div>
       </div>
+     </div>
       <div class="section-block hidden">
         <div class="section-head">
           <div class="section-head-left">
