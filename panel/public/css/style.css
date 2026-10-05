@@ -2652,12 +2652,11 @@ body.has-right-chat .usage-widget { max-width: none; }
   height: 30px; padding: 0 9px; margin-right: 8px;
   background: transparent;
   border: 1px solid hsl(var(--border));
-  color: #d97757;                   /* фирменный терракотовый Claude */
   cursor: pointer;
   transition: background .15s, border-color .15s;
 }
 .cs-chip:hover { background: hsl(var(--accent)); border-color: hsl(var(--smui-border-hover)); }
-.cs-chip-logo { display: block; }
+.cs-chip-logo { display: block; border-radius: 4px; }
 /* индикатор статуса — кружок справа от иконки, на одной линии */
 .cs-chip-dot {
   flex: none;
