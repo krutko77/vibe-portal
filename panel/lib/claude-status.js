@@ -1,18 +1,21 @@
 // Официальный статус сервисов Claude (status.claude.com, Atlassian Statuspage).
 //
-// Ходим НАПРЯМУЮ, без HTTPS_PROXY: прокси из proxy.env отвечает 403 на CONNECT к
-// status.claude.com, а с хоста он доступен и так. Node fetch прокси из env сам
-// не подхватывает — так и нужно.
+// Ходим ТОЛЬКО через HTTPS_PROXY (из proxy.env) — прямые запросы с портала к
+// status.claude.com запрещены. Node fetch прокси из env сам не подхватывает,
+// поэтому явный ProxyAgent из undici (как в shim/server.js). Нет HTTPS_PROXY —
+// считаемся выключенными, напрямую не идём.
 //
 // Кэш 60 с (статус-страница обновляется не чаще), при ошибке апстрима отдаём
 // последнее известное с stale:true — как /_shim/usage.
 //
-// ВЫКЛЮЧЕНО по умолчанию (2026-10-05): прямые запросы с портала к
-// status.claude.com временно запрещены — ждём, пока прокси разрешат этот хост.
-// Пока CLAUDE_STATUS_ENABLED != '1', наружу не уходит ни одного запроса,
-// API отвечает { disabled: true }, чип в навбаре серый.
+// Выключатель: CLAUDE_STATUS_ENABLED=0 → наружу ни одного запроса, API отвечает
+// { disabled: true }, чип в навбаре серый.
 
-export const CLAUDE_STATUS_ENABLED = process.env.CLAUDE_STATUS_ENABLED === '1';
+import { ProxyAgent, fetch as undiciFetch } from 'undici';
+
+const HTTPS_PROXY = process.env.HTTPS_PROXY || process.env.https_proxy || '';
+export const CLAUDE_STATUS_ENABLED = process.env.CLAUDE_STATUS_ENABLED !== '0' && !!HTTPS_PROXY;
+const dispatcher = CLAUDE_STATUS_ENABLED ? new ProxyAgent(HTTPS_PROXY) : null;
 const SUMMARY_URL = process.env.CLAUDE_STATUS_URL || 'https://status.claude.com/api/v2/summary.json';
 const PAGE_URL = 'https://status.claude.com';
 const CACHE_MS = 60_000;
@@ -63,7 +66,8 @@ function normalize(raw) {
 }
 
 async function load() {
-  const r = await fetch(SUMMARY_URL, {
+  const r = await undiciFetch(SUMMARY_URL, {
+    dispatcher,
     headers: { accept: 'application/json' },
     signal: AbortSignal.timeout(15_000),
   });

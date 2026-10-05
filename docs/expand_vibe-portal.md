@@ -769,32 +769,30 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
   `style.css`. SVG логотипа лежит **один раз** — в чипе навбара; модалка
   клонирует его (`csLogoSvg()`), дубля path нет.
   ⚠️ **Сетевая тонкость, проверить на новом сервере:** status.claude.com
-  запрашивается **напрямую, без `HTTPS_PROXY`** — прокси прода отвечает 403
-  на CONNECT к этому хосту (проверено 2026-10-05), а Node `fetch` прокси из
-  env и так не использует. Значит, с нового сервера status.claude.com должен
-  быть доступен напрямую. Если там прямого выхода нет — понадобится
-  `ProxyAgent` из `undici` (как в `shim/server.js`) с прокси, который этот
-  хост пропускает. Секретов не нужно. Проверка после установки:
+  запрашивается **только через `HTTPS_PROXY`** (из `/data/config/env/proxy.env`,
+  который подключён к `vibe-panel.service` как EnvironmentFile) — прямые
+  запросы с портала запрещены (решение 2026-10-05). Node `fetch` прокси из
+  env сам не берёт, поэтому в `claude-status.js` явный `ProxyAgent` +
+  `fetch` из `undici` (как в `shim/server.js`; зависимость `undici` в
+  `panel/package.json`, ставится `npm ci`). Прокси должен пропускать CONNECT
+  к `status.claude.com:443` (до 2026-10-05 прод-прокси отвечал на это 403,
+  потом доступ открыли). Секретов, кроме самого прокси, не нужно.
+  Выключатель — env `CLAUDE_STATUS_ENABLED`: по умолчанию включено,
+  `CLAUDE_STATUS_ENABLED=0` в `/data/config/env/vibe-panel.env` + `systemctl
+  restart vibe-panel` выключает. **Без `HTTPS_PROXY` модуль тоже считается
+  выключенным** — напрямую не пойдёт. В выключенном состоянии
+  `getClaudeStatus()` сразу отдаёт `{disabled:true}`, наружу ни одного
+  запроса, чип в навбаре полупрозрачный (`data-ind="off"`), модалка пишет
+  «Проверка статуса временно отключена» со ссылкой на status.claude.com,
+  фронт статус не опрашивает. Проверка после установки:
   ```bash
-  curl -s -o /dev/null -w "%{http_code}\n" --noproxy '*' https://status.claude.com/api/v2/summary.json  # 200
-  curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3020/api/claude-status                     # 401 без сессии
+  P=$(grep ^HTTPS_PROXY= /data/config/env/proxy.env | cut -d= -f2-)
+  curl -s -o /dev/null -w "%{http_code}\n" -x "$P" https://status.claude.com/api/v2/summary.json  # 200 через прокси
+  cd /opt/vibe-portal/panel && env HTTPS_PROXY="$P" node -e "import('./lib/claude-status.js').then(m=>m.getClaudeStatus()).then(s=>console.log(s.indicator, s.components.length))"  # none 6
+  curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3020/api/claude-status  # 401 без сессии
   ```
-  Если в модалке «Не удалось загрузить: fetch failed» — с сервера нет
-  прямого доступа к status.claude.com (см. выше).
-  🔌 **ВЫКЛЮЧЕНО с 2026-10-05.** Прямые запросы с портала к status.claude.com
-  запрещены, пока прокси не начнёт пропускать этот хост. Выключатель —
-  env `CLAUDE_STATUS_ENABLED` (по умолчанию выключено; включается только
-  значением `1`). В выключенном состоянии `getClaudeStatus()` сразу отдаёт
-  `{disabled:true}`, наружу не уходит ни одного запроса, чип в навбаре
-  полупрозрачный (`data-ind="off"`), модалка показывает «Проверка статуса
-  временно отключена» со ссылкой на status.claude.com, фронт статус не
-  опрашивает. Чтобы снова включить (после того как прокси разрешат и
-  `fetch` переведут на `ProxyAgent`), добавить `CLAUDE_STATUS_ENABLED=1` в
-  `/data/config/env/vibe-panel.env` и выполнить `systemctl restart vibe-panel`.
-  Проверка, что сейчас выключено:
-  ```bash
-  cd /opt/vibe-portal/panel && node -e "import('./lib/claude-status.js').then(m=>m.getClaudeStatus()).then(console.log)"  # { disabled: true }
-  ```
+  Если в модалке «Не удалось загрузить: status.claude.com 403/fetch failed» —
+  прокси не пускает к хосту или недоступен (первая команда выше).
 
 Единственное, что в этом списке реально завязано на конкретный сервер (а не
 просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджета нагрузки
