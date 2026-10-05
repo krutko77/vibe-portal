@@ -2648,33 +2648,31 @@ body.has-right-chat .usage-widget { max-width: none; }
 
 /* ── Статус Claude (status.claude.com): чип в навбаре + модалка ── */
 .cs-chip {
-  display: inline-flex; gap: 7px; align-items: center;
-  height: 30px; padding: 0 10px; margin-right: 8px;
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0; margin-right: 8px;
   background: transparent;
   border: 1px solid hsl(var(--border));
-  color: hsl(var(--muted-foreground));
-  font-family: var(--font-mono);
-  font-size: 10px; font-weight: 600;
-  letter-spacing: .08em; text-transform: uppercase;
+  color: hsl(15 63% 60%);           /* фирменный оранжевый Claude */
   cursor: pointer;
-  transition: background .15s, color .15s, border-color .15s;
+  transition: background .15s, border-color .15s;
 }
-.cs-chip:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); border-color: hsl(var(--smui-border-hover)); }
+.cs-chip:hover { background: hsl(var(--accent)); border-color: hsl(var(--smui-border-hover)); }
+.cs-chip-logo { display: block; }
+/* индикатор статуса — точка в правом нижнем углу иконки */
 .cs-chip-dot {
-  width: 8px; height: 8px; border-radius: 50%;
+  position: absolute; right: 3px; bottom: 3px;
+  width: 7px; height: 7px; border-radius: 50%;
   background: hsl(var(--muted-foreground) / .5);
+  box-shadow: 0 0 0 1.5px hsl(var(--background));
 }
 .cs-chip[data-ind="ok"]    .cs-chip-dot { background: hsl(var(--smui-green)); }
 .cs-chip[data-ind="maint"] .cs-chip-dot { background: hsl(var(--smui-frost-3)); }
 .cs-chip[data-ind="warn"]  .cs-chip-dot { background: hsl(var(--smui-yellow)); animation: cs-pulse 1.6s ease-in-out infinite; }
 .cs-chip[data-ind="bad"]   .cs-chip-dot { background: hsl(var(--destructive)); animation: cs-pulse 1s ease-in-out infinite; }
-.cs-chip[data-ind="warn"] { color: hsl(var(--smui-yellow)); border-color: hsl(var(--smui-yellow) / .5); }
-.cs-chip[data-ind="bad"]  { color: hsl(var(--destructive)); border-color: hsl(var(--destructive) / .6); }
+.cs-chip[data-ind="warn"] { border-color: hsl(var(--smui-yellow) / .6); }
+.cs-chip[data-ind="bad"]  { border-color: hsl(var(--destructive) / .7); }
 @keyframes cs-pulse { 50% { opacity: .35; } }
-@media (max-width: 900px) {
-  .cs-chip-text { display: none; }
-  .cs-chip { width: 30px; padding: 0; justify-content: center; }
-}
 
 /* цвет уровня: ok / warn / bad / maint */
 [data-lvl="ok"]    { --cs-c: var(--smui-green); }
