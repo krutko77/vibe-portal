@@ -253,7 +253,7 @@
 <span class="k-num">3.</span> dst 172.30.0.1 (любой порт)     <span class="k-drop">DROP</span>     <span class="k-comment">← всё остальное на gateway</span>
 <span class="k-num">4.</span> dst 10/8, 172.16/12, 192.168/16 <span class="k-drop">DROP</span>     <span class="k-comment">← другие docker-bridges, RFC1918</span>
 <span class="k-num">5.</span> dst 169.254/16, 127/8           <span class="k-drop">DROP</span>     <span class="k-comment">← link-local, loopback, cloud metadata</span>
-<span class="k-num">6.</span> dst 80.87.104.193               <span class="k-drop">DROP</span>     <span class="k-comment">← публичный IP сервера (NAT-loopback)</span>
+<span class="k-num">6.</span> dst 201.51.4.183               <span class="k-drop">DROP</span>     <span class="k-comment">← публичный IP сервера (NAT-loopback)</span>
 <span class="k-num">7.</span> остальное                       <span class="k-accept">ACCEPT</span>   <span class="k-comment">← интернет (npm, github, dns)</span></code></pre>
 
 <p><strong>VIBE-INPUT</strong> — контейнер → IP хоста:</p>
@@ -267,7 +267,7 @@
   <li><strong>другие docker-bridges</strong> (dev-portal, postgres, что угодно) — RFC1918 целиком в DROP'е;</li>
   <li><strong>других vibe-учеников</strong> — их IP тоже в 172.30/24, попадают в drop по 172.16/12;</li>
   <li><strong>127.0.0.1 хоста</strong> — vibe-panel:3020, dev-сервисы недоступны;</li>
-  <li><strong>публичный IP сервера</strong> — главное: иначе ученик бы постучался в <code>80.87.104.193:443</code> и попал на наш же nginx (NAT-loopback), оттуда на dev-портал. Закрыли явным DROP по <code>HOST_PUBLIC_IP</code>;</li>
+  <li><strong>публичный IP сервера</strong> — главное: иначе ученик бы постучался в <code>201.51.4.183:443</code> и попал на наш же nginx (NAT-loopback), оттуда на dev-портал. Закрыли явным DROP по <code>HOST_PUBLIC_IP</code>;</li>
   <li><strong>169.254/16</strong> — на случай cloud metadata endpoints.</li>
 </ul>
 
@@ -299,13 +299,13 @@
              │
              ├─✗ <span class="no">10/8, 172.16/12, 192/16</span>   другие docker-сети, RFC1918
              ├─✗ <span class="no">127.0.0.1</span>                 vibe-panel, dev, postgres
-             ├─✗ <span class="no">80.87.104.193</span>             nginx публичный (NAT-loopback)
+             ├─✗ <span class="no">201.51.4.183</span>             nginx публичный (NAT-loopback)
              ├─✗ <span class="no">169.254/16</span>                cloud metadata
              └─✗ <span class="no">vibe-net peers</span>            ICC off + drop по 172.16/12</div>
 
 <h2>Часть 2. Изоляция vibe от dev</h2>
 
-<p>Vibe и dev-portal крутятся на одном сервере (<code>80.87.104.193</code>), но это два <strong>независимых</strong> проекта — общего у них только git-репо для бэкапа и сам факт хостинга.</p>
+<p>Vibe и dev-portal крутятся на одном сервере (<code>201.51.4.183</code>), но это два <strong>независимых</strong> проекта — общего у них только git-репо для бэкапа и сам факт хостинга.</p>
 
 <h3>По коду</h3>
 <ul>
@@ -346,7 +346,7 @@
 <pre><code>-A VIBE-FILTER -d 10.0.0.0/8    -j <span class="k-drop">DROP</span>
 -A VIBE-FILTER -d 172.16.0.0/12 -j <span class="k-drop">DROP</span></code></pre>
 
-<p>Пакет от vibe-ученика в сторону любого dev-контейнера дропается на FORWARD-стадии. Плюс ученик не может постучаться в <code>127.0.0.1</code> хоста — а значит не достанет dev-panel, не достанет postgres, не достанет ничего, что слушает loopback. И не может обойти это через NAT-loopback по публичному IP — мы отдельно дропнули <code>80.87.104.193</code>.</p>
+<p>Пакет от vibe-ученика в сторону любого dev-контейнера дропается на FORWARD-стадии. Плюс ученик не может постучаться в <code>127.0.0.1</code> хоста — а значит не достанет dev-panel, не достанет postgres, не достанет ничего, что слушает loopback. И не может обойти это через NAT-loopback по публичному IP — мы отдельно дропнули <code>201.51.4.183</code>.</p>
 
 <h3>По бэкапу — единственное общее</h3>
 
