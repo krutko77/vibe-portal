@@ -23,6 +23,7 @@
 //   GET    /api/vps-disk        (admin) статистика диска этого VPS (Timeweb Cloud API)
 //   GET    /api/vps-metrics     (admin) история CPU/RAM этого VPS (Timeweb Cloud API)
 //   GET    /api/claude-usage    (admin) лимиты подписки Claude (сессия 5ч / неделя) через шим
+//   GET    /api/claude-status   официальный статус сервисов Claude (status.claude.com, кэш 60с)
 //   /code/<user>/*              прокси в контейнер ученика (auth-gate на сессию)
 
 import express from 'express';
@@ -45,6 +46,7 @@ import {
 } from './lib/students.js';
 import { sshConfig, privateKey, regenerateKeys } from './lib/ssh-access.js';
 import { homeDirFor } from './lib/home-dir.js';
+import { getClaudeStatus } from './lib/claude-status.js';
 import { listTemplates, listBaseTemplates, instantiateTemplate, createEmptyProject, createUploadedProject } from './lib/templates.js';
 import { listUsers as listTranscriptUsers, readUser as readTranscriptUser, feed as transcriptFeed } from './lib/transcripts.js';
 import { writeSection, containerIp } from './lib/publish.js';
@@ -866,6 +868,18 @@ app.get('/api/claude-usage', requireAdmin, async (req, res) => {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) return res.status(502).json({ error: data.message || `shim ${r.status}` });
     res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// ---------- Официальный статус Claude (чип «Статус Claude» в навбаре) ----------
+// Публичные данные status.claude.com — показываем всем залогиненным: ученику
+// полезно понимать, что «Claude тупит» не у него одного.
+
+app.get('/api/claude-status', requireAuth, async (req, res) => {
+  try {
+    res.json(await getClaudeStatus({ force: req.query.force === '1' && req.session?.isAdmin }));
   } catch (e) {
     res.status(502).json({ error: e.message });
   }

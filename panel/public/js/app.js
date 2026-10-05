@@ -968,6 +968,7 @@ async function refreshAll() {
     refreshTemplates(),
     ME?.isAdmin ? refreshUsers() : Promise.resolve(),
     ME?.isAdmin ? refreshClaudeUsage() : Promise.resolve(),
+    refreshClaudeStatus(),
   ]);
 }
 
@@ -1026,6 +1027,148 @@ setInterval(() => {
   if (ME?.isAdmin && document.visibilityState === 'visible'
       && !$('.view-projects')?.classList.contains('hidden')) refreshClaudeUsage();
 }, 60_000);
+
+// ── Статус Claude (status.claude.com) ──────────────────────
+// Чип в навбаре + модалка с сервисами и активными инцидентами. Видят все
+// залогиненные. Данные — /api/claude-status (кэш 60с на стороне панели).
+
+const CS_COMPONENT_LABEL = {
+  operational: 'работает',
+  degraded_performance: 'деградация',
+  partial_outage: 'частичный сбой',
+  major_outage: 'серьёзный сбой',
+  under_maintenance: 'обслуживание',
+};
+const CS_INDICATOR_LABEL = {
+  none: 'Всё работает',
+  minor: 'Есть проблемы',
+  major: 'Серьёзный сбой',
+  critical: 'Критический сбой',
+  maintenance: 'Обслуживание',
+};
+// уровень компонента → класс цвета (ok / warn / bad / maint)
+const csLevel = (st) => st === 'operational' ? 'ok'
+  : st === 'under_maintenance' ? 'maint'
+  : st === 'major_outage' ? 'bad' : 'warn';
+const csIndLevel = (ind) => ind === 'none' ? 'ok'
+  : ind === 'maintenance' ? 'maint'
+  : ind === 'major' || ind === 'critical' ? 'bad' : 'warn';
+
+const fmtDt = (iso) => iso ? new Date(iso).toLocaleString('ru-RU', {
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+}) : '';
+
+let CLAUDE_STATUS = null;
+let csLoading = false;
+
+function renderClaudeStatusChip(err) {
+  const btn = $('#claudeStatusBtn');
+  if (!btn) return;
+  if (err && !CLAUDE_STATUS) {
+    btn.dataset.ind = 'unknown';
+    btn.title = 'Статус Claude: не удалось получить (' + err + ')';
+    return;
+  }
+  const s = CLAUDE_STATUS;
+  const bad = s.components.filter(c => c.status !== 'operational');
+  const lvl = s.incidents.length && s.indicator === 'none' ? 'warn' : csIndLevel(s.indicator);
+  btn.dataset.ind = lvl;
+  btn.title = `Статус Claude: ${CS_INDICATOR_LABEL[s.indicator] || s.description}`
+    + (bad.length ? ` — ${bad.map(c => c.name).join(', ')}` : '');
+}
+
+function renderClaudeStatusModal(err) {
+  const body = $('#csBody');
+  if (!body) return;
+  const s = CLAUDE_STATUS;
+  if (!s) {
+    body.innerHTML = err
+      ? `<div class="usage-widget-hint error">Не удалось загрузить: ${escapeHtml(err)}</div>`
+      : '<div class="usage-widget-hint">Загрузка…</div>';
+    return;
+  }
+  $('#csChecked').textContent = `Проверено: ${fmtDt(s.fetchedAt)}${s.stale ? ' · устарело, status.claude.com не ответил' : ''}`;
+
+  const bad = s.components.filter(c => c.status !== 'operational');
+  const ok = s.components.filter(c => c.status === 'operational');
+  const lvl = s.incidents.length && s.indicator === 'none' ? 'warn' : csIndLevel(s.indicator);
+  const row = (c) => `<div class="cs-comp" data-lvl="${csLevel(c.status)}">
+      <span class="cs-ico"></span><span class="cs-comp-name">${escapeHtml(c.name)}</span>
+      ${c.status !== 'operational' ? `<span class="cs-comp-st">${escapeHtml(CS_COMPONENT_LABEL[c.status] || c.status)}</span>` : ''}
+    </div>`;
+
+  const summary = bad.length
+    ? `${bad.length} ${bad.length === 1 ? 'служба' : bad.length < 5 ? 'службы' : 'служб'} с проблемой из ${s.components.length}`
+    : `все ${s.components.length} служб работают`;
+
+  const incidents = s.incidents.map(i => `
+    <div class="cs-inc" data-lvl="${i.impact === 'major' || i.impact === 'critical' ? 'bad' : 'warn'}">
+      <div class="cs-inc-head">
+        <span class="cs-ico"></span>
+        <div class="cs-inc-title">
+          <div class="cs-inc-name">${escapeHtml(i.name)}</div>
+          <div class="cs-sub">Обновлено ${fmtDt(i.updatedAt)}</div>
+        </div>
+        <a class="cs-link" href="${escapeHtml(i.url)}" target="_blank" rel="noopener">Источник ↗</a>
+      </div>
+      ${i.components.length ? `<div class="cs-inc-aff"><b>Затронуто:</b> ${escapeHtml(i.components.join(', '))}</div>` : ''}
+      ${i.updates.map(u => `<div class="cs-upd">
+        <div class="cs-sub">${fmtDt(u.at)} · ${escapeHtml(u.status)}</div>
+        <div class="cs-upd-body">${escapeHtml(u.body)}</div>
+      </div>`).join('')}
+    </div>`).join('');
+
+  const maint = s.maintenances.map(m => `<div class="cs-comp" data-lvl="maint">
+      <span class="cs-ico"></span>
+      <a class="cs-comp-name cs-link" href="${escapeHtml(m.url)}" target="_blank" rel="noopener">${escapeHtml(m.name)}</a>
+      <span class="cs-comp-st">${fmtDt(m.scheduledFor)} – ${fmtDt(m.scheduledUntil)}</span>
+    </div>`).join('');
+
+  body.innerHTML = `
+    <div class="cs-card" data-lvl="${lvl}">
+      <div class="cs-card-head">
+        <span class="cs-logo">✻</span>
+        <div class="cs-card-title">
+          <div class="cs-card-name">Claude</div>
+          <div class="cs-sub">${summary} · обновлено ${fmtDt(s.updatedAt)}</div>
+        </div>
+        <span class="cs-badge" data-lvl="${lvl}"><span class="cs-ico"></span>${escapeHtml(CS_INDICATOR_LABEL[s.indicator] || s.description)}</span>
+        <a class="cs-link" href="${escapeHtml(s.pageUrl)}" target="_blank" rel="noopener">Официальный статус ↗</a>
+      </div>
+      ${bad.length ? `<div class="cs-grid">${bad.map(row).join('')}</div>` : ''}
+      ${ok.length ? (bad.length
+        ? `<details class="cs-rest"><summary>Остальные службы (${ok.length})</summary><div class="cs-grid">${ok.map(row).join('')}</div></details>`
+        : `<div class="cs-grid">${ok.map(row).join('')}</div>`) : ''}
+      ${s.incidents.length ? `<div class="cs-section">${s.incidents.length > 1 ? 'Активные инциденты' : 'Активный инцидент'}</div>${incidents}` : ''}
+      ${s.maintenances.length ? `<div class="cs-section">Плановое обслуживание</div><div class="cs-grid cs-grid-1">${maint}</div>` : ''}
+    </div>`;
+}
+
+async function refreshClaudeStatus() {
+  if (csLoading || !ME) return;
+  csLoading = true;
+  let err = null;
+  try {
+    CLAUDE_STATUS = await api('/api/claude-status');
+  } catch (e) {
+    if (e.message === 'unauthorized') { csLoading = false; return; }
+    err = e.message;
+  } finally {
+    csLoading = false;
+  }
+  renderClaudeStatusChip(err);
+  if (!$('#modal-claude-status')?.classList.contains('hidden')) renderClaudeStatusModal(err);
+}
+
+$('#claudeStatusBtn')?.addEventListener('click', () => {
+  renderClaudeStatusModal();
+  openModal('modal-claude-status');
+  refreshClaudeStatus();
+});
+// раз в 2 минуты, пока вкладка видима
+setInterval(() => {
+  if (ME && document.visibilityState === 'visible') refreshClaudeStatus();
+}, 120_000);
 
 // ── Container ──────────────────────────────────────────────
 
