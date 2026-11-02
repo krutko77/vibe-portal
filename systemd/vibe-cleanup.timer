@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly disk cleanup (Sun 04:30)
+
+[Timer]
+OnCalendar=Sun *-*-* 04:30:00
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

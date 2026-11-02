@@ -1,0 +1,11 @@
+[Unit]
+Description=Disk cleanup: caches + old VS Code server versions
+
+[Service]
+Type=oneshot
+ExecStart=/opt/vibe-portal/scripts/cleanup-disk.sh
+User=root
+Nice=19
+IOSchedulingClass=idle
+StandardOutput=journal
+StandardError=journal

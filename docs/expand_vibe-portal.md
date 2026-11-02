@@ -222,6 +222,24 @@ systemctl daemon-reload
 systemctl enable --now keepalive-claude.timer
 ```
 
+`systemd/vibe-cleanup.service` + `.timer` (2026-11-02) — еженедельная чистка
+диска (вс 04:30), скрипт `scripts/cleanup-disk.sh`. Чистит: старые версии
+VS Code server (десктопный VS Code по SSH, ~650 МБ на версию; оставляет
+версии с живым процессом + `KEEP_VSCODE_VERSIONS` самых свежих, по умолчанию 1)
+в `/data/vibe-students/*/.vscode-server` и `/data/config/vscode-server/*`,
+npm-кэши (`/root/.npm/_cacache`, `<workspace>/.npm/_cacache`), `apt-get clean`,
+journald до `JOURNAL_MAX` (200M). Проекты, extensions, docker-образы и ядра не
+трогает. На диске 24 ГБ без него хост дошёл до 90% (2026-11-02: 3.2 ГБ npm-кэша
++ 4 старые версии VS Code server ≈ 2.5 ГБ). Включать **таймер**:
+```bash
+cp /opt/vibe-portal/systemd/vibe-cleanup.{service,timer} /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now vibe-cleanup.timer
+/opt/vibe-portal/scripts/cleanup-disk.sh --dry-run   # что было бы удалено
+systemctl list-timers vibe-cleanup.timer             # следующий запуск
+journalctl -u vibe-cleanup --no-pager                # лог прошлых запусков
+```
+
 ## 8. nginx + TLS
 
 ```bash
