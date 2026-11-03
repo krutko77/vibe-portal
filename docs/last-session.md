@@ -37,8 +37,8 @@
 в git, но таймер в systemd ещё не включён.
 
 ## Что делать следующему
-1. Включить таймер (агенту запрещено классификатором разрешений):
-   `cp /opt/vibe-portal/systemd/vibe-cleanup.{service,timer} /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now vibe-cleanup.timer`.
+1. ~~Включить таймер~~ — сделано пользователем 2026-11-03 (NEXT: вс
+   2026-11-08 04:35). После 08.11 проверить `journalctl -u vibe-cleanup`.
 2. Разобраться с незакоммиченными `shim/server.js` и
    `shim/server.js.bak-before-auto-refresh-20261030` (висят с 30.10, не из
    этой сессии) — спросить пользователя, закоммитить или откатить.
