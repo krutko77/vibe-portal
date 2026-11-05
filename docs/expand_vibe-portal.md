@@ -857,6 +857,16 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
   journalctl -u anthropic-shim --since "-1 day" --no-pager | grep -E "refreshing|refresh ok|refresh.*fail"
   curl -s http://127.0.0.1:8190/_shim/health   # ok:true, validForMs > 0
   ```
+- **Скиллы Claude из GitHub Anthropic** (2026-11-05, в `.claude/`, к порталу
+  не относятся, это инструменты для работы Claude над репо):
+  `.claude/skills/frontend-design/` (из `anthropics/skills@ca45fc4`) и
+  `.claude/commands/security-review-pr.md` (из
+  `anthropics/claude-code-security-review@0c6a49f`, переименован, чтобы не
+  конфликтовать со встроенным `/security-review`). Команда сравнивает с
+  `origin/HEAD`, а `git clone` этот ref не всегда создаёт — после клона:
+  ```bash
+  cd /opt/vibe-portal && git remote set-head origin master && git rev-parse origin/HEAD
+  ```
 
 Единственное, что в этом списке реально завязано на конкретный сервер (а не
 просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджета нагрузки
