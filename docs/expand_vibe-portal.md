@@ -860,8 +860,8 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
 - **Скиллы Claude из GitHub Anthropic** (2026-11-05, в `.claude/`, к порталу
   не относятся, это инструменты для работы Claude над репо):
   `.claude/skills/frontend-design/` (из `anthropics/skills@ca45fc4`) и
-  `.claude/commands/security-review-pr.md` (из
-  `anthropics/claude-code-security-review@0c6a49f`, переименован, чтобы не
+  `.claude/skills/security-review-pr/SKILL.md` (из
+  `anthropics/claude-code-security-review@0c6a49f`, перенесён из command в skill и переименован, чтобы не
   конфликтовать со встроенным `/security-review`). Команда сравнивает с
   `origin/HEAD`, а `git clone` этот ref не всегда создаёт — после клона:
   ```bash
