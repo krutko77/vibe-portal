@@ -846,6 +846,17 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
   ```
   Если в модалке «Не удалось загрузить: status.claude.com 403/fetch failed» —
   прокси не пускает к хосту или недоступен (первая команда выше).
+- **Фоновый авто-рефреш OAuth-токена в шиме** (`shim/server.js`,
+  2026-10-30). `refreshIfNeeded()` обновляет токен за 10 мин до истечения
+  (было 1 мин) и дёргается не только на запросах, но и `setInterval` раз в
+  5 мин — токен не протухает в простое (ночью), первый утренний запрос не
+  упирается в refresh. Ручных шагов нет — едет с кодом, нужен только
+  `systemctl restart anthropic-shim`. Проверка: в журнале примерно раз в
+  ~7 ч 50 мин пара строк без ошибок:
+  ```bash
+  journalctl -u anthropic-shim --since "-1 day" --no-pager | grep -E "refreshing|refresh ok|refresh.*fail"
+  curl -s http://127.0.0.1:8190/_shim/health   # ok:true, validForMs > 0
+  ```
 
 Единственное, что в этом списке реально завязано на конкретный сервер (а не
 просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджета нагрузки

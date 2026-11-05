@@ -118,7 +118,7 @@ let refreshing = null;
 
 async function refreshIfNeeded() {
   maybeReloadFromDisk();
-  const skewMs = 60_000; // обновляем за 1 мин до истечения
+  const skewMs = 10 * 60_000; // обновляем за 10 мин до истечения
   if (creds.expiresAt && creds.expiresAt - Date.now() > skewMs) return;
   if (refreshing) return refreshing;
 
@@ -455,6 +455,11 @@ server.listen(LISTEN_PORT, LISTEN_HOST, () => {
 
 // прогрев — попробуем обновить заранее
 refreshIfNeeded().catch(e => log(`startup refresh: ${e.message}`));
+
+// периодическая проверка OAuth-токена каждые 5 минут
+setInterval(() => {
+  refreshIfNeeded().catch(e => log(`scheduled refresh: ${e.message}`));
+}, 5 * 60_000).unref();
 
 for (const sig of ['SIGTERM', 'SIGINT']) {
   process.on(sig, () => {
