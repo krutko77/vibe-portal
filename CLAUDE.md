@@ -4,7 +4,11 @@
 Каждый ученик работает в своём docker-контейнере, видит только свой workspace,
 не имеет доступа к dev-проектам сотрудников или к хостовой ФС.
 
-- URL: https://vibe.kiselevgroup.com
+- URL: https://vibe.kiselevgroup.com (задуманный). **Фактически этот сервер
+  обслуживает портал по голому IP** `https://201.51.4.183` с самоподписанным
+  сертификатом (nginx `nginx/201.51.4.183` → `sites-available/vibe`); домен
+  `vibe.kiselevgroup.com` резолвится в другой хост (193.47.41.205), проверено
+  2026-11-09 — см. `docs/expand_vibe-portal.md` §8/§8b.
 - Сервер: 201.51.4.183 (тот же что dev-portal; до смены DHCP-адреса был 80.87.104.193)
 - Аудитория: 5-10 платных учеников курса
 - Соседний проект: `/opt/dev-portal/` — портал для сотрудников КГ
@@ -47,7 +51,6 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
                                           ├── /api/*         JSON API
                                           └── /code/<user>/* прокси → 127.0.0.1:820X
                                                                        (контейнер vibe-<user>)
-                                          └── /<user>/<project>/* публикация (см. ниже)
 Контейнер vibe-<user>:
   image:   vibe-workspace:dev (Debian 12 + Node 22 + code-server + claude-cli + openssh-server + procps)
   user:    student (uid 1000), no sudo, --cap-drop=ALL, --no-new-privileges, --init (tini)
@@ -73,8 +76,7 @@ vibe.kiselevgroup.com → nginx :80/:443 → vibe-panel :3020
 подключается везде, где путь раньше был захардкожен: `students.js` (`dockerCreate`
 — `WorkingDir`, основной Bind, `Env: HOME=...`; `homeDirForUser()` — lookup по
 логину для мест без `role` под рукой), `code-slots.js` (`launchInstance`),
-`ssh-access.js` (`sshConfig` → `workspaceUri`/`projectUriBase`), `publish.js`
-(`deployApp`/`stopApp` → `cdir`), фронтенд `app.js` (через новое поле `homeDir`
+`ssh-access.js` (`sshConfig` → `workspaceUri`/`projectUriBase`), фронтенд `app.js` (через новое поле `homeDir`
 в `/api/me`). **Почему нельзя обойтись одним `useradd -d`:** это атрибут
 `/etc/passwd`, общий для ВСЕХ контейнеров одного образа — не даёт развести роли.
 Вместо этого HOME передаётся явно через `Env: [\`HOME=${home}\`]` в
@@ -187,17 +189,23 @@ systemctl restart anthropic-shim
 | POST | `/api/login` | — | htpasswd-vibe + users-vibe.json → сессия |
 | POST | `/api/logout` | — | |
 | GET | `/api/me` | — | username, isAdmin, статус контейнера |
-| GET | `/api/leaderboard` | user | Рейтинг учеников: только агрегаты-числа (без текста сообщений и названий проектов), для `/dashboard.html` |
 | GET | `/api/templates` | user | Список из `/opt/vibe-portal/templates/` |
 | GET | `/api/projects` | user | Папки в его workspace |
 | POST | `/api/projects/from-template` | user | `cp -a` шаблон + `chown 1000:1000` + замена `{{PROJECT_NAME}}` |
 | POST | `/api/container/{start,stop}` | user | docker start/stop своего контейнера |
 | POST | `/api/touch` | user | heartbeat (idle reaper останавливает через 30 мин) |
 | GET | `/api/projects/:name/download` | user | zip своего проекта (через системный `zip`, стрим) |
-| GET | `/api/projects/:name/publish` | user | статус публикации проекта |
-| POST | `/api/projects/:name/publish` | user | вкл/выкл публикацию (visibility, autosleep) |
-| POST | `/api/projects/:name/redeploy` | user | перезапуск приложения |
-| ANY | `/<user>/<project>/*` | session (visibility) | прокси в приложение ученика (self-heal) |
+| POST | `/api/projects/empty` | user | пустой проект |
+| POST | `/api/projects/upload` | user | проект из загруженных файлов (`multer`) |
+| DELETE | `/api/projects/:name` | user | мягкое удаление в корзину (`<workspace>/.deleted/`) |
+| GET / DELETE | `/api/trash`, `/api/trash/:id` | user | корзина: список / очистка (авто через `TRASH_RETENTION_DAYS`, 30 дн) |
+| POST | `/api/trash/:id/restore` | user | восстановить проект из корзины |
+| POST | `/api/projects/:name/section` | user | раздел проекта в таблице (`section` в `.portal-meta.json`) |
+| GET | `/api/workspace/download` | user | zip всего workspace |
+| GET | `/api/explore/{tree,file}` | user | просмотрщик файлов проекта (`lib/explorer.js`) |
+| GET / POST / DELETE | `/api/project-chat/*` | user | чат по проекту (claude на хосте, автокомпакт) |
+| POST / GET / DELETE | `/api/chat[/history]` | user | stateless user-chat |
+| GET / POST | `/api/vibe-setup/*` | user | чат-установщик: zip портала/базы знаний, проект `_vibe-setup` с `panel/vibe-setup-claude.md` |
 | ANY | `/admin-code/*` | admin | прокси в code-server проекта (127.0.0.1:8300), HTTP+WS гейт по isAdmin |
 | GET | `/api/template-download/:name` | user | zip базового шаблона (whitelist: `_base`, `_b24-single-php`) |
 | GET | `/api/template-claude/:which` | user | `CLAUDE.md` из шаблона отдельным файлом (`base`→`_base`, `b24`→`_b24-single-php`) |
@@ -205,6 +213,9 @@ systemctl restart anthropic-shim
 | GET | `/api/ssh-key` | user | скачать личный приватный ключ (файл для `~/.ssh/`) |
 | POST | `/api/ssh-key/regenerate` | user | перевыпуск ключа (старый перестаёт пускать; host-key не меняется) |
 | GET / POST / DELETE | `/api/students[/:u]` | admin | CRUD учеников: htpasswd + workspace + docker create |
+| PATCH | `/api/students/:u` | admin | лимит расходов (`spendLimitUsd`, `tokenPeriod`) |
+| POST | `/api/students/:u/password`, `/api/students/:u/token-usage/reset` | admin | смена пароля / сброс счётчика расходов |
+| GET | `/api/vps-metrics`, `/api/vps-disk` | admin | CPU/RAM/диск сервера из Timeweb Cloud API (`TIMEWEB_API_TOKEN`) |
 | GET | `/api/claude-usage` | admin | Лимиты подписки Claude (сессия 5 ч / неделя, %) через шим `/_shim/usage` |
 | GET | `/api/claude-status` | user | Официальный статус сервисов Claude (status.claude.com, кэш 60 с) |
 | GET | `/api/transcripts` | admin | список учеников с датами (аудит диалогов) |
@@ -247,28 +258,18 @@ API 429 «Usage credits required for 1M context». В headless-режиме ав
 и в `result` → один дружелюбный `error`-ивент (Part B). user-chat stateless,
 контекст не копит — не трогаем.
 
-**Дашборд/рейтинг учеников (`/dashboard.html`, кнопка-трофей в навбаре).**
-Доступен ЛЮБОМУ залогиненному ученику (не admin-only) — каждый видит общий
-рейтинг и отслеживает своё место. `GET /api/leaderboard` (`lib/leaderboard.js`)
-отдаёт **только агрегаты-числа** и имена: сообщений за день / за неделю
-(последние 7 дней) / всего, заходы, созданные проекты, опубликованные.
-**Приватность критична:** наружу не уходит ни текст сообщений, ни названия
-чужих проектов — ничего конфиденциального между учениками не перетекает.
-Очки: `заход = 20`, `созданное приложение = 100` (веса — константа `WEIGHTS`
-в `leaderboard.js`; сообщения сейчас вес 0, легко поднять). Сообщения считает
-`transcripts.dailyCounts()` (только строки JSONL, без `isToolContinuation`),
-заходы — поле `loginCount` в `users-vibe.json` (инкремент в `students.recordLogin()`
-на каждый успешный `/api/login`; бэкфилла нет, растёт с момента внедрения).
-Admin в рейтинг не входит.
-
-**Два вида рейтинга (переключатель на дашборде):** «За всё время» (как описано
-выше, по очкам) и «За день» (по умолчанию — сегодня, со стрелками ‹ › и выбором
-даты). Дневной вид ранжирует по **числу сообщений за выбранный день**; заходы за
-день — доп. колонка. Данные для дней: `leaderboard()` отдаёт на каждого ученика
-посуточные карты `dailyMsg` (из `dailyCounts()`) и `dailyLogins` (новое поле в
-`users-vibe.json`, инкремент по UTC-дню в `recordLogin()`, бэкфилла нет) + общий
-`firstDate` (нижняя граница выбора). Дашборд считает дневной рейтинг на клиенте —
-переключение даты мгновенное, без перезапросов. Приватность та же: только числа.
+**Удалено 2026-10-01 (коммит `6aa6247`):** рейтинг/дашборд учеников
+(`dashboard.html`, `lib/leaderboard.js`, `/api/leaderboard`, `recordLogin()`),
+публикация приложений учеников (роуты `publish`/`redeploy`, прокси
+`/<user>/<project>/*` в HTTP и WS, autosleep) и вкладка «VS Code» в панели.
+`lib/publish.js` сокращён до `readSection`/`writeSection`/`containerIp`/
+`appAlive` (последние два нужны `code-slots.js`). Поля `loginCount`/
+`dailyLogins` в `users-vibe.json` остались мёртвым грузом, `publish` в
+`.portal-meta.json` ни на что не влияет. Статус «РАБОЧИЙ» в таблице проектов
+теперь только по реестру deploy-service (или по ручному `status` в
+`.portal-meta.json`). Личные проекты admin'а выкладываются через
+deploy-service (см. ниже). На 2026-11-09 на портале один пользователь —
+admin `krutko77`, но код для учеников (CRUD, изоляция, слоты) сохранён.
 
 **Материалы/шаблоны (UI).** Секция-грид «Шаблоны» (showcase app-*) в проектах
 временно скрыта (`hidden`), но кнопка «+ Из шаблона» (создание из базовых
@@ -276,22 +277,8 @@ Admin в рейтинг не входит.
 есть страница «Шаблоны» с кнопками скачивания (`_base`, `_b24-single-php`,
 отдельно `CLAUDE.md` из b24). Вкладка «Работа с Клодом» убрана.
 
-**Публикация приложений.** Ученик публикует проект → приложение крутится в его
-контейнере на порту 3001+ (как `student`), панель проксирует
-`/<user>/<project>/*` → `http://<containerIP>:<port>/` по vibe-net (наружу порты
-не светятся). Доступ: `visibility=owner` (владелец+админ), `auth` (любой
-залогиненный) или `public` (без входа — внешние пользователи; `public` минует
-auth-гейт и в HTTP, и в WS). Конфиг — в `.portal-meta.json` проекта (`publish:{enabled,
-visibility,autosleep,port,cmd}`). Self-heal: заход на URL будит контейнер и
-переподнимает процесс (`panel/lib/publish.js`, `ensureRunning`). `autosleep=false`
-→ idle-reaper не усыпляет ученика. Деплой по умолчанию: Node (`node <entry>` с
-`PORT`), PHP (`php -S`), статика (`php -S`). Логи приложения — `.publish/app.log`
-в проекте, pid — `.publish/app.pid`. Образ контейнера включает `php-cli`.
-Ограничение: приложения должны использовать относительные пути к ассетам
-(подпуть `/<user>/<project>/`). Резерв логинов: `api,code,css,js,...` нельзя
-завести как ученика. WS-upgrade к опубликованному приложению (как и у `/code/`)
-не проходит сессионный auth-гейт — приемлемо: HTML гейтится по HTTP, аудитория
-доверенная (5-10 учеников).
+Резерв логинов (`RESERVED` в `students.js`): `api,code,css,js,dashboard,…`
+нельзя завести как ученика.
 
 Idle reaper: каждые 5 минут проверяет `lastActivityAt` каждого ученика, если
 больше 30 минут (`IDLE_STOP_MIN`) — `docker stop`.
@@ -307,7 +294,7 @@ VS Code (свои терминалы/вкладки), иначе один code-s
 (`req.session.codeSlot`). Первая сессия юзера → slot 0 (PID-1 `code-server` из
 CMD контейнера, порт 8080). Каждая конкурентная сессия того же логина →
 slot 1, 2, … — **отдельный процесс `code-server` в том же контейнере** на порту
-`8080+slot`, поднимается лениво через `docker exec -d` (как в `publish.js`),
+`8080+slot`, поднимается лениво через `docker exec -d`,
 со своим `--user-data-dir` (`~/.cs-data/<slot>` → независимые окна/терминалы),
 но общий HOME (по роли, см. выше) и общий `--extensions-dir`. Панель проксирует
 `/code/<user>/` в нужный инстанс по vibe-net (`http://<containerIP>:<8080+slot>`),
@@ -372,7 +359,9 @@ VS Code в namespace контейнера — проверено, **host-gateway
 | `anthropic-shim.service` | Reverse-proxy с OAuth swap (:8190), WD `/opt/vibe-portal/shim` |
 | `vibe-panel.service` | Express :3020, WD `/opt/vibe-portal/panel`, EnvFile=`/data/config/env/vibe-panel.env` |
 | `vibe-iptables.service` | oneshot, применяет VIBE-FILTER/VIBE-INPUT при boot |
-| `vibe-admin-code.service` | code-server для админа, рут `/opt/vibe-portal` (127.0.0.1:8300, `--auth none`), доступ только через admin-гейт панели на `/admin-code/` |
+| `vibe-admin-code.service` | code-server для админа, рут `/opt/vibe-portal` (127.0.0.1:8300, `--auth none`), доступ только через admin-гейт панели на `/admin-code/`; `--trusted-origins 201.51.4.183` — иначе WS по голому IP рвётся (прокси с `changeOrigin`) |
+| `vibe-deploy.service` | deploy-service на `172.30.0.1:8191` (см. «Деплой на этот же хост») |
+| `vibe-cleanup.timer` | вс 04:30, `scripts/cleanup-disk.sh` (кэши, старые версии VS Code server) |
 
 Юниты живут в `systemd/` репозитория. При изменении — копировать в
 `/etc/systemd/system/`, `daemon-reload`, рестарт сервиса.
@@ -391,13 +380,21 @@ VS Code в namespace контейнера — проверено, **host-gateway
 │   └── transcript.js                  аудит диалогов (IP→ученик, SSE-парсер, JSONL)
 ├── panel/
 │   ├── server.js                      Express :3020
-│   ├── lib/{auth,students,templates,transcripts,publish,leaderboard,code-slots,ssh-access}.js
-│   └── public/{index.html,history.html,logs.html,dashboard.html,css/,js/}
+│   ├── lib/{auth,students,templates,transcripts,publish,code-slots,ssh-access,home-dir,
+│   │        explorer,project-chat,user-chat,claude-status,vps-metrics}.js
+│   └── public/{index.html,history.html,logs.html,help.html,css/,js/}
 ├── scripts/
 │   ├── setup-iptables.sh              VIBE-FILTER/VIBE-INPUT chains
-│   └── create-admin.sh                бутстрап первого admin'а
-├── systemd/{anthropic-shim,vibe-panel,vibe-iptables}.service
-├── nginx/vibe.kiselevgroup.com
+│   ├── create-admin.sh                бутстрап первого admin'а
+│   ├── cleanup-disk.sh                еженедельная чистка диска (vibe-cleanup.timer)
+│   ├── keepalive-claude.sh            keepalive хостового OAuth (таймер на проде не стоит)
+│   ├── sync-claude-creds.sh           легаси, отключён
+│   └── snapshot.sh                    git-коммит для команды /end
+├── deploy-service/{server,ipmap}.js   vibe-deploy :8191 (личные деплои admin'а)
+├── systemd/                           anthropic-shim, vibe-panel, vibe-iptables, vibe-admin-code,
+│                                      vibe-deploy, vibe-cleanup.{service,timer},
+│                                      keepalive-claude.*, sync-claude-creds.* (легаси)
+├── nginx/{vibe.kiselevgroup.com,201.51.4.183}   домен / голый IP (на проде включён второй)
 └── templates/                         курсовые app-* (из showcase demo-app)
     ├── app-ai-helper/
     ├── app-chief24/
@@ -454,7 +451,6 @@ fieldsmap24, parser1c, pult24, quality24, support24, timepay24.
 | 8080+slot (в контейнере) | code-server'ы слотов (multi-window под одной учёткой, vibe-net) |
 | 2222 (в контейнере) | sshd ученика (публикуется на 0.0.0.0:84XX) |
 | 8300 (127.0.0.1) | admin code-server (root проекта), прокси `/admin-code/` (только admin) |
-| 3001-3099 (в контейнере) | приложения учеников (доступ через панель, наружу не торчат) |
 
 ## Бэкап
 

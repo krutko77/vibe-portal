@@ -233,25 +233,22 @@ curl http://127.0.0.1:8190/_shim/health
 iptables -nL VIBE-FILTER --line-numbers   # правила должны быть, счётчики появятся после первого трафика
 ```
 
-⚠️ **Дрейф `vibe-admin-code.service` (проверено 2026-11-09).** Установленный
-на текущем сервере `/etc/systemd/system/vibe-admin-code.service` отличается
-от `systemd/vibe-admin-code.service` в репо одним флагом, который в репо
-не попал: `--trusted-origins 201.51.4.183`.
+⚠️ **`--trusted-origins` в `vibe-admin-code.service` завязан на IP сервера.**
+В юните `ExecStart` содержит `--trusted-origins 201.51.4.183`. До 2026-11-09
+флаг был только в `/etc/systemd/system/` (вписан руками, в git не
+коммитился); 2026-11-09 юнит в репо синхронизирован с сервером. Флаг нужен из-за
+проверки origin в code-server. Панель проксирует `/admin-code/` с
+`changeOrigin: true` (`panel/server.js`), поэтому code-server получает
+`Host: 127.0.0.1:8300`, а браузер присылает `Origin: https://<IP>`. Флаг
+объявляет этот origin доверенным; без него WebSocket к code-server не
+проходит проверку, и `/admin-code/` рвётся. **На новом сервере перед
+`daemon-reload` заменить `201.51.4.183` на его IP** (при установке по §8b)
+или на домен (§8):
+```bash
+sed -i 's/--trusted-origins 201.51.4.183/--trusted-origins <ваш IP или домен>/' /etc/systemd/system/vibe-admin-code.service
 ```
-# на сервере:
-ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry --trusted-origins 201.51.4.183 /opt/vibe-portal
-# в репо:
-ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry /opt/vibe-portal
-```
-Флаг нужен из-за проверки origin в code-server. Панель проксирует
-`/admin-code/` с `changeOrigin: true` (`panel/server.js`), поэтому code-server
-получает `Host: 127.0.0.1:8300`, а браузер присылает `Origin: https://<IP>`.
-Флаг объявляет этот origin доверенным; без него WebSocket к code-server не
-проходит проверку, и `/admin-code/` рвётся. Флаг был добавлен руками прямо в
-`/etc/`, в git ни разу не коммитился. Поэтому при установке по §8b **после `cp`
-дописать флаг руками** с IP нового сервера; при установке с доменом (§8) —
-указать домен или не добавлять флаг, если `/admin-code/` и так работает.
-Остальные юниты в `/etc/systemd/system/` совпадают с репо побайтово.
+Сейчас все установленные юниты совпадают с репо побайтово (кроме
+неустановленных таймеров keepalive/sync, см. ниже).
 Проверка дрейфа на любом сервере:
 ```bash
 for f in /opt/vibe-portal/systemd/*; do b=$(basename $f); [ -f /etc/systemd/system/$b ] && { cmp -s $f /etc/systemd/system/$b && echo "SAME $b" || echo "DIFF $b"; } || echo "NOT-INSTALLED $b"; done
@@ -349,7 +346,7 @@ certbot --nginx -d vibe.kiselevgroup.com
 (`193.47.41.205`), не в этот. Остальные vhost'ы в `sites-enabled` —
 клиентские `*.es-trans.ru` (deploy-service, §12), к порталу отношения не
 имеют. Итог: если нужна **точная копия текущего сервера** — ставить по §8b
-(включая флаг `--trusted-origins` из §7); если копия «как задумано, с
+(флаг `--trusted-origins` в юните уже под этот IP, §7); если копия «как задумано, с
 доменом» — по этому разделу.
 
 ## 8b. (Опционально) HTTPS на голом IP без домена — самоподписанный сертификат
@@ -1012,10 +1009,13 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
 
 Найденные расхождения внесены в соответствующие разделы:
 §1 (хостовый `claude`, версии), §6.2 (`NO_PROXY`), §6.3 (`/api/vps-disk`),
-§7 (дрейф `vibe-admin-code`, состояние keepalive/cleanup), §8 (сервер
+§7 (`--trusted-origins` в `vibe-admin-code`, юнит в репо синхронизирован; состояние keepalive/cleanup), §8 (сервер
 фактически на §8b), §9 (docker-тома, эталон контейнера), §12 (pm2/rsync/
 php-fpm), §13.3–13.4 (`PATCH`, легаси-поля), §14.1 (статус без публикации),
 §15 (удалённые фичи, неописанные функции панели).
+
+`CLAUDE.md` синхронизирован с кодом в тот же день: убраны рейтинг, публикация и
+`/api/leaderboard`, дописаны актуальные роуты, сервисы и структура файлов.
 
 Не относится к развёртыванию и сознательно не описано: `scripts/snapshot.sh`
 (git-коммит для команды `/end`), каталоги `uroki/` и `docs/superpowers/`

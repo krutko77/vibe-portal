@@ -13,7 +13,7 @@ Environment=HOME=/root
 EnvironmentFile=/data/config/env/proxy.env
 Environment=CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 # auth none — доступ закрывает vibe-panel (admin-гейт на /admin-code/), слушаем только loopback.
-ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry /opt/vibe-portal
+ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry --trusted-origins 201.51.4.183 /opt/vibe-portal
 Restart=always
 RestartSec=5
 StandardOutput=journal
