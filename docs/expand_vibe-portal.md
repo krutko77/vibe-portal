@@ -37,6 +37,12 @@
   `/admin-code/`, слушает `127.0.0.1:8300`, root — `/opt/vibe-portal`). Ставится
   не из `apt`, а официальным скриптом (тем же, что бейкается в
   `workspace-image/Dockerfile`).
+- `claude` CLI **на хосте** (`npm install -g @anthropic-ai/claude-code` →
+  `/usr/bin/claude`). Нужен для двух вещей: `claude login` в шаге 6.1 (откуда
+  берётся `.credentials.json` для шима) и панельных чатов project-chat /
+  user-chat — они спавнят `claude` на хосте мимо шима (`CLAUDE_BIN` в
+  `panel/lib/project-chat.js`, по умолчанию `/usr/bin/claude`). Без него
+  панель стартует, но чаты в панели падают при первом сообщении.
 
 ```bash
 apt-get update
@@ -47,9 +53,14 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt-get install -y nodejs
 
 curl -fsSL https://code-server.dev/install.sh | sh
+npm install -g @anthropic-ai/claude-code
 
 systemctl enable --now docker
 ```
+
+Версии на текущем сервере (2026-11-09), для ориентира: Node `v22.23.0`,
+code-server `1.129.0`, claude-code `2.1.316`. Пакеты для опционального
+`deploy-service` (§12) — `pm2`, `rsync`, `php-fpm` — перечислены там.
 
 **Фаервол / security group облачного провайдера.** Кроме очевидных 80/443
 (nginx), контейнеры учеников публикуют desktop-SSH наружу на диапазоне
@@ -134,7 +145,20 @@ chmod 600 /root/.claude/.credentials.json
 `/data/config/env/proxy.env`:
 ```
 HTTPS_PROXY=http://user:pass@host:port
+NO_PROXY=github.com,*.github.com,githubusercontent.com,*.githubusercontent.com,npmjs.org,*.npmjs.org,pypi.org,*.pypi.org,files.pythonhosted.org,open-vsx.org,*.open-vsx.org,marketplace.visualstudio.com,*.marketplace.visualstudio.com,localhost,127.0.0.1,172.30.0.0/24,::1,openvsx.eclipsecontent.org,*.eclipsecontent.org
 ```
+
+`NO_PROXY` выше — дословно как на текущем сервере (секретов в нём нет). Он
+нужен не шиму (шим всегда ходит через явный `ProxyAgent` и `NO_PROXY` не
+читает), а остальным потребителям этого же файла: `vibe-admin-code`,
+`keepalive-claude` и `vibe-panel`. Хосты из списка идут напрямую, потому что
+прокси их либо не пускает, либо в этом нет смысла. Особенно важны
+`openvsx.eclipsecontent.org,*.eclipsecontent.org` (добавлены 2026-10-05):
+Open VSX отдаёт VSIX редиректом на этот CDN, прокси на нём отвечает
+`CONNECT 403`, а admin code-server показывает при установке или обновлении
+расширения невнятное `Error while installing extension: [object Object]`.
+Правка `proxy.env` начинает действовать только после рестарта зависимых
+сервисов.
 
 **Обязателен для `anthropic-shim`** (с 2026-10-05): без `HTTPS_PROXY` шим не
 стартует — пишет в журнал `FATAL: HTTPS_PROXY не задан…` и выходит с кодом 1,
@@ -170,12 +194,14 @@ openssl rand -hex 32
 ```
 
 **`TIMEWEB_API_TOKEN` — опционален, завязан на конкретного хостера.**
-Виджет «Нагрузка на процессор» в админском дашборде (`GET /api/vps-metrics`,
-`panel/lib/vps-metrics.js`) не сам снимает метрики, а тянет готовую историю
-CPU/RAM из API **Timeweb Cloud** по `TIMEWEB_SERVER_ID` (дефолт в коде —
+От него зависят два админских виджета в `panel/lib/vps-metrics.js`:
+график «Нагрузка на процессор» (`GET /api/vps-metrics`) и модалка диска/RAM
+сервера (`GET /api/vps-disk`, кнопка `#vpsDiskBtn`). Метрики панель сама не
+снимает, а тянет готовые цифры (историю CPU/RAM, объём диска) из API
+**Timeweb Cloud** по `TIMEWEB_SERVER_ID` (дефолт в коде —
 `8414777`, ID **этого конкретного сервера**, не универсальный). Без токена
-(или на хостинге не Timeweb) эндпоинт просто отвечает `502` — остальной портал
-не затронут, но виджет будет показывать ошибку. На новом сервере: если он тоже
+(или на хостинге не Timeweb) оба эндпоинта просто отвечают `502` — остальной
+портал не затронут, но виджеты будут показывать ошибку. На новом сервере: если он тоже
 на Timeweb Cloud — завести токен в их панели и переопределить
 `TIMEWEB_SERVER_ID` под ID нового сервера (env-переменная, не в этом файле, а
 `Environment=` в `vibe-panel.service`, либо тоже вынести в `.env`); если у
@@ -207,6 +233,30 @@ curl http://127.0.0.1:8190/_shim/health
 iptables -nL VIBE-FILTER --line-numbers   # правила должны быть, счётчики появятся после первого трафика
 ```
 
+⚠️ **Дрейф `vibe-admin-code.service` (проверено 2026-11-09).** Установленный
+на текущем сервере `/etc/systemd/system/vibe-admin-code.service` отличается
+от `systemd/vibe-admin-code.service` в репо одним флагом, который в репо
+не попал: `--trusted-origins 201.51.4.183`.
+```
+# на сервере:
+ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry --trusted-origins 201.51.4.183 /opt/vibe-portal
+# в репо:
+ExecStart=/usr/bin/code-server --bind-addr 127.0.0.1:8300 --auth none --disable-telemetry /opt/vibe-portal
+```
+Флаг нужен из-за проверки origin в code-server. Панель проксирует
+`/admin-code/` с `changeOrigin: true` (`panel/server.js`), поэтому code-server
+получает `Host: 127.0.0.1:8300`, а браузер присылает `Origin: https://<IP>`.
+Флаг объявляет этот origin доверенным; без него WebSocket к code-server не
+проходит проверку, и `/admin-code/` рвётся. Флаг был добавлен руками прямо в
+`/etc/`, в git ни разу не коммитился. Поэтому при установке по §8b **после `cp`
+дописать флаг руками** с IP нового сервера; при установке с доменом (§8) —
+указать домен или не добавлять флаг, если `/admin-code/` и так работает.
+Остальные юниты в `/etc/systemd/system/` совпадают с репо побайтово.
+Проверка дрейфа на любом сервере:
+```bash
+for f in /opt/vibe-portal/systemd/*; do b=$(basename $f); [ -f /etc/systemd/system/$b ] && { cmp -s $f /etc/systemd/system/$b && echo "SAME $b" || echo "DIFF $b"; } || echo "NOT-INSTALLED $b"; done
+```
+
 Не копировать/не включать: `systemd/sync-claude-creds.service` (и его
 `.timer`) — легаси, отключён в проде (см. `CLAUDE.md` → «Единый OAuth-файл»),
 не нужен при установке с нуля.
@@ -221,6 +271,14 @@ cp /opt/vibe-portal/systemd/keepalive-claude.{service,timer} /etc/systemd/system
 systemctl daemon-reload
 systemctl enable --now keepalive-claude.timer
 ```
+
+Состояние на текущем сервере (2026-11-09): **keepalive не работает.** В
+`/etc/systemd/system/` лежит только `keepalive-claude.service`, а
+`keepalive-claude.timer` не установлен (`systemctl is-enabled
+keepalive-claude.timer` → `not-found`). Так же и с `sync-claude-creds`:
+`.service` скопирован, `.timer` отсутствует. Токен держится живым за счёт
+фонового авто-рефреша в самом шиме (§15), keepalive для этого не нужен. Чтобы
+повторить прод один в один, keepalive на новом сервере можно не включать.
 
 `systemd/vibe-cleanup.service` + `.timer` (2026-11-02) — еженедельная чистка
 диска (вс 04:30), скрипт `scripts/cleanup-disk.sh`. Чистит: старые версии
@@ -240,7 +298,8 @@ systemctl list-timers vibe-cleanup.timer             # следующий зап
 journalctl -u vibe-cleanup --no-pager                # лог прошлых запусков
 ```
 
-Состояние на текущем сервере: таймер **включён 2026-11-03** (руками, от root).
+Состояние на текущем сервере: таймер **включён 2026-11-03** (руками, от root);
+первый плановый прогон прошёл 2026-11-08 04:42 UTC, следующий — 2026-11-15.
 Шаги установки выполняет **человек** — Claude Code в auto-mode включать
 systemd-таймеры не может (классификатор разрешений режет `systemctl enable`
 как persistence), поэтому на новом сервере не поручать это агенту.
@@ -279,6 +338,19 @@ nginx -t && systemctl reload nginx
 ```bash
 certbot --nginx -d vibe.kiselevgroup.com
 ```
+
+⚠️ **Текущий сервер (`201.51.4.183`) работает не по этому разделу, а по §8b**
+(проверено 2026-11-09). В `sites-enabled` из vibe-конфигов включён только
+`vibe` → `/etc/nginx/sites-available/vibe`, и он побайтово совпадает с
+`nginx/201.51.4.183` (голый IP, самоподписанный сертификат
+`/etc/nginx/ssl/vibe-selfsigned.*` от 2026-07-22). Файла
+`vibe.kiselevgroup.com` в `/etc/nginx` нет, сертификата Let's Encrypt для
+него тоже нет: `vibe.kiselevgroup.com` резолвится в другой хост
+(`193.47.41.205`), не в этот. Остальные vhost'ы в `sites-enabled` —
+клиентские `*.es-trans.ru` (deploy-service, §12), к порталу отношения не
+имеют. Итог: если нужна **точная копия текущего сервера** — ставить по §8b
+(включая флаг `--trusted-origins` из §7); если копия «как задумано, с
+доменом» — по этому разделу.
 
 ## 8b. (Опционально) HTTPS на голом IP без домена — самоподписанный сертификат
 
@@ -380,6 +452,19 @@ curl -s -X POST http://127.0.0.1:3020/api/container/start \
 (проще просто зайти в браузере: `https://<домен>` → логин → панель сама
 запустит контейнер по актуальной конфигурации).
 
+Общие docker-тома `vibe-extensions` (расширения code-server, rw) и
+`vibe-claude-skills` (`~/.claude/skills` в контейнере, ro) руками создавать
+не нужно: docker сам заводит именованный том при первом `docker create`
+с `Binds` на него (`panel/lib/students.js → dockerCreate()`). На текущем
+сервере оба тома существуют и **пустые** (2026-11-09), так что переносить
+их содержимое со старого сервера не требуется.
+
+Состав живого контейнера для сверки (`docker inspect vibe-<login>`): 6
+маунтов — workspace → HOME (rw), `templates` (ro), `vibe-extensions` (rw),
+`vibe-claude-skills` (ro), `/data/config/ssh/<u>/host` → `.sshd` (rw),
+`/data/config/vscode-server/<u>` → `.vscode-server` (rw); `Init: true`,
+лимиты 3 ГБ / 1.5 CPU, `CapDrop=ALL`, `no-new-privileges`.
+
 ## 10. Смоук-тест
 
 ```bash
@@ -467,7 +552,16 @@ DHCP/провайдер сменит адрес уже после установ
 (ломает всю модель изоляции курса). Поднять `deploy-service` по тому же
 образцу, что и `anthropic-shim`:
 
+Внешние бинарники, которые `deploy-service/server.js` зовёт напрямую, должны
+быть на хосте: `nginx`, `certbot` (уже есть из §1), а также **`pm2`** (Node-
+деплои), **`rsync`** (выкладка кода) и, для записей `type:"php"`, **`php-fpm`**
+(на текущем сервере — `php8.3-fpm`). pm2 должен переживать ребут
+(`pm2 startup` → юнит `pm2-root`, на текущем сервере он enabled; сервис
+после каждого деплоя сам делает `pm2 save`).
+
 ```bash
+apt-get install -y rsync php-fpm
+npm install -g pm2 && pm2 startup systemd   # на проде pm2 7.0.1
 npm --prefix /opt/vibe-portal/deploy-service install
 cp /opt/vibe-portal/systemd/vibe-deploy.service /etc/systemd/system/
 systemctl daemon-reload
@@ -600,12 +694,12 @@ find /data/vibe-students -name "hooks.json" -exec grep -l "run-hook.cmd" {} \;
 | `role` | `server.js` → `isAdmin = role === 'admin'`; `homeDirFor(role)` | admin теряет админку (CRUD учеников, `/api/transcripts`, `/logs.html`, `/admin-code/`); HOME контейнера при пересоздании уезжает с `/home/my_workspace` на `/home/student/workspace` |
 | `containerPort` | порт code-server слота 0 (820X) | `dockerStart` бросит `no port assigned`, либо переаллокация |
 | `sshPort` | published-порт sshd (84XX) | новый порт → готовый `~/.ssh/config` на ноуте перестаёт подключать |
-| `loginCount`, `dailyLogins` | счётчики рейтинга (`/api/leaderboard`) | **безвозвратно** — бэкфилла нет by design |
+| `lastActivityAt`, `lastLoginAt` | idle-reaper (30 мин) и время входа | reaper может сразу усыпить контейнер; некритично, перезапишется при следующем входе |
 | `spendLimitUsd`, `tokenPeriod` | лимиты расходов (`shim/token-limits.js`) | — |
+| `loginCount`, `dailyLogins` | **легаси**: счётчики удалённого 2026-10-01 рейтинга (§15) | ничего — код их больше не читает и не пишет, поля остались в файле от прошлого |
 
 Восстановить `role`/`containerPort`/`sshPort` постфактум можно из живого
-контейнера (`docker port vibe-<u>`, `docker inspect` → `HOME`), счётчики
-логинов — нельзя.
+контейнера (`docker port vibe-<u>`, `docker inspect` → `HOME`).
 
 Если лимит действительно нужно снять (его кто-то ставил раньше) — правильный
 способ, сохраняющий остальные поля:
@@ -613,7 +707,7 @@ find /data/vibe-students -name "hooks.json" -exec grep -l "run-hook.cmd" {} \;
 ```bash
 # через панель: карточка ученика → поле лимита пустое/0 → сохранить
 # или API (нужна admin-сессия):
-curl -X POST http://127.0.0.1:3020/api/students/<user> \
+curl -X PATCH http://127.0.0.1:3020/api/students/<user> \
   -H 'Content-Type: application/json' \
   -b <cookie-admin-сессии> \
   -d '{"spendLimitUsd": 0, "tokenPeriod": "total"}'
@@ -657,7 +751,7 @@ systemctl restart vibe-panel && systemctl is-active vibe-panel anthropic-shim
 # 4. В UI: залогиниться и убедиться, что админские разделы видны
 #    (если role потерян — админки не будет, а 403 легко списать на «баг»)
 # 5. В VS Code внутри контейнера: claude запускается, нет Permission denied
-#    и нет 429 от шима (429 = превышен spendLimitUsd, см. shim/server.js:196)
+#    и нет 429 от шима (429 = превышен spendLimitUsd, см. checkLimit() в shim/server.js)
 ```
 
 ## 14. UI-доработки таблицы «Мои проекты» (2026-09-18) — уже в коде, но есть ручные шаги
@@ -673,9 +767,11 @@ systemctl restart vibe-panel && systemctl is-active vibe-panel anthropic-shim
 
 `GET /api/projects` (`panel/server.js`) сам вычисляет статус:
 - **«НОВЫЙ»** — проект нигде не опубликован и не задеплоен;
-- **«РАБОЧИЙ»** — проект опубликован через панель (`.portal-meta.json` →
-  `publish.enabled`) **или** задеплоен через `deploy-service`
-  (есть ключ `<owner>::<папка>` в `/etc/vibe-deploy/registry.json`, см. §12).
+- **«РАБОЧИЙ»** — проект задеплоен через `deploy-service` (есть ключ
+  `<owner>::<папка>` в `/etc/vibe-deploy/registry.json`, см. §12). Раньше
+  «РАБОЧИЙ» давала и панельная публикация (`.portal-meta.json` →
+  `publish.enabled`), но публикацию удалили 2026-10-01 (§15), и поле
+  `publish` в `.portal-meta.json` теперь ни на что не влияет.
 
 Переопределяется вручную полем `status` в `.portal-meta.json` проекта —
 используется для служебных/утилитных проектов admin'а, которые крутятся без
@@ -753,10 +849,41 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
   умолчанию 30 дней, `TRASH_RETENTION_DAYS`) подвешена на тот же 5-минутный
   `setInterval`, что и idle-reaper (`startReaper()`) — отдельного таймера
   заводить не нужно.
-- **Рейтинг/дашборд учеников** (`/dashboard.html`, агрегаты в `students.js`:
-  `loginCount`/`dailyLogins`/`dailyCounts()`). Доступен любому залогиненному
-  ученику, бэкфилла нет — просто начинает копиться с момента первого входа
-  на новом сервере.
+- **Прочие функции панели без отдельной настройки** — сверено с роутами
+  `panel/server.js` 2026-11-09: чаты в панели (project-chat
+  `/api/project-chat/*` с автокомпактом и stateless user-chat `/api/chat*`;
+  оба требуют хостовый `claude` из §1), просмотрщик файлов проекта
+  (`panel/lib/explorer.js`, `/api/explore/{tree,file}`), создание пустого
+  проекта и загрузка файлов (`/api/projects/empty`, `/api/projects/upload` —
+  `multer`, ставится `npm install` из §2), скачивание всего workspace одним zip
+  (`/api/workspace/download`), «чат-установщик» портала
+  (`/api/vibe-setup/*`: отдаёт zip исходников портала/базы знаний и кладёт
+  `panel/vibe-setup-claude.md` как `CLAUDE.md` в проект `_vibe-setup`; файл
+  читается **при старте** панели, без него `vibe-panel` не поднимется).
+  Аудит диалогов (`/logs.html`, `/api/transcripts*`) пишется в
+  `/data/config/transcripts/`, каталог создан в §3. Счётчики расходов шима
+  (`/data/config/env/token-usage.json`, `TOKEN_USAGE_FILE`) шим создаёт сам
+  при первом запросе; файл не секретный, но лежит в `env/`, поэтому в git
+  не попадает.
+
+**Удалено из портала 2026-10-01 (коммит `6aa6247`) — на новом сервере этого
+нет и восстанавливать не нужно.** В `CLAUDE.md` эти фичи ещё описаны как
+действующие; ориентироваться на код:
+- **Рейтинг/дашборд учеников** — `dashboard.html`, `lib/leaderboard.js`,
+  `GET /api/leaderboard`, `recordLogin()` удалены. Поля `loginCount`/
+  `dailyLogins` в `users-vibe.json` остались мёртвым грузом (§13.3).
+- **Публикация приложений учеников** — роуты `/api/projects/:name/publish`,
+  `/redeploy`, прокси `/<user>/<project>/*` (HTTP и WS) удалены;
+  `lib/publish.js` сокращён до `readSection`/`writeSection`/`containerIp`/
+  `appAlive` (последние два нужны `code-slots.js`). Личные проекты admin'а
+  выкладываются только через `deploy-service` (§12).
+- **Вкладка «VS Code»** в панели (тоггл контейнера, «Топ-3 недавних»).
+  Контейнер стартует кнопкой «vscode» в строке проекта или при заходе на
+  `/code/<user>/`.
+
+На текущем сервере зарегистрирован один пользователь — admin `krutko77`
+(2026-11-09). Учеников нет, но код для них не удалялся: CRUD учеников,
+изоляция и слоты работают как описано.
 - **Десктопный VS Code по SSH** (`panel/lib/ssh-access.js`). Ключи/host-key
   провижатся лениво при первом клике «💻 Десктоп VS Code» в навбаре — директории
   `/data/config/ssh` и `/data/config/vscode-server` уже созданы в шаге 3,
@@ -869,5 +996,27 @@ curl -X POST http://127.0.0.1:3020/api/projects/<project>/section \
   ```
 
 Единственное, что в этом списке реально завязано на конкретный сервер (а не
-просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджета нагрузки
-на CPU, см. §6.3.
+просто «код, который уже едет») — `TIMEWEB_API_TOKEN` для виджетов нагрузки
+на CPU и диска, см. §6.3.
+
+## 16. Сверка раннбука с живым сервером (последняя — 2026-11-09)
+
+Что сверялось и чем: юниты (`cmp` репо ↔ `/etc/systemd/system`, §7), nginx
+(`cmp` репо ↔ `/etc/nginx/sites-available`, §8), ключи env-файлов в
+`/data/config/env/` против `process.env.*` в коде, маунты и лимиты живого
+контейнера (`docker inspect`), docker-тома, цепочки `VIBE-FILTER`/
+`VIBE-INPUT` (hook на `br-92be0fc90d9e`, DROP на `201.51.4.183` есть),
+внешние бинарники, которые зовёт код (`spawn`/`execFile`/`run`), роуты
+`panel/server.js`, дата образа `vibe-workspace:dev` (2026-08-11, совпадает с
+последним коммитом в `workspace-image/`, пересборка не нужна).
+
+Найденные расхождения внесены в соответствующие разделы:
+§1 (хостовый `claude`, версии), §6.2 (`NO_PROXY`), §6.3 (`/api/vps-disk`),
+§7 (дрейф `vibe-admin-code`, состояние keepalive/cleanup), §8 (сервер
+фактически на §8b), §9 (docker-тома, эталон контейнера), §12 (pm2/rsync/
+php-fpm), §13.3–13.4 (`PATCH`, легаси-поля), §14.1 (статус без публикации),
+§15 (удалённые фичи, неописанные функции панели).
+
+Не относится к развёртыванию и сознательно не описано: `scripts/snapshot.sh`
+(git-коммит для команды `/end`), каталоги `uroki/` и `docs/superpowers/`
+(рабочие заметки), `DEPLOY-INSTRUCTIONS-es-trans_repairs.txt`.
