@@ -1,58 +1,43 @@
-# Последняя сессия — 2026-11-05
+# Последняя сессия — 2026-11-09
 
 ## Кто работал
 не указано
 
 ## Что было сделано
-- Разобраны висевшие с 30.10 незакоммиченные `shim/server.js` +
-  `.bak-before-auto-refresh-20261030`: рефреш OAuth-токена за 10 мин до
-  истечения (было 1 мин) + фоновый `setInterval` раз в 5 мин. В бою с
-  02.11, журнал без ошибок. Бэкап удалён, `CLAUDE.md` и раннбук §15
-  обновлены — коммит `23ecf78`.
-- Из GitHub установлены скиллы `.claude/skills/frontend-design/`
-  (`anthropics/skills@ca45fc4`) и `.claude/skills/security-review-pr/`
-  (`anthropics/claude-code-security-review@0c6a49f`; был command, по
-  просьбе пользователя перенесён в skills). `git remote set-head origin
-  master`. Коммиты `d366381`, `f892351`; промежуточный `/end` — `0ac75e0`.
-- Ответы на вопросы пользователя (без правок кода):
-  - `.claude/commands|skills` в `/opt/vibe-portal` действуют только на
-    хостового Claude в этом репо; Claude в контейнере `vibe-krutko77` их
-    не видит. Общие для всех проектов admin'а — в
-    `/data/vibe-students/krutko77/.claude/` (`~/.claude` в контейнере),
-    сейчас там пусто.
-  - Хостовый Claude: расширение в admin code-server (`/admin-code/`,
-    `vibe-admin-code`, root `/opt/vibe-portal`), бинарь
-    `/root/.local/share/code-server/extensions/anthropic.claude-code-*`,
-    CLI `/usr/bin/claude`, конфиг `/root/.claude/`. Ходит в Anthropic
-    мимо шима.
-  - Что такое шим: подмена фейкового ключа контейнера на реальный токен,
-    рефреш, аудит диалогов, лимиты.
-  - Как открыть контейнерного Claude: десктопный VS Code → Remote-SSH
-    `vibe-krutko77` → иконка Claude (расширение 2.1.318 стоит), или
-    браузер `/code/krutko77/` → терминал → `claude`. В браузерном
-    code-server расширения Claude Code нет (проверено), только CLI.
+- Сверил `docs/expand_vibe-portal.md` с живым сервером: сравнил юниты репо и `/etc/systemd/system` (`cmp`), nginx-конфиги, ключи в `/data/config/env/*` и `process.env.*` в коде, `docker inspect vibe-krutko77`, docker-тома, `VIBE-FILTER`/`VIBE-INPUT`, внешние бинарники (`spawn`/`execFile`/`run`), роуты `panel/server.js`, дату образа.
+- Внёс в раннбук найденные расхождения:
+  - §1: хостовый `claude` CLI и версии ПО.
+  - §6.2: `NO_PROXY`.
+  - §6.3: `/api/vps-disk`.
+  - §7: `--trusted-origins`, keepalive-таймер не установлен.
+  - §8: сервер работает по голому IP (§8b).
+  - §9: docker-тома, эталон контейнера.
+  - §12: pm2/rsync/php-fpm.
+  - §13.3–13.4: `PATCH` для лимитов, легаси-поля.
+  - §14.1: статус проекта без публикации.
+  - §15: удалённые фичи, неописанные функции панели.
+  - Новый §16 «Сверка». Коммит `dce9900`.
+- Синхронизировал `systemd/vibe-admin-code.service` с `/etc`: добавлен флаг `--trusted-origins 201.51.4.183`, который раньше был только на сервере.
+- Привёл `CLAUDE.md` к коду:
+  - убраны рейтинг/дашборд, публикация, `/api/leaderboard`, autosleep, порты 3001-3099;
+  - дописаны актуальные роуты, сервисы, структура файлов и то, что сервер работает по голому IP.
+  - Коммит `410f8a6`, запушен.
+- Проверил первый боевой прогон `vibe-cleanup.timer` (08.11 04:42): удалены 4 старые версии VS Code server и npm-кэши, оставлена `Stable-c4453f8…`; диск занят на 54%.
 
 ## Ключевые решения
-- Command из `claude-code-security-review` переименован в
-  `security-review-pr` (конфликт со встроенным `/security-review`) и
-  перенесён в skills; Python-часть GitHub Action не ставилась.
+- Флаг `--trusted-origins` перенесён в юнит в репо, хотя он завязан на IP. Цель — чтобы клон совпадал с сервером. На новом сервере IP заменяется `sed`-командой из §7 раннбука.
+- Удалённые 2026-10-01 фичи (рейтинг, публикация, вкладка «VS Code») вычищены из `CLAUDE.md`, а не помечены как «отключено». Вместо них один абзац «Удалено» со ссылкой на коммит `6aa6247`.
 
 ## На чём остановились
-Объяснил пользователю, как открыть контейнерного Claude; всё закоммичено и запушено.
+Вся документация сверена и запушена, сделан `/end`-снимок.
 
 ## Что делать следующему
-1. После 2026-11-08 проверить первый прогон чистки:
-   `journalctl -u vibe-cleanup --no-pager` и `df -h /`.
-2. Если пользователь захочет скиллы/команды во всех своих проектах —
-   скопировать в `/data/vibe-students/krutko77/.claude/{skills,commands}/`
-   (chown 1000:1000); `/end` адаптировать под проекты без `docs/state.md`
-   и `scripts/snapshot.sh`.
-3. По желанию — поставить расширение Claude Code в браузерный code-server
-   контейнера (сейчас там только CLI).
-4. Остальное — бэклог `docs/state.md` «Следующие шаги».
+1. Запушить `/end`-снимок: `git push origin master`, потому что `snapshot.sh` только коммитит.
+2. Решить с пользователем, должен ли `vibe.kiselevgroup.com` вести на этот сервер. Сейчас домен резолвится в `193.47.41.205`, а портал открывается только по `https://201.51.4.183`.
+3. Остальные открытые хвосты из `docs/handoff.md`: живые проверки UI в браузере, test-2.es-trans.ru, уязвимость `rsync --delete` у трёх записей реестра, `create-admin.sh`.
 
 ## Подводные камни
-- `/security-review-pr` диффает против `origin/HEAD` — после пуша
-  проверять нечего; на свежем клоне сначала `git remote set-head origin master`.
-- Правки `.claude/` хоста не влияют на Claude в контейнере, и наоборот.
-- Агенту запрещено `systemctl enable` — такие шаги отдавать человеку.
+- `vibe-admin-code.service` содержит IP этого сервера. При переезде без замены IP `/admin-code/` будет рваться по WebSocket.
+- В `users-vibe.json` остались поля `loginCount`/`dailyLogins`, а в `.portal-meta.json` поле `publish`. Код их больше не использует, это не баг.
+- Рестарт `vibe-admin-code` убивает сессию Claude, если она запущена в терминале admin code-server. Рестарт делает только пользователь.
+- Агенту в auto-mode запрещено `systemctl enable` (persistence), такие шаги выполняет человек.
